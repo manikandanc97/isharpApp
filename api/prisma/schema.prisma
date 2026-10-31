@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model UserProfile {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId  String?  @unique(map: "user_profiles_auth_user_id_key") @map("auth_user_id") @db.Uuid
+  displayName String   @map("display_name") @db.VarChar(150)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  userRoles UserRole[]
+
+  @@map("user_profiles")
+}
+
+model Role {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique(map: "roles_name_key") @db.VarChar(50)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  userRoles UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userProfileId String   @map("user_profile_id") @db.Uuid
+  roleId        String   @map("role_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  userProfile UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  role        Role        @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([userProfileId, roleId], map: "user_roles_user_profile_id_role_id_key")
+  @@index([roleId], map: "user_roles_role_id_idx")
+  @@map("user_roles")
+}
+
+model Course {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String   @unique(map: "courses_code_key") @db.VarChar(50)
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  courseSubjects CourseSubject[]
+
+  @@map("courses")
+}
+
+model Subject {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String   @unique(map: "subjects_code_key") @db.VarChar(50)
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  courseSubjects CourseSubject[]
+
+  @@map("subjects")
+}
+
+model CourseSubject {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  subjectId String   @map("subject_id") @db.Uuid
+  position  Int      @default(0) @db.SmallInt
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  course   Course    @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  subject  Subject   @relation(fields: [subjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  chapters Chapter[]
+
+  @@unique([courseId, subjectId], map: "course_subjects_course_id_subject_id_key")
+  @@index([subjectId], map: "course_subjects_subject_id_idx")
+  @@index([courseId, position], map: "course_subjects_course_id_position_idx")
+  @@map("course_subjects")
+}
+
+model Chapter {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courseSubjectId String   @map("course_subject_id") @db.Uuid
+  title           String   @db.VarChar(200)
+  description     String?  @db.Text
+  position        Int      @db.SmallInt
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  courseSubject CourseSubject @relation(fields: [courseSubjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([courseSubjectId, position], map: "chapters_course_subject_id_position_key")
+  @@map("chapters")
+}

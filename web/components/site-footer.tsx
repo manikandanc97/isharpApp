@@ -1,0 +1,201 @@
+import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
+import {
+  CheckCircle2,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+
+export function SiteFooter() {
+  return (
+    <footer className="relative overflow-hidden border-t border-slate-800 bg-[#070b14] text-white">
+      {/* Editorial Luxury Quote Bar */}
+      <div className="border-b border-slate-800 bg-slate-900/50">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-5 text-center sm:px-8 md:flex-row md:text-left">
+          <div className="flex items-center gap-3">
+            <span className="grid size-9 place-items-center rounded-lg bg-amber-400/10 text-amber-300 border border-amber-400/20 shadow-2xs">
+              <Sparkles className="size-4.5" />
+            </span>
+            <div>
+              <p className="text-xs sm:text-sm font-semibold text-white">
+                &ldquo;Consistency beats intensity. When practice becomes reflex, rank becomes inevitable.&rdquo;
+              </p>
+              <p className="text-3xs sm:text-xs text-slate-400">
+                — I-Sharp Academic Directorate &amp; Faculty Council
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3.5 py-1 text-3xs text-slate-300">
+            <ShieldCheck className="size-3.5 text-emerald-400" />
+            <span>NTA Calibrated Curriculum Standard</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Footer Content */}
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-8 sm:py-14">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
+          {/* Brand Info */}
+          <div className="lg:col-span-2">
+            <div className="inline-block rounded-xl bg-white p-2.5 shadow-sm">
+              <BrandLogo />
+            </div>
+            <p className="mt-4 max-w-sm text-xs leading-relaxed text-slate-400 sm:text-sm">
+              Empowering NEET and JEE aspirants with focused bilingual education (தமிழ் + English),
+              disciplined daily practice sets (DPP), and calibrated real-exam diagnostic telemetry.
+            </p>
+            <div className="mt-6 flex flex-col gap-2.5 text-xs text-slate-300">
+              <div className="flex items-center gap-2.5">
+                <Phone className="size-4 text-[#e51d35] shrink-0" />
+                <span>Admission Helpline: +91 94422 00000</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Mail className="size-4 text-[#e51d35] shrink-0" />
+                <span>admissions@isharpacademy.com</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <MapPin className="size-4 text-[#e51d35] shrink-0" />
+                <span>Chennai &amp; Regional Hubs, Tamil Nadu, India</span>
+              </div>
+            </div>
+
+            {/* Enterprise Security Badges */}
+            <div className="mt-6 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-3xs font-medium text-slate-400">
+                <Lock className="size-3 text-emerald-400" /> 256-Bit TLS
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-3xs font-medium text-slate-400">
+                <CheckCircle2 className="size-3 text-blue-400" /> ISO 9001:2015
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-3xs font-medium text-slate-400">
+                <ShieldCheck className="size-3 text-amber-400" /> NTA Aligned
+              </span>
+            </div>
+          </div>
+
+          {/* Column 1: Academic Programs */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+              Academic Curriculums
+            </h4>
+            <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
+              <li>
+                <a href="#courses" className="hover:text-white transition">
+                  NEET All-India Mock Series
+                </a>
+              </li>
+              <li>
+                <a href="#courses" className="hover:text-white transition">
+                  Tamil Medium Foundation
+                </a>
+              </li>
+              <li>
+                <a href="#courses" className="hover:text-white transition">
+                  Complete NEET Prep Batch
+                </a>
+              </li>
+              <li>
+                <a href="#courses" className="hover:text-white transition">
+                  15-Year PYQ Bank
+                </a>
+              </li>
+              <li>
+                <a href="#courses" className="hover:text-white transition">
+                  Last-Mile Revision Sprints
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 2: Preparation Pillars */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+              Learning System
+            </h4>
+            <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
+              <li>
+                <a href="#experience" className="hover:text-white transition">
+                  Daily Practice (DPP)
+                </a>
+              </li>
+              <li>
+                <a href="#experience" className="hover:text-white transition">
+                  NTA Exam Simulation
+                </a>
+              </li>
+              <li>
+                <a href="#experience" className="hover:text-white transition">
+                  Bilingual Audio Lectures
+                </a>
+              </li>
+              <li>
+                <a href="#journey" className="hover:text-white transition">
+                  Diagnostic Rank Telemetry
+                </a>
+              </li>
+              <li>
+                <a href="#achievements" className="hover:text-white transition">
+                  Verified Selections
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Portals & Compliance */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+              Portals &amp; Access
+            </h4>
+            <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
+              <li>
+                <Link href="/login" className="hover:text-white transition">
+                  Student Portal Login
+                </Link>
+              </li>
+              <li>
+                <Link href="/register" className="hover:text-white transition">
+                  New Student Admission
+                </Link>
+              </li>
+              <li>
+                <Link href="/administration" className="hover:text-white transition">
+                  Faculty &amp; Proctor SSO
+                </Link>
+              </li>
+              <li>
+                <a href="#courses" className="hover:text-white transition">
+                  Academic Calendar 2026
+                </a>
+              </li>
+              <li>
+                <a href="tel:+919442200000" className="hover:text-white transition">
+                  Direct Student Grievance
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Enterprise Bottom Legal & Status Strip */}
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-6 text-3xs text-slate-500 sm:flex-row">
+          <div className="flex flex-wrap items-center gap-3">
+            <p>© 2026 I-Sharp Academy. All rights reserved.</p>
+            <span>·</span>
+            <span className="text-slate-400">Tamil Nadu, India</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-emerald-400">
+              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Gateway: Online &amp; Encrypted</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
