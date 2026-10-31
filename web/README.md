@@ -1,8 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is the I-Sharp Academy Next.js frontend. It runs on
+`http://localhost:3000` and connects to the NestJS API through the server-only
+`API_BASE_URL` setting documented in `.env.example`.
 
 ## Getting Started
 
-First, run the development server:
+Run the development server:
 
 ```bash
 npm run dev
@@ -14,7 +16,8 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The footer connection
+indicator checks the NestJS health endpoint through `GET /api/health`.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

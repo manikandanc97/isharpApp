@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
 import { PrismaService } from './../src/prisma/prisma.service.js';
+import { SupabaseTokenVerifier } from './../src/auth/supabase-token-verifier.service.js';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -16,6 +17,8 @@ describe('AppController (e2e)', () => {
       .useValue({
         $queryRaw: vi.fn().mockResolvedValue([{ '?column?': 1 }]),
       })
+      .overrideProvider(SupabaseTokenVerifier)
+      .useValue({ verify: vi.fn() })
       .compile();
 
     app = moduleFixture.createNestApplication();

@@ -1,101 +1,173 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  ArrowRight,
+  FileCheck2,
+  Flame,
+  Languages,
+  Sparkles,
+  Star,
+} from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
-  title: "Login | I-Sharp Academy",
-  description: "Sign in to the I-Sharp Academy learning portal.",
+  title: "Student LMS Login | I-Sharp Academy",
+  description: "Sign in to the I-Sharp Academy bilingual NEET/JEE learning portal.",
 };
+
+const portalHighlights = [
+  {
+    icon: Flame,
+    title: "15 Daily Practice Problems (DPP)",
+    sub: "Timed concept drills with step-by-step video solution keys.",
+  },
+  {
+    icon: Languages,
+    title: "தமிழ் + English Bilingual Lectures",
+    sub: "Clear intuitive explanations in Tamil aligned with NTA English terminology.",
+  },
+  {
+    icon: FileCheck2,
+    title: "Simulated All-India Mock Tests",
+    sub: "Full 720-mark NEET & 300-mark JEE papers with sub-topic diagnostic rank.",
+  },
+] as const;
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-svh flex-col bg-background">
-      <header className="border-b bg-card/95">
-        <div className="mx-auto flex h-20 w-full max-w-7xl items-center px-5 sm:h-24 sm:px-8 lg:px-10">
-          <BrandLogo priority />
+    <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-[#e51d35] selection:text-white antialiased lg:h-svh lg:overflow-hidden">
+      {/* 01. NAVIGATION HEADER (h-16, max-w-6xl aligned with main content & homepage) */}
+      <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-[0_1px_10px_-2px_rgba(15,23,42,0.03)]">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
+          <div className="flex items-center gap-3.5 sm:gap-4">
+            <BrandLogo priority className="h-8.5 sm:h-9.5 w-auto" />
+            <span
+              className="hidden h-5 w-px bg-slate-200 sm:block"
+              aria-hidden="true"
+            />
+            {/* Dual instruction capsule */}
+            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-3xs font-medium text-slate-700 shadow-2xs">
+              <span className="size-1.5 rounded-full bg-[#2525b8] animate-pulse" />
+              <span className="font-bold text-slate-900">தமிழ்</span>
+              <span className="text-slate-400">+</span>
+              <span className="font-bold text-slate-900">English</span>
+              <span className="h-2 w-px bg-slate-200" aria-hidden="true" />
+              <span className="text-slate-500">Student LMS</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+            >
+              <ArrowLeft className="size-3.5" />
+              <span>Back to Academy</span>
+            </Link>
+            <span className="h-3.5 w-px bg-slate-200" aria-hidden="true" />
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-[#e51d35] transition hover:bg-rose-100 hover:border-rose-300"
+            >
+              <span>New Student</span>
+              <ArrowRight className="size-3" />
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 overflow-x-clip px-5 py-10 sm:px-8 sm:py-14 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-20 xl:grid-cols-3 xl:gap-24">
-        <section
-          aria-labelledby="brand-heading"
-          className="relative isolate flex min-w-0 flex-col justify-center lg:min-h-140 xl:col-span-2"
-        >
-          <div
-            aria-hidden="true"
-            className="absolute top-1/2 -left-44 -z-10 hidden size-120 -translate-y-1/2 rounded-full border border-secondary/8 lg:block"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute top-1/2 -left-28 -z-10 hidden size-84 -translate-y-1/2 rounded-full border border-primary/8 lg:block"
-          />
-
-          <div className="relative z-10 max-w-2xl">
-            <div className="flex items-center gap-3 text-xs font-semibold tracking-eyebrow text-secondary uppercase">
-              <span className="h-px w-9 bg-primary" aria-hidden="true" />
-              Built for ambitious minds
+      {/* 02. MAIN CONTENT AREA - Perfectly fitted for laptop viewports */}
+      <main className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-4 sm:px-8 lg:overflow-hidden lg:py-0 min-h-0">
+        <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-6 lg:grid-cols-12 lg:gap-10 xl:gap-14">
+          {/* Left Column: Academic Brand Presentation (Compact for laptop screen) */}
+          <section
+            aria-labelledby="brand-heading"
+            className="flex flex-col justify-center lg:col-span-6 xl:col-span-7"
+          >
+            {/* Eyebrow Pill */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 bg-white px-2.5 py-0.5 text-3xs font-bold tracking-wider text-slate-800 shadow-2xs uppercase">
+                <span className="size-1.5 rounded-full bg-[#e51d35] animate-pulse" />
+                <span>Built for Ambitious Minds</span>
+              </div>
+              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-3xs font-semibold text-[#2525b8]">
+                <Sparkles className="size-2.5" />
+                Batch 2026 Admissions Open
+              </span>
             </div>
+
+            {/* Headline */}
             <h1
               id="brand-heading"
-              className="mt-5 max-w-xl text-3xl leading-tight font-semibold tracking-heading text-foreground sm:text-4xl lg:text-5xl"
+              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-[34px] xl:text-[38px] lg:leading-[1.14]"
             >
-              Your journey to excellence starts here.
+              Your journey to{" "}
+              <span className="text-[#e51d35]">excellence</span> starts here.
             </h1>
-            <p className="mt-5 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-              Focused preparation, expert guidance, and steady progress for
-              every NEET and JEE aspirant ready to aim higher.
+
+            <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-sm">
+              Focused preparation, calibrated practice, and steady progress for every
+              NEET &amp; JEE aspirant ready to secure top medical and engineering ranks.
             </p>
-          </div>
 
-          <div
-            aria-hidden="true"
-            className="relative mt-10 hidden h-52 max-w-xl sm:block lg:mt-14 lg:h-56"
-          >
-            <div className="absolute top-5 right-6 left-10 h-px bg-slate-200" />
-            <div className="absolute top-5 left-1/5 h-32 w-px bg-slate-200" />
-            <div className="absolute top-5 left-3/5 h-40 w-px bg-slate-200" />
+            {/* Feature Highlight Cards (Tightly spaced) */}
+            <div className="mt-4 space-y-2 max-w-xl">
+              {portalHighlights.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.title}
+                    className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white/90 px-3 py-2 shadow-2xs backdrop-blur-xs transition hover:border-slate-300"
+                  >
+                    <div className="grid size-7.5 shrink-0 place-items-center rounded-lg bg-blue-50 text-[#2525b8]">
+                      <Icon className="size-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-900">
+                        {item.title}
+                      </p>
+                      <p className="text-3xs text-slate-500 truncate sm:text-clip">
+                        {item.sub}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-            <div className="absolute top-0 left-1/6 size-3 rounded-full border-3 border-background bg-secondary ring-1 ring-secondary/20" />
-            <div className="absolute top-0 left-3/5 size-3 rounded-full border-3 border-background bg-primary ring-1 ring-primary/20" />
-
-            <div className="absolute bottom-7 left-0 w-1/2 -rotate-2 rounded-2xl border border-secondary/10 bg-white/75 p-5 shadow-card backdrop-blur-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-2xs font-semibold tracking-label text-secondary uppercase">
-                  Foundation
+            {/* Trust Metrics Pill */}
+            <div className="mt-3.5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-3.5 py-2 shadow-2xs backdrop-blur-xs max-w-md">
+              <div className="flex -space-x-1.5">
+                <span className="inline-grid size-6.5 place-items-center rounded-full bg-[#191747] text-3xs font-bold text-white ring-2 ring-white">
+                  99%
                 </span>
-                <span className="size-2 rounded-full bg-secondary" />
+                <span className="inline-grid size-6.5 place-items-center rounded-full bg-[#2525b8] text-3xs font-bold text-white ring-2 ring-white">
+                  AIR
+                </span>
+                <span className="inline-grid size-6.5 place-items-center rounded-full bg-[#e51d35] text-3xs font-bold text-white ring-2 ring-white">
+                  NEET
+                </span>
               </div>
-              <div className="mt-5 space-y-2.5">
-                <div className="h-1.5 w-full rounded-full bg-secondary/8">
-                  <div className="h-full w-4/5 rounded-full bg-secondary/60" />
+              <div className="text-xs">
+                <div className="flex items-center gap-1 text-amber-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="size-3 fill-amber-400 text-amber-400" />
+                  ))}
+                  <span className="ml-1 text-2xs font-bold text-slate-800">4.9 / 5.0</span>
                 </div>
-                <div className="h-1.5 w-3/4 rounded-full bg-foreground/8" />
+                <p className="text-3xs text-slate-500">
+                  Trusted by 1,200+ NEET &amp; JEE aspirants across Tamil Nadu
+                </p>
               </div>
             </div>
+          </section>
 
-            <div className="absolute right-2 bottom-0 w-1/2 rotate-2 rounded-2xl border border-primary/10 bg-white/90 p-5 shadow-card-hover backdrop-blur-sm">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <span className="text-2xs font-semibold tracking-label text-primary uppercase">
-                    Weekly progress
-                  </span>
-                  <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                    Keep moving forward
-                  </p>
-                </div>
-                <div className="flex h-14 items-end gap-1.5">
-                  <span className="h-5 w-2 rounded-full bg-secondary/20" />
-                  <span className="h-8 w-2 rounded-full bg-secondary/45" />
-                  <span className="h-11 w-2 rounded-full bg-primary/70" />
-                  <span className="h-14 w-2 rounded-full bg-primary" />
-                </div>
-              </div>
-            </div>
+          {/* Right Column: Refined LoginForm */}
+          <div className="flex w-full min-w-0 justify-center lg:col-span-6 lg:justify-end xl:col-span-5">
+            <LoginForm />
           </div>
-        </section>
-
-        <div className="flex w-full min-w-0 justify-center lg:justify-end">
-          <LoginForm />
         </div>
       </main>
     </div>

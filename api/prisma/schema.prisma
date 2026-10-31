@@ -15,9 +15,78 @@ model UserProfile {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  userRoles UserRole[]
+  userRoles             UserRole[]
+  institutionMembership InstitutionMembership?        @relation("MembershipUser")
+  verifiedMemberships   InstitutionMembership[]       @relation("MembershipVerifier")
+  verificationAudits    MembershipVerificationAudit[] @relation("VerificationAuditActor")
 
   @@map("user_profiles")
+}
+
+enum MembershipVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  REVOKED
+}
+
+enum MembershipVerificationMethod {
+  TRUSTED_ROSTER
+  MANUAL_ADMIN
+}
+
+model TrustedInstitutionStudent {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId  String   @unique(map: "trusted_institution_students_student_id_key") @map("student_id") @db.VarChar(64)
+  authUserId String?  @unique(map: "trusted_institution_students_auth_user_id_key") @map("auth_user_id") @db.Uuid
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  membership InstitutionMembership?
+
+  @@index([isActive], map: "trusted_institution_students_is_active_idx")
+  @@map("trusted_institution_students")
+}
+
+model InstitutionMembership {
+  id              String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String                        @unique(map: "institution_memberships_user_id_key") @map("user_id") @db.Uuid
+  studentId       String                        @unique(map: "institution_memberships_student_id_key") @map("student_id") @db.VarChar(64)
+  status          MembershipVerificationStatus  @default(PENDING)
+  method          MembershipVerificationMethod?
+  trustedRecordId String?                       @unique(map: "institution_memberships_trusted_record_id_key") @map("trusted_record_id") @db.Uuid
+  verifiedById    String?                       @map("verified_by_id") @db.Uuid
+  verifiedAt      DateTime?                     @map("verified_at") @db.Timestamptz(3)
+  createdAt       DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user          UserProfile                   @relation("MembershipUser", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  verifiedBy    UserProfile?                  @relation("MembershipVerifier", fields: [verifiedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  trustedRecord TrustedInstitutionStudent?    @relation(fields: [trustedRecordId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  audits        MembershipVerificationAudit[]
+
+  @@index([status], map: "institution_memberships_status_idx")
+  @@index([verifiedById], map: "institution_memberships_verified_by_id_idx")
+  @@map("institution_memberships")
+}
+
+model MembershipVerificationAudit {
+  id             String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId   String                        @map("membership_id") @db.Uuid
+  actorUserId    String?                       @map("actor_user_id") @db.Uuid
+  previousStatus MembershipVerificationStatus? @map("previous_status")
+  newStatus      MembershipVerificationStatus  @map("new_status")
+  method         MembershipVerificationMethod?
+  reason         String                        @db.VarChar(500)
+  createdAt      DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  membership InstitutionMembership @relation(fields: [membershipId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actor      UserProfile?          @relation("VerificationAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([membershipId, createdAt], map: "membership_verification_audits_membership_created_idx")
+  @@index([actorUserId], map: "membership_verification_audits_actor_user_id_idx")
+  @@map("membership_verification_audits")
 }
 
 model Role {

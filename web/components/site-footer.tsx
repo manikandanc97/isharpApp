@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ApiConnectionStatus } from "@/components/api-connection-status";
 import { BrandLogo } from "@/components/brand-logo";
 import {
   CheckCircle2,
@@ -45,33 +46,38 @@ export function SiteFooter() {
               <BrandLogo />
             </div>
             <p className="mt-4 max-w-sm text-xs leading-relaxed text-slate-400 sm:text-sm">
-              Empowering NEET and JEE aspirants with focused bilingual education (தமிழ் + English),
-              disciplined daily practice sets (DPP), and calibrated real-exam diagnostic telemetry.
+              Premier NEET, IIT-JEE &amp; MBA Entrance coaching centre in Coimbatore.
+              Empowering students with disciplined pedagogy, separate Tamil Medium foundation batches,
+              calibrated test series, and personalized one-on-one doubt clearance.
             </p>
             <div className="mt-6 flex flex-col gap-2.5 text-xs text-slate-300">
-              <div className="flex items-center gap-2.5">
-                <Phone className="size-4 text-[#e51d35] shrink-0" />
-                <span>Admission Helpline: +91 94422 00000</span>
+              <div className="flex items-start gap-2.5">
+                <Phone className="size-4 text-[#e51d35] shrink-0 mt-0.5" />
+                <div className="flex flex-col">
+                  <span>Helpline: <a href="tel:+919894850370" className="hover:text-white font-medium">+91 98948 50370</a> / <a href="tel:+918148217151" className="hover:text-white font-medium">+91 81482 17151</a></span>
+                </div>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="size-4 text-[#e51d35] shrink-0" />
-                <span>admissions@isharpacademy.com</span>
+                <a href="mailto:isharpacademy@gmail.com" className="hover:text-white">isharpacademy@gmail.com</a>
               </div>
-              <div className="flex items-center gap-2.5">
-                <MapPin className="size-4 text-[#e51d35] shrink-0" />
-                <span>Chennai &amp; Regional Hubs, Tamil Nadu, India</span>
+              <div className="flex items-start gap-2.5">
+                <MapPin className="size-4 text-[#e51d35] shrink-0 mt-0.5" />
+                <span className="leading-snug">
+                  2nd Floor, AK Complex, No.207, 6th Street, Cross Cut Rd, Gandhipuram, Coimbatore – 641012, Tamil Nadu
+                </span>
               </div>
             </div>
 
             {/* Enterprise Security Badges */}
             <div className="mt-6 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-3xs font-medium text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-3xs font-medium text-slate-400">
                 <Lock className="size-3 text-emerald-400" /> 256-Bit TLS
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-3xs font-medium text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-3xs font-medium text-slate-400">
                 <CheckCircle2 className="size-3 text-blue-400" /> ISO 9001:2015
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-3xs font-medium text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-3xs font-medium text-slate-400">
                 <ShieldCheck className="size-3 text-amber-400" /> NTA Aligned
               </span>
             </div>
@@ -85,27 +91,27 @@ export function SiteFooter() {
             <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
               <li>
                 <a href="#courses" className="hover:text-white transition">
-                  NEET All-India Mock Series
+                  NEET Classroom &amp; Distance Prep
                 </a>
               </li>
               <li>
                 <a href="#courses" className="hover:text-white transition">
-                  Tamil Medium Foundation
+                  NEET Tamil Medium Foundation
                 </a>
               </li>
               <li>
                 <a href="#courses" className="hover:text-white transition">
-                  Complete NEET Prep Batch
+                  IIT-JEE Main &amp; Advanced
                 </a>
               </li>
               <li>
                 <a href="#courses" className="hover:text-white transition">
-                  15-Year PYQ Bank
+                  NEET All-India Test Series (AITS)
                 </a>
               </li>
               <li>
                 <a href="#courses" className="hover:text-white transition">
-                  Last-Mile Revision Sprints
+                  TANCET, MAT &amp; CAT (MBA)
                 </a>
               </li>
             </ul>
@@ -158,7 +164,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/register" className="hover:text-white transition">
-                  New Student Admission
+                  New Student
                 </Link>
               </li>
               <li>
@@ -172,8 +178,8 @@ export function SiteFooter() {
                 </a>
               </li>
               <li>
-                <a href="tel:+919442200000" className="hover:text-white transition">
-                  Direct Student Grievance
+                <a href="tel:+919894850370" className="hover:text-white transition">
+                  Direct Student Grievance: +91 98948 50370
                 </a>
               </li>
             </ul>
@@ -189,10 +195,7 @@ export function SiteFooter() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Gateway: Online &amp; Encrypted</span>
-            </span>
+            <ApiConnectionStatus />
           </div>
         </div>
       </div>

@@ -6,14 +6,10 @@ import {
   Check,
   CheckCircle2,
   Clock,
-  FileText,
   Flame,
-  Languages,
-  Sparkles,
   Target,
   Trophy,
   Volume2,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 

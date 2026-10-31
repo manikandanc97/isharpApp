@@ -3,10 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navigationLinks = [
-  { label: "Curriculum", href: "#courses" },
   { label: "Methodology", href: "#journey" },
   { label: "Experience", href: "#experience" },
   { label: "Results", href: "#achievements" },
@@ -27,7 +36,7 @@ export function SiteHeader() {
         {/* Brand Logo & Luxury Language Capsule */}
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="flex items-center transition-opacity hover:opacity-95">
-            <BrandLogo priority />
+            <BrandLogo priority className="h-8.5 sm:h-9.5 w-auto" />
           </div>
 
           <span
@@ -35,8 +44,11 @@ export function SiteHeader() {
             aria-hidden="true"
           />
 
-          {/* Bilingual Capsule Indicator */}
-          <div className="hidden lg:flex items-center gap-2 rounded-full border border-slate-200/80 bg-gradient-to-r from-slate-50/90 via-white to-blue-50/40 px-3.5 py-1 text-2xs font-medium text-slate-700 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] backdrop-blur-xs transition-all hover:border-blue-200/90 hover:shadow-2xs">
+          {/* Bilingual Capsule Indicator using Shadcn Badge */}
+          <Badge
+            variant="outline"
+            className="hidden lg:flex items-center gap-2 rounded-full border-slate-200/90 bg-gradient-to-r from-slate-50/90 via-white to-blue-50/40 px-3.5 py-1 text-2xs font-medium text-slate-700 shadow-2xs hover:border-blue-200"
+          >
             <span className="relative flex size-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2525b8] opacity-50" />
               <span className="relative inline-flex size-2 rounded-full bg-[#2525b8]" />
@@ -46,14 +58,93 @@ export function SiteHeader() {
             <span className="font-bold text-slate-900 tracking-tight">English</span>
             <span className="h-2.5 w-px bg-slate-200" aria-hidden="true" />
             <span className="text-slate-500 font-normal tracking-tight">Dual-Instruction</span>
-          </div>
+          </Badge>
         </div>
 
-        {/* Center Desktop Navigation: Simple, Clean & Refined */}
+        {/* Center Desktop Navigation with Shadcn DropdownMenu */}
         <nav
-          className="hidden md:flex items-center gap-1 rounded-full border border-slate-200/50 bg-slate-50/60 p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+          className="hidden md:flex items-center gap-1 rounded-full border border-slate-200/60 bg-slate-50/70 p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
           aria-label="Main Navigation"
         >
+          {/* Shadcn DropdownMenu for Curriculum */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-medium text-slate-600 transition-colors duration-200 hover:bg-white hover:text-slate-900 hover:shadow-2xs cursor-pointer outline-none select-none"
+                >
+                  <span>Curriculum</span>
+                  <ChevronDown className="size-3 text-slate-400" />
+                </button>
+              }
+            />
+            <DropdownMenuContent
+              align="start"
+              className="w-64 rounded-2xl border-slate-200 bg-white p-1.5 shadow-xl"
+            >
+              <DropdownMenuLabel className="px-2.5 py-1.5 text-3xs font-bold uppercase tracking-wider text-slate-400">
+                Academic Programs 2026
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="#courses"
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-800 transition hover:bg-blue-50 hover:text-[#2525b8]"
+                  >
+                    <span className="size-2 rounded-full bg-[#e51d35] shrink-0" />
+                    <span>NEET 2026 Full Course</span>
+                  </Link>
+                }
+              />
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="#courses"
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-800 transition hover:bg-blue-50 hover:text-[#2525b8]"
+                  >
+                    <span className="size-2 rounded-full bg-[#2525b8] shrink-0" />
+                    <span>10 மாதிரி தேர்வு (Tamil Medium)</span>
+                  </Link>
+                }
+              />
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="#courses"
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-800 transition hover:bg-blue-50 hover:text-[#2525b8]"
+                  >
+                    <span className="size-2 rounded-full bg-[#2525b8] shrink-0" />
+                    <span>JEE Main &amp; Advanced 2026</span>
+                  </Link>
+                }
+              />
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="#courses"
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-800 transition hover:bg-blue-50 hover:text-[#2525b8]"
+                  >
+                    <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>10 Grand Mocks Series</span>
+                  </Link>
+                }
+              />
+              <DropdownMenuSeparator className="my-1 bg-slate-100" />
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="#courses"
+                    className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#2525b8] transition hover:bg-blue-50"
+                  >
+                    <span>Explore All Programs</span>
+                    <ArrowRight className="size-3" />
+                  </Link>
+                }
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {navigationLinks.map((link) => (
             <Link
               key={link.label}
@@ -65,22 +156,19 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        {/* Right Action: Luxury Sign In Button & Mobile Toggle */}
+        {/* Right Action: Luxury Sign In Button & Mobile Toggle using Shadcn Button */}
         <div className="flex items-center gap-2.5">
-          <Link
-            href="/login"
-            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-[#191747] via-[#24215d] to-[#2525b8] px-4.5 py-2 text-xs font-semibold text-white shadow-[0_2px_10px_rgba(36,33,93,0.22)] transition-all duration-300 hover:shadow-[0_4px_18px_rgba(37,37,184,0.35)] hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span className="relative z-10 flex items-center gap-1.5">
-              <span>Sign In</span>
-              <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </span>
-            {/* Subtle Shimmer Sheen on Hover */}
-            <span
-              className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
-              aria-hidden="true"
-            />
-          </Link>
+          <Button
+            size="sm"
+            nativeButton={false}
+            className="rounded-full bg-[#2525b8] hover:bg-[#1a187a] px-4.5 text-xs font-semibold text-white shadow-xs transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
+            render={
+              <Link href="/login" className="inline-flex items-center gap-1.5">
+                <span>Sign In</span>
+                <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </Link>
+            }
+          />
 
           {/* Mobile Menu Trigger */}
           <button
@@ -99,19 +187,27 @@ export function SiteHeader() {
       {mobileMenuOpen && (
         <div className="border-t border-slate-200/70 bg-white/95 px-4 py-4 backdrop-blur-xl md:hidden animate-in slide-in-from-top-2 duration-200 shadow-lg">
           <div className="flex flex-col gap-1">
+            <Link
+              href="#courses"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between rounded-full px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+            >
+              <span>Curriculum &amp; Programs</span>
+              <ArrowRight className="size-3.5 text-slate-400" />
+            </Link>
             {navigationLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+                className="flex items-center justify-between rounded-full px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 <span>{link.label}</span>
                 <ArrowRight className="size-3.5 text-slate-400" />
               </Link>
             ))}
 
-            <div className="mt-3 flex items-center gap-2 rounded-xl border border-slate-200/70 bg-slate-50 p-2.5 text-2xs font-medium text-slate-700">
+            <div className="mt-3 flex items-center gap-2 rounded-full border border-slate-200/70 bg-slate-50 px-3.5 py-2 text-2xs font-medium text-slate-700">
               <span className="relative flex size-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2525b8] opacity-50" />
                 <span className="relative inline-flex size-2 rounded-full bg-[#2525b8]" />

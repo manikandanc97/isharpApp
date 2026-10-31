@@ -14,17 +14,14 @@ const prisma = new PrismaClient({
 
 const roles = [
   {
-    id: '10000000-0000-4000-8000-000000000001',
     name: 'ADMIN',
     description: 'Academy administrator',
   },
   {
-    id: '10000000-0000-4000-8000-000000000002',
-    name: 'INSTRUCTOR',
-    description: 'Faculty member',
+    name: 'SUPERADMIN',
+    description: 'System administrator with privileged account management',
   },
   {
-    id: '10000000-0000-4000-8000-000000000003',
     name: 'STUDENT',
     description: 'Enrolled learner',
   },

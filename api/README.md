@@ -97,6 +97,92 @@ Or do it by hand: create an application and an API key at [observe.nestjs.com](h
 
 The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
 
+## Authentication and RBAC
+
+Protected endpoints require a Supabase access token in `Authorization: Bearer <token>`. Configure:
+
+```dotenv
+SUPABASE_URL=https://<project-ref>.supabase.co
+# Optional; defaults to "authenticated"
+SUPABASE_JWT_AUDIENCE=authenticated
+# Only for a project still using legacy HS256 signing. Prefer Supabase JWKS.
+SUPABASE_JWT_SECRET=<server-side-secret>
+```
+
+The API verifies signature, issuer, audience, expiry/not-before, and the UUID subject. Authorization roles are then loaded from PostgreSQL; token metadata and request bodies are never trusted as role sources. The authenticated Supabase UUID remains separate from academic data in `UserProfile.authUserId`.
+
+`GET /api/auth/me` returns the authenticated UUID, linked profile ID, and
+database-backed roles. It requires a valid Supabase Bearer token.
+
+## Frontend connection and CORS
+
+The API listens on `PORT` (default `3001`). `GET /api/health` checks both the
+API and PostgreSQL. CORS allows `FRONTEND_LOCAL_ORIGIN` (default
+`http://localhost:3000`) and the optional explicit
+`FRONTEND_PRODUCTION_ORIGIN`; all other browser origins are rejected. Wildcard
+origins are not used with credentials.
+
+The reviewed migration `prisma/migrations/20261031090000_seed_rbac_roles/migration.sql` only upserts the canonical `STUDENT`, `ADMIN`, and `SUPERADMIN` role rows. Review and apply it through the normal deployment process; the application does not apply migrations automatically.
+
+### Initial SUPERADMIN and ADMIN
+
+The initial-admin setup is a CLI-only, two-stage operation. It creates exactly
+one marked Supabase Auth account for each role through normal email signup.
+Configure the distinct target addresses with `INITIAL_SUPERADMIN_EMAIL` and
+`INITIAL_ADMIN_EMAIL`. The command does not auto-confirm either account. After
+both people confirm their Supabase emails, rerunning the command atomically
+creates or links their active profiles and idempotently assigns the roles.
+
+1. Confirm that Supabase email confirmation is enabled and the canonical role
+   migration has been deployed. The project must allow email signup from this
+   trusted environment; if Auth CAPTCHA is enforced for signup, complete account
+   creation through a separately reviewed operator process instead of weakening
+   CAPTCHA or auto-confirming users.
+2. Configure the initial-admin variables documented in `.env.example` in the
+   existing `.env` file without replacing its database or Supabase settings.
+   Never commit `.env`. `DATABASE_URL` must be a complete `postgresql://` URL;
+   URL-encode any reserved characters in its password. The setup explicitly
+   loads `.env`; values already set by the operating environment take
+   precedence and are not overwritten.
+3. From `api/`, verify authenticated PostgreSQL connectivity without making any
+   Supabase request or creating accounts:
+
+   ```powershell
+   $env:INITIAL_ADMINS_SETUP_CONFIRM = 'CREATE_INITIAL_PRIVILEGED_ACCOUNTS'
+   try {
+     npm.cmd run setup-initial-admins -- --check-database-only
+   } finally {
+     Remove-Item Env:INITIAL_ADMINS_SETUP_CONFIRM -ErrorAction SilentlyContinue
+   }
+   ```
+
+   This performs `SELECT 1` and stops. Correct `DATABASE_URL`, network, SSL, or
+   database availability problems before continuing.
+
+4. After the connectivity check succeeds, run the setup:
+
+   ```powershell
+   $env:INITIAL_ADMINS_SETUP_CONFIRM = 'CREATE_INITIAL_PRIVILEGED_ACCOUNTS'
+   try {
+     npm.cmd run setup-initial-admins
+   } finally {
+     Remove-Item Env:INITIAL_ADMINS_SETUP_CONFIRM -ErrorAction SilentlyContinue
+   }
+   ```
+
+5. If the command reports that confirmation is pending, both users must use the
+   Supabase verification emails. Then rerun the exact same command.
+6. After success, remove the four `INITIAL_*` setup values from `.env` and
+   rotate the initial passwords through Supabase Auth.
+
+The command refuses existing unmarked email accounts, duplicate setup
+markers, existing unexpected privileged assignments, inactive profiles,
+auto-confirm configuration, and insufficient service-role permissions. Auth
+users created during a partial first run are recognized by protected
+`app_metadata`, so retrying does not create duplicates. Database profile and
+role writes run in one transaction. No public initial-admin endpoint exists, and
+the command never prints credentials, keys, tokens, emails, or user UUIDs.
+
 ## Resources
 
 Check out a few resources that may come in handy when working with NestJS:

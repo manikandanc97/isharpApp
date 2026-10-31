@@ -10,8 +10,16 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "I-Sharp Academy",
-  description: "Learn, grow, and build practical skills with I-Sharp Academy.",
+  title: "I-Sharp Academy | Premier NEET, IIT-JEE, MAT, CAT & TANCET Coaching Coimbatore",
+  description:
+    "Top Rated NEET & IIT-JEE Coaching Centre in Coimbatore. Dedicated batches for Tamil Medium students, calibrated NTA pattern test series, one-on-one doubt clearing, and hostel facilities.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png" }],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

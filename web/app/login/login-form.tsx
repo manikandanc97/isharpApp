@@ -3,15 +3,23 @@
 import { createClient } from "@supabase/supabase-js";
 import {
   AlertCircle,
+  ArrowRight,
   CheckCircle2,
   Eye,
   EyeOff,
+  Headphones,
   LoaderCircle,
+  Lock,
+  Mail,
+  ShieldCheck,
+  UserPlus,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { getAuthenticatedSession } from "@/lib/auth-session";
 import { cn } from "@/lib/utils";
 
 type FieldErrors = {
@@ -30,14 +38,14 @@ function validateIdentifier(value: string): string | undefined {
   const identifier = value.trim();
 
   if (!identifier) {
-    return "Enter your email address or mobile number.";
+    return "Enter your email or mobile number.";
   }
 
   if (
     !emailPattern.test(identifier) &&
     !phonePattern.test(normalizePhone(identifier))
   ) {
-    return "Enter a valid email address or mobile number.";
+    return "Enter a valid email or mobile number.";
   }
 }
 
@@ -100,7 +108,7 @@ export function LoginForm() {
 
     if (!supabase) {
       setAuthError(
-        "Sign-in is not configured yet. Please contact I-Sharp Academy support.",
+        "Sign-in service is currently in preview mode. Please contact I-Sharp Academy support.",
       );
       return;
     }
@@ -111,10 +119,24 @@ export function LoginForm() {
     const credentials = emailPattern.test(cleanedIdentifier)
       ? { email: cleanedIdentifier, password }
       : { phone: normalizePhone(cleanedIdentifier), password };
+
     try {
-      const { error } = await supabase.auth.signInWithPassword(credentials);
+      const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
       if (!error) {
+        const accessToken = data.session?.access_token;
+        if (!accessToken) {
+          setAuthError("Your Supabase session did not include an access token.");
+          return;
+        }
+        const session = await getAuthenticatedSession(accessToken);
+        if (!session.roles.includes("STUDENT")) {
+          await supabase.auth.signOut();
+          setAuthError(
+            "This account does not have active student access. Contact I-Sharp Academy support.",
+          );
+          return;
+        }
         router.replace("/");
         router.refresh();
         return;
@@ -141,7 +163,7 @@ export function LoginForm() {
     if (identifierError || !emailPattern.test(identifier.trim())) {
       setErrors((current) => ({
         ...current,
-        identifier: identifierError ?? "Enter your email address to reset your password.",
+        identifier: identifierError ?? "Enter your email to reset password.",
       }));
       return;
     }
@@ -150,7 +172,7 @@ export function LoginForm() {
 
     if (!supabase) {
       setAuthError(
-        "Password reset is not configured yet. Please contact I-Sharp Academy support.",
+        "Password reset is in preview mode. Please contact support.",
       );
       return;
     }
@@ -167,7 +189,7 @@ export function LoginForm() {
         return;
       }
 
-      setStatusMessage("Check your email for a secure password reset link.");
+      setStatusMessage("Check your email for password reset link.");
     } catch {
       setAuthError("The reset link could not be sent. Please try again.");
     } finally {
@@ -175,75 +197,89 @@ export function LoginForm() {
     }
   }
 
-  const inputClassName =
-    "h-12 w-full rounded-xl border border-input bg-background/40 px-3.5 text-sm text-foreground shadow-xs transition-colors outline-none placeholder:text-muted-foreground/70 hover:border-muted-foreground/50 focus-visible:border-secondary focus-visible:ring-3 focus-visible:ring-secondary/20 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/15 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none";
+  const inputBaseStyle =
+    "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-[#2525b8] focus:ring-3 focus:ring-[#2525b8]/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <section
       aria-labelledby="login-heading"
-      className="w-full min-w-0 max-w-md rounded-2xl border bg-card px-5 py-8 shadow-elevated xs:px-6 xs:py-9 sm:px-10 sm:py-11"
+      className="w-full min-w-0 max-w-sm sm:max-w-md rounded-2xl border border-slate-200/90 bg-white p-4.5 sm:p-5.5 lg:p-6 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]"
     >
-      <div className="mb-7 h-1 w-10 rounded-full bg-primary" />
-      <p className="text-sm font-semibold tracking-widest text-secondary uppercase">
-        Secure learning portal
-      </p>
+      {/* Top Badge */}
+      <div className="flex items-center justify-between">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-[#2525b8] uppercase">
+          <ShieldCheck className="size-3 text-[#2525b8]" />
+          <span>Student LMS Portal</span>
+        </div>
+        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" title="System Operational" />
+      </div>
+
       <h2
         id="login-heading"
-        className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+        className="mt-2 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl"
       >
         Welcome back
       </h2>
-      <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
-        Sign in to continue your learning journey with I-Sharp Academy.
+      <p className="mt-0.5 text-2xs text-slate-500 sm:text-xs">
+        Sign in to access your DPPs, test telemetry &amp; lecture notes.
       </p>
 
-      <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
-        <div className="space-y-2">
+      {/* Main Login Form */}
+      <form className="mt-3.5 space-y-2.5 sm:space-y-3" onSubmit={handleSubmit} noValidate>
+        {/* Identifier Field */}
+        <div className="space-y-1">
           <label
             htmlFor="identifier"
-            className="text-sm font-medium text-foreground"
+            className="block text-2xs sm:text-xs font-semibold text-slate-700"
           >
-            Email or mobile number
+            Email or Mobile Number
           </label>
-          <input
-            id="identifier"
-            name="identifier"
-            type="text"
-            inputMode="email"
-            autoComplete="username"
-            placeholder="you@example.com"
-            value={identifier}
-            disabled={isSubmitting}
-            aria-invalid={Boolean(errors.identifier)}
-            aria-describedby={errors.identifier ? "identifier-error" : undefined}
-            className={inputClassName}
-            onChange={(event) => {
-              setIdentifier(event.target.value);
-              setErrors((current) => ({ ...current, identifier: undefined }));
-              setAuthError("");
-              setStatusMessage("");
-            }}
-            onBlur={() => {
-              const error = validateIdentifier(identifier);
-              setErrors((current) => ({ ...current, identifier: error }));
-            }}
-          />
+          <div className="relative">
+            <input
+              id="identifier"
+              name="identifier"
+              type="text"
+              inputMode="email"
+              autoComplete="username"
+              placeholder="you@example.com or mobile"
+              value={identifier}
+              disabled={isSubmitting}
+              aria-invalid={Boolean(errors.identifier)}
+              aria-describedby={errors.identifier ? "identifier-error" : undefined}
+              className={cn(inputBaseStyle, "pl-9")}
+              onChange={(event) => {
+                setIdentifier(event.target.value);
+                setErrors((current) => ({ ...current, identifier: undefined }));
+                setAuthError("");
+                setStatusMessage("");
+              }}
+              onBlur={() => {
+                const error = validateIdentifier(identifier);
+                setErrors((current) => ({ ...current, identifier: error }));
+              }}
+            />
+            <Mail
+              className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
+          </div>
           {errors.identifier && (
             <p
               id="identifier-error"
               role="alert"
-              className="flex items-start gap-1.5 text-sm font-medium text-destructive"
+              className="flex items-center gap-1 text-2xs font-medium text-rose-600"
             >
-              <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-              {errors.identifier}
+              <AlertCircle aria-hidden="true" className="size-3 shrink-0" />
+              <span>{errors.identifier}</span>
             </p>
           )}
         </div>
 
-        <div className="space-y-2">
+        {/* Password Field */}
+        <div className="space-y-1">
           <label
             htmlFor="password"
-            className="text-sm font-medium text-foreground"
+            className="block text-2xs sm:text-xs font-semibold text-slate-700"
           >
             Password
           </label>
@@ -253,12 +289,12 @@ export function LoginForm() {
               name="password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              placeholder="Enter your password"
+              placeholder="Enter your LMS password"
               value={password}
               disabled={isSubmitting}
               aria-invalid={Boolean(errors.password)}
               aria-describedby={errors.password ? "password-error" : undefined}
-              className={cn(inputClassName, "pr-12")}
+              className={cn(inputBaseStyle, "pl-9 pr-10")}
               onChange={(event) => {
                 setPassword(event.target.value);
                 setErrors((current) => ({ ...current, password: undefined }));
@@ -273,18 +309,22 @@ export function LoginForm() {
                 }
               }}
             />
+            <Lock
+              className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
             <button
               type="button"
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-pressed={showPassword}
               disabled={isSubmitting}
-              className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-secondary/30 disabled:cursor-not-allowed motion-reduce:transition-none"
+              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700 focus:outline-hidden disabled:cursor-not-allowed"
               onClick={() => setShowPassword((visible) => !visible)}
             >
               {showPassword ? (
-                <EyeOff aria-hidden="true" className="size-4.5" />
+                <EyeOff aria-hidden="true" className="size-3.5" />
               ) : (
-                <Eye aria-hidden="true" className="size-4.5" />
+                <Eye aria-hidden="true" className="size-3.5" />
               )}
             </button>
           </div>
@@ -292,71 +332,118 @@ export function LoginForm() {
             <p
               id="password-error"
               role="alert"
-              className="flex items-start gap-1.5 text-sm font-medium text-destructive"
+              className="flex items-center gap-1 text-2xs font-medium text-rose-600"
             >
-              <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-              {errors.password}
+              <AlertCircle aria-hidden="true" className="size-3 shrink-0" />
+              <span>{errors.password}</span>
             </p>
           )}
         </div>
 
-        <div className="flex flex-col items-stretch gap-1 xs:flex-row xs:items-center xs:justify-between xs:gap-4">
-          <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-muted-foreground select-none">
+        {/* Remember Me and Forgot Password Row */}
+        <div className="flex items-center justify-between pt-0.5">
+          <label className="flex cursor-pointer items-center gap-1.5 text-2xs sm:text-xs text-slate-600 select-none whitespace-nowrap hover:text-slate-900">
             <input
               type="checkbox"
               name="remember"
               checked={rememberMe}
               disabled={isSubmitting}
-              className="size-4 rounded border-input accent-primary outline-none focus-visible:ring-3 focus-visible:ring-secondary/20 disabled:cursor-not-allowed"
+              className="size-3.5 rounded border-slate-300 text-[#2525b8] accent-[#2525b8] focus:ring-[#2525b8]"
               onChange={(event) => setRememberMe(event.target.checked)}
             />
-            Remember me
+            <span className="font-medium">Remember me</span>
           </label>
           <button
             type="button"
             disabled={isSubmitting || isResetting}
-            className="min-h-11 rounded-md px-1 text-left text-sm font-medium text-secondary underline-offset-4 outline-none transition-colors hover:text-secondary/80 hover:underline focus-visible:ring-3 focus-visible:ring-secondary/30 xs:px-0 xs:text-right disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
+            className="text-2xs sm:text-xs font-semibold text-[#2525b8] hover:underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
             onClick={handleForgotPassword}
           >
             {isResetting ? "Sending link…" : "Forgot password?"}
           </button>
         </div>
 
+        {/* Auth Error Banner */}
         {authError && (
           <div
             role="alert"
-            className="flex gap-2.5 rounded-xl border border-destructive/20 bg-destructive/5 px-3.5 py-3 text-sm leading-5 text-destructive"
+            className="flex gap-1.5 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-2xs leading-snug text-rose-700"
           >
-            <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <AlertCircle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-rose-600" />
             <p>{authError}</p>
           </div>
         )}
 
+        {/* Status Message Banner */}
         {statusMessage && (
           <div
             role="status"
-            className="flex gap-2.5 rounded-xl border border-secondary/20 bg-accent px-3.5 py-3 text-sm leading-5 text-accent-foreground"
+            className="flex gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50/90 p-2 text-2xs leading-snug text-emerald-800"
           >
-            <CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <CheckCircle2 aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-emerald-600" />
             <p>{statusMessage}</p>
           </div>
         )}
 
+        {/* Submit Button */}
         <Button
           type="submit"
-          size="lg"
+          size="default"
           disabled={isSubmitting || isResetting}
-          className="mt-1 h-12 w-full rounded-xl text-sm font-semibold shadow-primary hover:bg-primary/90 hover:shadow-primary-hover focus-visible:border-primary focus-visible:ring-primary/30 motion-safe:hover:-translate-y-px active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
+          className="mt-1 h-10.5 w-full cursor-pointer rounded-full bg-[#191747] hover:bg-[#2525b8] text-xs sm:text-sm font-semibold text-white shadow-xs transition hover:shadow-md active:scale-[0.99] disabled:opacity-60"
         >
           {isSubmitting && (
             <LoaderCircle
               aria-hidden="true"
-              className="size-4 animate-spin motion-reduce:animate-none"
+              className="size-3.5 animate-spin motion-reduce:animate-none mr-2"
             />
           )}
-          {isSubmitting ? "Signing in…" : "Sign in"}
+          <span>{isSubmitting ? "Authenticating…" : "Sign In to LMS"}</span>
         </Button>
       </form>
+
+      {/* Divider */}
+      <div className="relative my-2.5 sm:my-3 text-center">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-slate-200" />
+        </div>
+        <span className="relative bg-white px-2.5 text-3xs font-bold uppercase tracking-wider text-slate-400">
+          New Student?
+        </span>
+      </div>
+
+      {/* Register Promotion Box */}
+      <Link
+        href="/register"
+        className="group flex items-center justify-between rounded-xl border border-rose-200/80 bg-rose-50/50 px-3 py-2 transition hover:bg-rose-50 hover:border-rose-300"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="grid size-7.5 shrink-0 place-items-center rounded-lg bg-[#e51d35] text-white shadow-2xs">
+            <UserPlus className="size-3.5" />
+          </div>
+          <div>
+            <p className="text-2xs sm:text-xs font-bold text-slate-900 group-hover:text-[#e51d35] transition">
+              Apply for 2026 Batch Admission
+            </p>
+            <p className="text-3xs text-slate-500">
+              NEET Bilingual &amp; Tamil Medium Cohort
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="size-3.5 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-[#e51d35]" />
+      </Link>
+
+      {/* Help & Support Footer */}
+      <div className="mt-2.5 flex items-center justify-center gap-1 text-3xs text-slate-400">
+        <Headphones className="size-2.5 text-slate-400" />
+        <span>Helpline:</span>
+        <a
+          href="tel:+919894850370"
+          className="font-semibold text-slate-600 hover:text-slate-900 hover:underline"
+        >
+          +91 98948 50370
+        </a>
+      </div>
     </section>
   );
 }

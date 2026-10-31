@@ -6,6 +6,9 @@ import { AppService } from './app.service.js';
 import { HealthController } from './health/health.controller.js';
 import { HealthService } from './health/health.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { AccessModule } from './access/access.module.js';
+import { ProfilesModule } from './profiles/profiles.module.js';
+import { InstitutionMembershipsModule } from './institution-memberships/institution-memberships.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -13,6 +16,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    AccessModule,
+    ProfilesModule,
+    InstitutionMembershipsModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com,
     // then run `npx @nestjs/observe link` to write your key pair into .env.

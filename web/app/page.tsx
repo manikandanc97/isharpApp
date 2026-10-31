@@ -2,10 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
-  Flame,
-  Languages,
-  ShieldCheck,
-  Sparkles,
+  ChevronDown,
   Star,
   Users,
 } from "lucide-react";
@@ -17,26 +14,9 @@ import { FeatureShowcase } from "@/components/feature-showcase";
 import { LearningJourney } from "@/components/learning-journey";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-const enterpriseHighlights = [
-  {
-    icon: Flame,
-    title: "15 Daily Practice Sets (DPP)",
-    sub: "Timed reflex drills with instant video solutions",
-  },
-  {
-    icon: Languages,
-    title: "தமிழ் + English Bilingual Clarity",
-    sub: "Conceptual depth in native tongue paired with standard scientific terms",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Real NTA Pattern Simulations",
-    sub: "Calibrated 720-mark tests with sub-topic diagnostic percentile rank",
-  },
-] as const;
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   return (
@@ -45,31 +25,40 @@ export default function Home() {
       <SiteHeader />
 
       <main className="flex flex-1 flex-col">
-        {/* 02. SECTION 1: ARCHITECTURAL ENTERPRISE HERO */}
-        <section className="relative overflow-hidden border-b border-slate-200/80 bg-slate-50/70 py-12 sm:py-16 lg:py-20">
-          {/* Subtle Enterprise Architectural Grid Background */}
+        {/* 02. SECTION 1: ARCHITECTURAL ENTERPRISE HERO (Optimized for 100% Laptop Viewport Fit) */}
+        <section className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-slate-200/90 bg-gradient-to-br from-[#dbe7f6] via-[#ebf1f9] to-[#f6e4ea] py-8 lg:py-0">
+          {/* Luxury Ambient Lighting Glows (Deeper Sapphire & Ruby Tints) */}
           <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px] opacity-60"
+            className="pointer-events-none absolute -top-36 -left-24 h-[480px] w-[480px] rounded-full bg-gradient-to-br from-[#2525b8]/20 via-blue-400/22 to-transparent blur-3xl"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute -bottom-36 -right-24 h-[480px] w-[480px] rounded-full bg-gradient-to-tl from-[#e51d35]/18 via-rose-300/20 to-transparent blur-3xl"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full max-w-6xl bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.35)_0%,transparent_75%)]"
             aria-hidden="true"
           />
 
-          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:gap-12">
+          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:gap-14">
             {/* Left Column: Authoritative Academic Value Proposition */}
             <div className="flex flex-col lg:col-span-7">
-              {/* Enterprise Eyebrow Badge Group */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-300/80 bg-white px-3 py-1 text-3xs font-bold tracking-wider text-slate-800 shadow-2xs uppercase">
-                  <span className="size-2 rounded-full bg-[#e51d35] animate-pulse" />
-                  <span>Premier Bilingual NEET &amp; JEE Platform</span>
-                </div>
-                <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-3xs font-semibold text-[#2525b8]">
-                  <Sparkles className="size-3" />
-                  Batch 2026 Active
-                </span>
+              {/* Luxury Refined Eyebrow Capsule with Shadcn Badge */}
+              <div className="flex items-center">
+                <Badge
+                  variant="outline"
+                  className="inline-flex items-center gap-2 rounded-full border-blue-200/90 bg-white px-4 py-1.5 text-xs font-semibold text-[#1a187a] shadow-xs backdrop-blur-md"
+                >
+                  <span className="flex size-2 rounded-full bg-[#e51d35] animate-pulse shadow-[0_0_8px_rgba(229,29,53,0.5)]" />
+                  <span className="tracking-wide">Premier Bilingual NEET &amp; JEE Platform</span>
+                  <span className="h-3.5 w-px bg-slate-200" aria-hidden="true" />
+                  <span className="text-[#2525b8] font-bold">Batch 2026</span>
+                </Badge>
               </div>
 
-              {/* Enterprise Headline */}
-              <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-[44px] lg:leading-[1.15]">
+              {/* Authoritative Headline */}
+              <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-[42px] lg:leading-[1.16]">
                 Practical learning engineered for{" "}
                 <span className="text-[#e51d35]">
                   top percentile success.
@@ -77,64 +66,58 @@ export default function Home() {
               </h1>
 
               {/* Subtitle */}
-              <p className="mt-3.5 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
-                Build unbroken daily study consistency with calibrated Daily Practice Problems (DPP),
-                rigorous concept clarity taught in <strong className="font-semibold text-slate-900">தமிழ் + English</strong>,
-                and real-time diagnostic performance telemetry.
+              <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
+                Build unbroken daily study consistency with timed Daily Practice Problems (DPP),
+                concept clarity taught in <strong className="font-semibold text-slate-900">தமிழ் + English</strong>,
+                and calibrated 720-mark simulated mock tests.
               </p>
 
-              {/* Enterprise Capability Pillars */}
-              <div className="mt-6 space-y-2.5">
-                {enterpriseHighlights.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div
-                      key={item.title}
-                      className="flex items-start gap-3 rounded-xl border border-slate-200/90 bg-white p-2.5 shadow-2xs transition hover:border-slate-300"
+              {/* Academic Highlights (Clean, spacious, uncluttered checks) */}
+              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs sm:text-sm font-semibold text-slate-700">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4.5 text-emerald-600 shrink-0" />
+                  <span>15 Daily DPP Drills</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4.5 text-emerald-600 shrink-0" />
+                  <span>தமிழ் + English Clarity</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4.5 text-emerald-600 shrink-0" />
+                  <span>720-Mark NTA Tests</span>
+                </div>
+              </div>
+
+              {/* Primary & Secondary Call to Actions using Shadcn Button */}
+              <div className="mt-7 flex flex-wrap items-center gap-3.5">
+                <Button
+                  nativeButton={false}
+                  render={
+                    <Link
+                      href="#academy"
+                      className="group inline-flex items-center gap-2 rounded-full bg-[#2525b8] hover:bg-[#1a187a] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
                     >
-                      <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-[#2525b8]">
-                        <Icon className="size-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-slate-900 sm:text-sm">
-                            {item.title}
-                          </p>
-                        </div>
-                        <p className="text-3xs text-slate-500 sm:text-xs">
-                          {item.sub}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+                      <span>Explore Academy Portal</span>
+                      <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </Link>
+                  }
+                />
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={
+                    <Link
+                      href="#courses"
+                      className="inline-flex items-center rounded-full border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98]"
+                    >
+                      <span>View 2026 Curriculums</span>
+                    </Link>
+                  }
+                />
               </div>
 
-              {/* Primary & Secondary Call to Actions */}
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link
-                  href="#academy"
-                  className={cn(
-                    buttonVariants({ size: "default" }),
-                    "h-11 px-6 text-xs sm:text-sm font-semibold bg-[#2525b8] hover:bg-[#1a187a] text-white shadow-xs gap-2 border-0 transition",
-                  )}
-                >
-                  <span>Explore Academy Portal</span>
-                  <ArrowRight className="size-4" />
-                </Link>
-                <Link
-                  href="#courses"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "default" }),
-                    "h-11 px-5 text-xs sm:text-sm font-semibold border-slate-300 bg-white hover:bg-slate-100 text-slate-800 shadow-2xs",
-                  )}
-                >
-                  View 2026 Curriculums
-                </Link>
-              </div>
-
-              {/* Enterprise Social Proof & Telemetry Strip */}
-              <div className="mt-6 flex flex-wrap items-center gap-y-2 gap-x-5 border-t border-slate-200/90 pt-4 text-xs text-slate-600">
+              {/* Social Proof & Trust Strip using Shadcn Separator */}
+              <div className="mt-7 flex flex-wrap items-center gap-y-2 gap-x-5 border-t border-slate-200/80 pt-4 text-xs text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <div className="flex items-center text-amber-500">
                     {[...Array(5)].map((_, i) => (
@@ -143,12 +126,12 @@ export default function Home() {
                   </div>
                   <span className="font-bold text-slate-900">4.9/5 Rating</span>
                 </div>
-                <span className="h-3 w-px bg-slate-200" aria-hidden="true" />
+                <Separator orientation="vertical" className="h-3.5 bg-slate-300" />
                 <div className="flex items-center gap-1.5 font-medium">
                   <Users className="size-3.5 text-[#2525b8]" />
-                  <span>Over 1,000+ daily active aspirants</span>
+                  <span>1,000+ Active Daily Aspirants</span>
                 </div>
-                <span className="h-3 w-px bg-slate-200" aria-hidden="true" />
+                <Separator orientation="vertical" className="h-3.5 bg-slate-300" />
                 <div className="flex items-center gap-1.5 font-medium text-emerald-700">
                   <CheckCircle2 className="size-3.5" />
                   <span>Verified 2024–25 Selections</span>
@@ -156,10 +139,16 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Column: High-Security Academic Gateway Card */}
+            {/* Right Column: Clean Academic Gateway Card */}
             <div id="academy" className="scroll-mt-24 lg:col-span-5">
               <AccessPortal />
             </div>
+          </div>
+
+          {/* Subtle Scroll Cue on Laptop/Desktop */}
+          <div className="pointer-events-none absolute bottom-2.5 left-1/2 hidden -translate-x-1/2 items-center gap-1 text-3xs font-medium text-slate-400/90 lg:flex">
+            <span>Scroll to explore</span>
+            <ChevronDown className="size-3 animate-bounce text-slate-400" />
           </div>
         </section>
 

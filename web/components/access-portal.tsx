@@ -8,97 +8,100 @@ import {
   ShieldCheck,
   UserPlus,
   Users,
-  KeyRound,
-  CheckCircle2,
   type LucideIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+
 type PortalLink = {
   title: string;
-  role: string;
   badge: string;
+  badgeColor: string;
   description: string;
   href: string;
   icon: LucideIcon;
   solidBg: string;
-  badgeBg: string;
-  badgeText: string;
   accentBorder: string;
 };
 
 const portalLinks: readonly PortalLink[] = [
   {
     title: "Student LMS Portal",
-    role: "Enrolled Learners",
-    badge: "Active LMS",
-    description: "Daily DPP drills, bilingual lectures & simulated tests",
+    badge: "Enrolled",
+    badgeColor: "bg-blue-50 text-[#2525b8] border-blue-200/80",
+    description: "Daily DPP drills, lectures & simulated tests",
     href: "/login",
     icon: Users,
     solidBg: "bg-[#2525b8]",
-    badgeBg: "bg-blue-50 border-blue-200/80",
-    badgeText: "text-[#2525b8]",
-    accentBorder: "hover:border-[#2525b8]/40",
+    accentBorder: "hover:border-[#2525b8]/50 hover:shadow-blue-500/5",
   },
   {
-    title: "New Student Admission",
-    role: "Fresh Applications",
-    badge: "2026 Cohort",
-    description: "Enroll in Tamil Medium & Bilingual NEET/JEE batches",
+    title: "New Student",
+    badge: "Batch 2026",
+    badgeColor: "bg-rose-50 text-[#e51d35] border-rose-200/80",
+    description: "Enroll in Tamil Medium & Bilingual batches",
     href: "/register",
     icon: UserPlus,
     solidBg: "bg-[#e51d35]",
-    badgeBg: "bg-rose-50 border-rose-200/80",
-    badgeText: "text-[#e51d35]",
-    accentBorder: "hover:border-[#e51d35]/40",
+    accentBorder: "hover:border-[#e51d35]/50 hover:shadow-rose-500/5",
   },
   {
     title: "Faculty & Administration",
-    role: "Instructors & Staff",
-    badge: "SSO Secure",
-    description: "Syllabus tracking, test telemetry & question bank",
+    badge: "Staff",
+    badgeColor: "bg-slate-100 text-slate-700 border-slate-200",
+    description: "Curriculum tracking & question bank",
     href: "/administration",
     icon: ShieldCheck,
     solidBg: "bg-slate-900",
-    badgeBg: "bg-slate-100 border-slate-300",
-    badgeText: "text-slate-800",
-    accentBorder: "hover:border-slate-400",
+    accentBorder: "hover:border-slate-400 hover:shadow-slate-500/5",
   },
 ];
 
 export function AccessPortal() {
   return (
-    <section
+    <Card
       aria-labelledby="access-portal-title"
-      className="relative rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm transition-all hover:shadow-md"
+      className="relative rounded-3xl border border-slate-200/85 bg-white p-5 sm:p-6 shadow-[0_16px_44px_-12px_rgba(25,23,71,0.09),0_2px_8px_rgba(0,0,0,0.02)] transition-all hover:shadow-[0_20px_52px_-12px_rgba(25,23,71,0.13)]"
     >
+      {/* Top subtle luxury accent line */}
+      <div
+        className="pointer-events-none absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#2525b8]/40 to-transparent"
+        aria-hidden="true"
+      />
+
       {/* Top Header */}
-      <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
         <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-emerald-700 uppercase">
+          <Badge
+            variant="outline"
+            className="inline-flex items-center gap-1.5 rounded-full border-emerald-200/80 bg-emerald-50/80 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-emerald-700 uppercase"
+          >
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Academic Gateway · Single Sign-On</span>
-          </div>
+            <span>Academic Gateway</span>
+          </Badge>
           <h2
             id="access-portal-title"
-            className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl"
+            className="mt-1 text-lg font-bold tracking-tight text-slate-900 sm:text-xl"
           >
-            Academic Gateway
+            Portal Access
           </h2>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Secure authenticated access to your personalized learning workspace
+          <p className="text-xs text-slate-500">
+            Select your portal to continue to your workspace
           </p>
         </div>
 
-        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-slate-900 text-white shadow-2xs">
-          <GraduationCap aria-hidden="true" className="size-5.5" strokeWidth={2} />
+        <div className="grid size-10.5 shrink-0 place-items-center rounded-2xl bg-[#2525b8] text-white shadow-xs">
+          <GraduationCap aria-hidden="true" className="size-5" strokeWidth={2} />
         </div>
       </div>
 
       {/* Portal Links */}
-      <nav aria-label="Account access" className="mt-4">
-        <ul className="space-y-3">
+      <nav aria-label="Account access" className="mt-3.5">
+        <ul className="space-y-2.5">
           {portalLinks.map((item) => {
             const Icon = item.icon;
 
@@ -107,43 +110,47 @@ export function AccessPortal() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "group flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition duration-200 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2525b8]",
+                    "group flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/60 p-3 sm:p-3.5 transition-all duration-200 hover:bg-white hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2525b8]",
                     item.accentBorder,
                   )}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0">
                     <span
                       className={cn(
-                        "grid size-10 shrink-0 place-items-center rounded-lg text-white shadow-2xs transition-transform duration-200 group-hover:scale-105",
+                        "grid size-9.5 shrink-0 place-items-center rounded-xl text-white shadow-2xs transition-transform duration-200 group-hover:scale-105",
                         item.solidBg,
                       )}
                     >
                       <Icon aria-hidden="true" className="size-4.5" strokeWidth={2} />
                     </span>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-slate-900 group-hover:text-[#2525b8] sm:text-sm transition-colors">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900 group-hover:text-[#2525b8] sm:text-sm transition-colors leading-snug">
                           {item.title}
                         </span>
-                        <span
+                        <Badge
+                          variant="outline"
                           className={cn(
-                            "rounded border px-1.5 py-0.5 text-3xs font-bold uppercase tracking-wider",
-                            item.badgeBg,
-                            item.badgeText,
+                            "rounded-full border px-2 py-0.2 text-3xs font-semibold uppercase tracking-wider",
+                            item.badgeColor,
                           )}
                         >
                           {item.badge}
-                        </span>
+                        </Badge>
                       </div>
-                      <p className="mt-0.5 text-3xs text-slate-500 sm:text-xs truncate">
+                      <p className="mt-0.5 text-3xs text-slate-500 sm:text-xs leading-tight">
                         {item.description}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid size-7.5 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 group-hover:border-[#2525b8] group-hover:bg-[#2525b8] group-hover:text-white transition-all shadow-2xs">
-                    <ArrowRight aria-hidden="true" className="size-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+                  <div className="grid size-7 shrink-0 place-items-center rounded-full border border-slate-200/80 bg-white text-slate-400 group-hover:border-[#2525b8] group-hover:bg-[#2525b8] group-hover:text-white transition-all shadow-2xs">
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
+                      strokeWidth={2.5}
+                    />
                   </div>
                 </Link>
               </li>
@@ -152,19 +159,18 @@ export function AccessPortal() {
         </ul>
       </nav>
 
-      {/* Security & Authentication Protocol Footnote */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-3xs text-slate-500">
-        <div className="flex items-center gap-1.5 font-medium">
+      {/* Subtle security & network footnote */}
+      <Separator className="mt-3.5 bg-slate-100" />
+      <div className="pt-3 flex items-center justify-between text-3xs text-slate-400">
+        <div className="flex items-center gap-1.5 font-medium text-slate-500">
           <Lock className="size-3 text-emerald-600" aria-hidden="true" />
-          <span>256-Bit TLS 1.3 Encryption</span>
+          <span>256-Bit Encrypted Access</span>
         </div>
-        <div className="flex items-center gap-2 font-semibold">
-          <span className="text-slate-400">Auth:</span>
-          <span className="text-[#2525b8] flex items-center gap-1">
-            <CheckCircle2 className="size-3 text-[#2525b8]" /> Official I-Sharp ID
-          </span>
+        <div className="flex items-center gap-1 font-semibold text-slate-600">
+          <ShieldCheck className="size-3.5 text-[#2525b8]" />
+          <span>Official I-Sharp ID</span>
         </div>
       </div>
-    </section>
+    </Card>
   );
 }
