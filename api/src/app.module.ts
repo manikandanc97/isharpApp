@@ -9,6 +9,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { AccessModule } from './access/access.module.js';
 import { ProfilesModule } from './profiles/profiles.module.js';
 import { InstitutionMembershipsModule } from './institution-memberships/institution-memberships.module.js';
+import { AdminModule } from './admin/admin.module.js';
+import { QuestionBankModule } from './question-bank/question-bank.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -19,14 +21,19 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AccessModule,
     ProfilesModule,
     InstitutionMembershipsModule,
-    // Distributed tracing, auto-correlated logs, request/job metrics, error
-    // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com,
-    // then run `npx @nestjs/observe link` to write your key pair into .env.
-    ObserveModule.forRoot({
-      appKey: process.env.OBSERVE_APP_KEY ?? 'YOUR_APP_KEY',
-      appSecret: process.env.OBSERVE_APP_SECRET ?? 'YOUR_APP_SECRET',
-      serviceId: 'api',
-    }),
+    AdminModule,
+    QuestionBankModule,
+    ...(process.env.OBSERVE_APP_KEY &&
+    process.env.OBSERVE_APP_SECRET &&
+    process.env.OBSERVE_APP_KEY !== 'YOUR_APP_KEY'
+      ? [
+          ObserveModule.forRoot({
+            appKey: process.env.OBSERVE_APP_KEY,
+            appSecret: process.env.OBSERVE_APP_SECRET,
+            serviceId: 'api',
+          }),
+        ]
+      : []),
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, HealthService],

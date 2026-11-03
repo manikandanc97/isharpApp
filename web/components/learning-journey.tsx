@@ -35,7 +35,7 @@ const journey = [
       "Master foundational principles through bilingual lectures (Tamil + English) and curated formula summaries.",
     note: "Concept-First Foundation",
     icon: BookOpen,
-    accent: "blue",
+    accent: "red",
     metrics: "Bilingual Lecture Audio",
   },
   {
@@ -79,10 +79,10 @@ function StepPreview({ step }: { step: JourneyStep }) {
       <div className="mt-4 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Volume2 className="size-3.5 text-[#2525b8]" />
+            <Volume2 className="size-3.5 text-brand-red" />
             <span className="text-2xs font-bold text-slate-800">Mechanics &amp; Optics</span>
           </div>
-          <span className="rounded bg-blue-50 px-1.5 py-0.5 text-3xs font-bold text-[#2525b8]">
+          <span className="rounded bg-rose-50 px-1.5 py-0.5 text-3xs font-bold text-brand-red">
             தமிழ் + EN
           </span>
         </div>
@@ -92,7 +92,7 @@ function StepPreview({ step }: { step: JourneyStep }) {
             <span className="font-semibold text-slate-700">78%</span>
           </div>
           <div className="mt-1 flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-[78%] rounded-full bg-[#2525b8]" />
+            <div className="h-full w-4/5 rounded-full bg-brand-red" />
           </div>
         </div>
       </div>
@@ -104,9 +104,9 @@ function StepPreview({ step }: { step: JourneyStep }) {
       <div className="mt-4 space-y-2 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
         <div className="flex items-center justify-between text-3xs font-bold text-slate-600 uppercase tracking-wider">
           <span className="flex items-center gap-1">
-            <Clock className="size-3 text-[#e51d35]" /> DPP #48 · 15 Qs
+            <Clock className="size-3 text-brand-blue" /> DPP #48 · 15 Qs
           </span>
-          <span className="text-[#e51d35] flex items-center gap-1">
+          <span className="text-brand-blue flex items-center gap-1">
             <Flame className="size-3 fill-current" /> 14-Day Streak
           </span>
         </div>
@@ -117,7 +117,7 @@ function StepPreview({ step }: { step: JourneyStep }) {
               className={cn(
                 "grid size-6 flex-1 place-items-center rounded text-3xs font-bold transition",
                 item <= 4
-                  ? "bg-[#e51d35] text-white"
+                  ? "bg-brand-blue text-white"
                   : "border border-slate-200 text-slate-400 bg-slate-50",
               )}
             >
@@ -134,7 +134,7 @@ function StepPreview({ step }: { step: JourneyStep }) {
       <div className="mt-4 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
         <div className="flex items-center justify-between text-3xs">
           <span className="font-bold text-slate-800">Speed vs Accuracy</span>
-          <span className="font-mono text-[#2525b8] font-bold">96.4% Accuracy</span>
+          <span className="font-mono text-brand-blue font-bold">96.4% Accuracy</span>
         </div>
         <div className="mt-2 flex h-8 items-end justify-between gap-1.5 px-0.5">
           {[42, 65, 52, 88, 74, 95].map((height, index) => (
@@ -142,7 +142,7 @@ function StepPreview({ step }: { step: JourneyStep }) {
               <span
                 className={cn(
                   "w-full rounded-t-xs",
-                  index >= 4 ? "bg-[#2525b8]" : "bg-blue-200",
+                  index >= 4 ? "bg-brand-blue" : "bg-blue-200",
                 )}
                 style={{ height: `${height}%` }}
               />
@@ -158,12 +158,12 @@ function StepPreview({ step }: { step: JourneyStep }) {
 
   return (
     <div className="mt-4 flex items-center gap-3 rounded-xl border border-rose-200/80 bg-rose-50/80 p-3 shadow-2xs">
-      <span className="grid size-9 place-items-center rounded-lg bg-[#e51d35] text-white shadow-2xs">
+      <span className="grid size-9 place-items-center rounded-lg bg-brand-red text-white shadow-2xs">
         <Trophy className="size-4.5" aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
         <span className="block text-xs font-bold text-slate-900">NTA Standard Simulated Exam</span>
-        <span className="mt-0.5 flex items-center gap-1 text-2xs font-semibold text-[#e51d35]">
+        <span className="mt-0.5 flex items-center gap-1 text-2xs font-semibold text-brand-red">
           <CheckCircle2 className="size-3" /> Projected AIR &lt; 500
         </span>
       </div>
@@ -176,22 +176,22 @@ export function LearningJourney() {
     <section
       id="journey"
       aria-labelledby="learning-journey-title"
-      className="relative overflow-hidden border-b border-slate-200/80 bg-[#f8fafc] px-4 py-12 sm:px-8 sm:py-16 lg:py-20"
+      className="relative overflow-hidden border-b border-slate-200/80 bg-slate-50 px-4 py-12 sm:px-8 sm:py-16 lg:py-20"
     >
       <div className="relative mx-auto w-full max-w-6xl">
         {/* Section Heading & Stage Indicator */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-0.5 text-3xs font-bold tracking-wider text-[#2525b8] uppercase">
-              <Target className="size-3 text-[#2525b8]" aria-hidden="true" />
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-0.5 text-3xs font-bold tracking-wider text-brand-red uppercase">
+              <Target className="size-3 text-brand-red" aria-hidden="true" />
               <span>The 4-Stage Methodology</span>
             </div>
             <h2
               id="learning-journey-title"
-              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-[32px]"
+              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl"
             >
               From First Concept to{" "}
-              <span className="text-[#e51d35]">
+              <span className="text-brand-red">
                 Exam-Day Mastery.
               </span>
             </h2>
@@ -230,7 +230,7 @@ export function LearningJourney() {
                       <span
                         className={cn(
                           "grid size-10 place-items-center rounded-xl font-mono text-xs font-bold text-white shadow-2xs",
-                          isBlue ? "bg-[#2525b8]" : "bg-[#e51d35]",
+                          isBlue ? "bg-brand-blue" : "bg-brand-red",
                         )}
                       >
                         {step.number}
@@ -239,8 +239,8 @@ export function LearningJourney() {
                         className={cn(
                           "grid size-9 place-items-center rounded-lg",
                           isBlue
-                            ? "bg-blue-50 text-[#2525b8]"
-                            : "bg-rose-50 text-[#e51d35]",
+                            ? "bg-blue-50 text-brand-blue"
+                            : "bg-rose-50 text-brand-red",
                         )}
                       >
                         <Icon className="size-4.5" strokeWidth={2} aria-hidden="true" />
@@ -251,7 +251,7 @@ export function LearningJourney() {
                       <span
                         className={cn(
                           "text-3xs font-bold tracking-wider uppercase",
-                          isBlue ? "text-[#2525b8]" : "text-[#e51d35]",
+                          isBlue ? "text-brand-blue" : "text-brand-red",
                         )}
                       >
                         Stage {step.number} · {step.verb}
@@ -274,7 +274,7 @@ export function LearningJourney() {
                       <ArrowRight
                         className={cn(
                           "size-3.5 transition-transform duration-200 group-hover:translate-x-1",
-                          isBlue ? "text-[#2525b8]" : "text-[#e51d35]",
+                          isBlue ? "text-brand-blue" : "text-brand-red",
                         )}
                         aria-hidden="true"
                       />

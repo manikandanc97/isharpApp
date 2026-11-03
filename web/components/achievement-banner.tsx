@@ -52,7 +52,8 @@ const achievements: readonly AchievementItem[] = [
   {
     value: "15+",
     label: "Districts & Regional Hubs",
-    detail: "Expanded learning footprint across Tamil Nadu and regional centers",
+    detail:
+      "Expanded learning footprint across Tamil Nadu and regional centers",
     icon: Globe2,
     accent: "emerald",
     tag: "Footprint",
@@ -80,14 +81,8 @@ export function AchievementBanner() {
     <section
       id="achievements"
       aria-labelledby="achievement-banner-title"
-      className="relative overflow-hidden border-b border-slate-800 bg-[#0a0f1d] py-12 text-white sm:py-16 lg:py-20"
+      className="relative overflow-hidden border-b border-slate-800 bg-slate-950 py-12 text-white sm:py-16 lg:py-20"
     >
-      {/* Subtle Architectural Dark Grid */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-70"
-        aria-hidden="true"
-      />
-
       <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
         <div className="grid gap-10 lg:grid-cols-12 lg:gap-12 items-center">
           {/* Left Column: Prestigious Statement & Verification */}
@@ -102,7 +97,7 @@ export function AchievementBanner() {
               {/* Headline */}
               <h2
                 id="achievement-banner-title"
-                className="mt-4 text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-[34px] lg:leading-[1.2]"
+                className="mt-4 text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-3xl lg:leading-snug"
               >
                 Learn with purpose.{" "}
                 <span className="block mt-1 text-slate-300 font-semibold">
@@ -111,7 +106,9 @@ export function AchievementBanner() {
               </h2>
 
               <p className="mt-3.5 text-xs leading-relaxed text-slate-400 sm:text-sm">
-                Top percentiles aren’t born from luck. They are engineered through disciplined daily repetition, bilingual conceptual clarity, and relentless exam-condition simulation.
+                Top percentiles aren’t born from luck. They are engineered
+                through disciplined daily repetition, bilingual conceptual
+                clarity, and relentless exam-condition simulation.
               </p>
             </div>
 
@@ -154,23 +151,39 @@ export function AchievementBanner() {
                       <div
                         className={cn(
                           "flex size-10 items-center justify-center rounded-lg border",
-                          isAmber && "border-amber-400/30 bg-amber-400/10 text-amber-400",
-                          isRuby && "border-rose-500/30 bg-rose-500/10 text-rose-400",
-                          isSapphire && "border-blue-400/30 bg-blue-400/10 text-blue-400",
-                          !isAmber && !isRuby && !isSapphire && "border-emerald-400/30 bg-emerald-400/10 text-emerald-400",
+                          isAmber &&
+                            "border-amber-400/30 bg-amber-400/10 text-amber-400",
+                          isRuby &&
+                            "border-rose-500/30 bg-rose-500/10 text-rose-400",
+                          isSapphire &&
+                            "border-blue-400/30 bg-blue-400/10 text-blue-400",
+                          !isAmber &&
+                            !isRuby &&
+                            !isSapphire &&
+                            "border-emerald-400/30 bg-emerald-400/10 text-emerald-400",
                         )}
                       >
-                        <Icon className="size-5" aria-hidden="true" strokeWidth={2} />
+                        <Icon
+                          className="size-5"
+                          aria-hidden="true"
+                          strokeWidth={2}
+                        />
                       </div>
 
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
                             "rounded-full border px-2.5 py-0.5 text-3xs font-bold uppercase tracking-wider",
-                            isAmber && "border-amber-400/30 bg-amber-400/10 text-amber-300",
-                            isRuby && "border-rose-500/30 bg-rose-500/10 text-rose-300",
-                            isSapphire && "border-blue-400/30 bg-blue-400/10 text-blue-300",
-                            !isAmber && !isRuby && !isSapphire && "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+                            isAmber &&
+                              "border-amber-400/30 bg-amber-400/10 text-amber-300",
+                            isRuby &&
+                              "border-rose-500/30 bg-rose-500/10 text-rose-300",
+                            isSapphire &&
+                              "border-blue-400/30 bg-blue-400/10 text-blue-300",
+                            !isAmber &&
+                              !isRuby &&
+                              !isSapphire &&
+                              "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
                           )}
                         >
                           {item.tag}
@@ -187,7 +200,10 @@ export function AchievementBanner() {
                             isAmber && "text-amber-300",
                             isRuby && "text-rose-300",
                             isSapphire && "text-blue-300",
-                            !isAmber && !isRuby && !isSapphire && "text-emerald-300",
+                            !isAmber &&
+                              !isRuby &&
+                              !isSapphire &&
+                              "text-emerald-300",
                           )}
                         >
                           {item.value}

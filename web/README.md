@@ -19,6 +19,13 @@ bun dev
 Open [http://localhost:3000](http://localhost:3000). The footer connection
 indicator checks the NestJS health endpoint through `GET /api/health`.
 
+Google OAuth uses the existing public Supabase variables documented in
+`.env.example` and the exact local callback
+`http://localhost:3000/auth/callback`. Session cookies are managed by
+`@supabase/ssr`; authorization roles always come from the NestJS API/database.
+See the repository root README for the Supabase and Google Cloud dashboard
+settings that must be verified manually.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

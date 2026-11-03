@@ -40,7 +40,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-full items-center justify-between gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-normal text-slate-900 transition-colors outline-none select-none hover:border-slate-400 focus:border-[#2525b8] focus:ring-3 focus:ring-[#2525b8]/15 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-slate-400 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "flex w-full items-center justify-between gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-normal text-slate-900 transition-colors outline-none select-none hover:border-slate-400 focus:border-brand-blue focus:ring-3 focus:ring-brand-blue/15 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-slate-400 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -83,7 +83,7 @@ function SelectContent({
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
           className={cn(
-            "relative isolate z-50 max-h-[var(--available-height,20rem)] w-[var(--anchor-width)] min-w-[8rem] origin-[var(--transform-origin)] overflow-x-hidden overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 text-slate-800 shadow-xl duration-100 outline-none data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            "relative isolate z-50 max-h-[var(--available-height,20rem)] w-[var(--anchor-width)] min-w-32 origin-[var(--transform-origin)] overflow-x-hidden overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 text-slate-800 shadow-xl duration-100 outline-none data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
             className
           )}
           {...props}

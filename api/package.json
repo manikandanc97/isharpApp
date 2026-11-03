@@ -13,14 +13,16 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "prestart:prod": "npm run build",
+    "start:prod": "node dist/main.js",
     "lint": "oxlint --type-aware src/ test/ scripts/",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
-    "setup-initial-admins": "tsx scripts/setup-initial-admins.ts"
+    "setup-initial-admins": "tsx scripts/setup-initial-admins.ts",
+    "ensure-admin-account": "tsx scripts/ensure-admin-account.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

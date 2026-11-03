@@ -28,11 +28,14 @@
   --shadow-card-hover: 0 22px 60px rgb(36 33 36 / 0.11);
   --shadow-elevated: 0 20px 60px rgb(36 33 36 / 0.08);
   --shadow-panel: 0 28px 80px rgb(36 33 36 / 0.1);
-  --shadow-brand: 0 10px 25px rgb(37 37 184 / 0.22);
+  --shadow-brand: 0 10px 25px rgb(229 29 53 / 0.22);
+  --shadow-secondary: 0 8px 20px rgb(37 37 184 / 0.18);
   --shadow-primary: 0 8px 20px rgb(229 29 53 / 0.18);
   --shadow-primary-hover: 0 10px 24px rgb(229 29 53 / 0.22);
   --color-brand-red: var(--brand-red);
+  --color-brand-red-hover: var(--brand-red-hover);
   --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-hover: var(--brand-blue-hover);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -73,52 +76,15 @@
 
 :root {
   --brand-red: #e51d35;
+  --brand-red-hover: #c41328;
   --brand-blue: #2525b8;
+  --brand-blue-hover: #1a187a;
   --brand-navy: #24215d;
   --brand-pink: #ffb8c1;
   --surface-soft: #f7f8fc;
   --surface-subtle: #f5f6fb;
   --surface-section: #f3f4f8;
   --surface-tint: #f8f9ff;
-  --feature-practice-background: linear-gradient(
-    145deg,
-    #f8f9ff 0%,
-    #ffffff 52%,
-    #fff7f8 100%
-  );
-  --feature-mock-background: linear-gradient(
-    145deg,
-    #fff9fa,
-    #ffffff 58%,
-    #f3f3ff
-  );
-  --feature-progress-background: linear-gradient(
-    145deg,
-    #ffffff,
-    #f6f6ff 55%,
-    #fff8f9
-  );
-  --progress-ring-background: conic-gradient(
-    #ed4054 0 78%,
-    rgb(255 255 255 / 0.12) 78%
-  );
-  --dot-pattern-background: radial-gradient(
-    circle at center,
-    white 1px,
-    transparent 1px
-  );
-  --achievement-pattern-background: linear-gradient(
-    115deg,
-    transparent 0% 48%,
-    rgb(37 37 184 / 0.045) 48% 50%,
-    transparent 50% 100%
-  );
-  --journey-pattern-background: linear-gradient(
-    120deg,
-    transparent 0% 47%,
-    rgb(37 37 184 / 0.035) 47% 49%,
-    transparent 49% 100%
-  );
   --scrollbar-thumb: #858da3;
   --background: #f8f9fc;
   --foreground: #242124;
@@ -132,57 +98,26 @@
   --secondary-foreground: #ffffff;
   --muted: #f1f3f7;
   --muted-foreground: #5f6470;
-  --accent: #eeeeff;
-  --accent-foreground: #2525b8;
+  --accent: #fff0f2;
+  --accent-foreground: #e51d35;
   --destructive: #b42318;
   --border: #e5e7eb;
   --input: #d1d5db;
-  --ring: #2525b8;
+  --ring: #e51d35;
   --chart-1: #e51d35;
   --chart-2: #2525b8;
   --chart-3: #5f6470;
-  --chart-4: #a7a9ed;
-  --chart-5: #f28b98;
+  --chart-4: #f28b98;
+  --chart-5: #a7a9ed;
   --radius: 0.75rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #242124;
-  --sidebar-primary: #2525b8;
+  --sidebar-primary: #e51d35;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eeeeff;
-  --sidebar-accent-foreground: #2525b8;
+  --sidebar-accent: #fff0f2;
+  --sidebar-accent-foreground: #e51d35;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: #2525b8;
-}
-
-@utility bg-feature-practice {
-  background-image: var(--feature-practice-background);
-}
-
-@utility bg-feature-mock {
-  background-image: var(--feature-mock-background);
-}
-
-@utility bg-feature-progress {
-  background-image: var(--feature-progress-background);
-}
-
-@utility bg-progress-ring {
-  background-image: var(--progress-ring-background);
-}
-
-@utility bg-dot-pattern {
-  background-image: var(--dot-pattern-background);
-  background-size: 1.25rem 1.25rem;
-}
-
-@utility bg-achievement-pattern {
-  background-image: var(--achievement-pattern-background);
-  background-size: 11.25rem 11.25rem;
-}
-
-@utility bg-journey-pattern {
-  background-image: var(--journey-pattern-background);
-  background-size: 10.625rem 10.625rem;
+  --sidebar-ring: #e51d35;
 }
 
 .dark {
@@ -198,25 +133,25 @@
   --secondary-foreground: #17151a;
   --muted: #302d33;
   --muted-foreground: #b7bac2;
-  --accent: #30305e;
-  --accent-foreground: #eeeeff;
+  --accent: #5a2831;
+  --accent-foreground: #fff0f2;
   --destructive: #ff7a70;
   --border: #403d43;
   --input: #55515a;
-  --ring: #8f8fe8;
+  --ring: #ed4054;
   --chart-1: #ed4054;
   --chart-2: #8f8fe8;
   --chart-3: #b7bac2;
-  --chart-4: #b5b5f2;
-  --chart-5: #f28b98;
+  --chart-4: #f28b98;
+  --chart-5: #b5b5f2;
   --sidebar: #242124;
   --sidebar-foreground: #f8f9fc;
-  --sidebar-primary: #8f8fe8;
-  --sidebar-primary-foreground: #17151a;
-  --sidebar-accent: #30305e;
-  --sidebar-accent-foreground: #eeeeff;
+  --sidebar-primary: #ed4054;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #5a2831;
+  --sidebar-accent-foreground: #fff0f2;
   --sidebar-border: #403d43;
-  --sidebar-ring: #8f8fe8;
+  --sidebar-ring: #ed4054;
 }
 
 @layer base {
@@ -250,11 +185,14 @@
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: var(--brand-blue);
+    background-color: var(--brand-red);
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   html {
     @apply scroll-smooth font-sans;

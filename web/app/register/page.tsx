@@ -21,6 +21,7 @@ import {
   Users,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -49,6 +50,7 @@ const academicPillars = [
 export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [oauthError, setOauthError] = useState("");
   const [formErrors, setFormErrors] = useState<{
     name?: string;
     phone?: string;
@@ -104,12 +106,12 @@ export default function RegisterPage() {
   }
 
   const inputBaseStyle =
-    "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-[#2525b8] focus:ring-3 focus:ring-[#2525b8]/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60";
+    "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-blue focus:ring-3 focus:ring-brand-blue/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-[#e51d35] selection:text-white antialiased lg:h-svh lg:overflow-hidden">
+    <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-brand-red selection:text-white antialiased lg:h-svh lg:overflow-hidden">
       {/* 01. NAVIGATION HEADER (h-16, max-w-6xl aligned with main content & homepage) */}
-      <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-[0_1px_10px_-2px_rgba(15,23,42,0.03)]">
+      <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-xs">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
           <div className="flex items-center gap-3.5 sm:gap-4">
             <BrandLogo priority className="h-8.5 sm:h-9.5 w-auto" />
@@ -119,7 +121,7 @@ export default function RegisterPage() {
             />
             {/* Dual instruction capsule */}
             <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-3xs font-medium text-slate-700 shadow-2xs">
-              <span className="size-1.5 rounded-full bg-[#e51d35] animate-pulse" />
+              <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
               <span className="font-bold text-slate-900">தமிழ்</span>
               <span className="text-slate-400">+</span>
               <span className="font-bold text-slate-900">English</span>
@@ -139,7 +141,7 @@ export default function RegisterPage() {
             <span className="h-3.5 w-px bg-slate-200" aria-hidden="true" />
             <Link
               href="/login"
-              className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-[#2525b8] transition hover:bg-blue-100 hover:border-blue-300"
+              className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-brand-blue transition hover:bg-blue-100 hover:border-blue-300"
             >
               <span>Student Sign In</span>
               <ArrowRight className="size-3" />
@@ -157,17 +159,17 @@ export default function RegisterPage() {
               <div>
                 {/* Eyebrow badge */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-[#e51d35] uppercase shadow-2xs">
-                    <GraduationCap className="size-3 text-[#e51d35]" />
+                  <div className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-brand-red uppercase shadow-2xs">
+                    <GraduationCap className="size-3 text-brand-red" />
                     <span>Cohort 2026 Admissions Open</span>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-3xs font-semibold text-[#2525b8]">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-3xs font-semibold text-brand-blue">
                     <Sparkles className="size-2.5" />
                     Limited Seats
                   </span>
                 </div>
 
-                <h1 className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-[32px] leading-tight">
+                <h1 className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl leading-tight">
                   Student Enrolment &amp; Admissions
                 </h1>
                 <p className="mt-1 text-2xs leading-relaxed text-slate-600 sm:text-xs">
@@ -197,7 +199,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Immediate Academic Helpline Card */}
-              <div className="mt-4 rounded-xl bg-[#191747] text-white p-3.5 shadow-sm">
+              <div className="mt-4 rounded-xl bg-brand-navy text-white p-3.5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <p className="text-3xs uppercase font-bold tracking-wider text-slate-300">
                     Immediate Academic Helpline
@@ -206,7 +208,7 @@ export default function RegisterPage() {
                 </div>
                 <div className="mt-2 flex items-center gap-3">
                   <div className="grid size-8 place-items-center rounded-lg bg-white/10 text-white shadow-2xs">
-                    <PhoneCall className="size-4 text-[#e51d35]" />
+                    <PhoneCall className="size-4 text-brand-red" />
                   </div>
                   <div>
                     <a
@@ -224,7 +226,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Right Column: Admission Form */}
-            <div className="lg:col-span-7 rounded-2xl border border-slate-200/90 bg-white p-4.5 sm:p-5.5 lg:p-6 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]">
+            <div className="lg:col-span-7 rounded-2xl border border-slate-200/90 bg-white p-4.5 sm:p-5.5 lg:p-6 shadow-card">
               {submitted ? (
                 /* Success View */
                 <div className="py-4 text-center animate-in fade-in-50 duration-300">
@@ -237,18 +239,18 @@ export default function RegisterPage() {
                   <p className="mt-1 text-2xs leading-relaxed text-slate-600 max-w-md mx-auto sm:text-xs">
                     Thank you, <strong className="text-slate-900">{formData.studentName}</strong>.
                     We have reserved your application for{" "}
-                    <strong className="text-[#2525b8]">{formData.academicProgram}</strong> ({formData.targetYear}).
+                    <strong className="text-brand-blue">{formData.academicProgram}</strong> ({formData.targetYear}).
                   </p>
 
                   <div className="mt-3.5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-left max-w-md mx-auto text-3xs sm:text-2xs space-y-1.5">
                     <p className="font-bold text-slate-900">What happens next?</p>
                     <ul className="space-y-1 text-slate-600">
                       <li className="flex items-center gap-1.5">
-                        <span className="size-1 rounded-full bg-[#2525b8]" />
+                        <span className="size-1 rounded-full bg-brand-blue" />
                         Our counselor will call your mobile (<strong>{formData.mobileNumber}</strong>) within 24 working hours.
                       </li>
                       <li className="flex items-center gap-1.5">
-                        <span className="size-1 rounded-full bg-[#2525b8]" />
+                        <span className="size-1 rounded-full bg-brand-blue" />
                         Free bilingual Diagnostic Benchmark Assessment schedule shared on WhatsApp.
                       </li>
                     </ul>
@@ -263,7 +265,7 @@ export default function RegisterPage() {
                     </Link>
                     <Link
                       href="/login"
-                      className="rounded-full bg-[#191747] hover:bg-[#2525b8] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:shadow-md transition"
+                      className="rounded-full bg-brand-red hover:bg-brand-red-hover px-5 py-2 text-xs font-semibold text-white shadow-primary transition"
                     >
                       Go to Student LMS Login
                     </Link>
@@ -292,8 +294,8 @@ export default function RegisterPage() {
                 <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3" noValidate>
                   {/* Top Card Badge */}
                   <div className="flex items-center justify-between">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-[#e51d35] uppercase">
-                      <ShieldCheck className="size-3 text-[#e51d35]" />
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-brand-red uppercase">
+                      <ShieldCheck className="size-3 text-brand-red" />
                       <span>Direct Admission 2026</span>
                     </div>
                     <span className="text-3xs font-medium text-slate-400">Step 1 of 1</span>
@@ -306,6 +308,32 @@ export default function RegisterPage() {
                     <p className="text-2xs text-slate-500">
                       Enter details below to register for the upcoming batch.
                     </p>
+                  </div>
+
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-2.5">
+                    <GoogleSignInButton
+                      label="Register with Google"
+                      onError={setOauthError}
+                      className="bg-white"
+                    />
+                    <p className="mt-1.5 text-center text-3xs leading-relaxed text-slate-500">
+                      Creates your secure LMS identity. Internal student emails receive free access automatically; other accounts use a paid plan.
+                    </p>
+                    {oauthError && (
+                      <p role="alert" className="mt-2 flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50 p-2 text-2xs text-rose-700">
+                        <AlertCircle className="mt-0.5 size-3 shrink-0" />
+                        <span>{oauthError}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="relative text-center">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-slate-200" />
+                    </div>
+                    <span className="relative bg-white px-2.5 text-3xs font-bold uppercase tracking-wider text-slate-400">
+                      or register with details
+                    </span>
                   </div>
 
                   {/* Row 1: Full Name & Phone */}
@@ -639,14 +667,14 @@ export default function RegisterPage() {
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="h-10.5 w-full cursor-pointer rounded-full bg-[#191747] hover:bg-[#2525b8] text-xs sm:text-sm font-semibold text-white shadow-xs transition hover:shadow-md active:scale-[0.99] disabled:opacity-60"
+                      className="h-10.5 w-full cursor-pointer rounded-full bg-brand-red hover:bg-brand-red-hover text-xs sm:text-sm font-semibold text-white shadow-primary transition hover:shadow-md active:scale-95 disabled:opacity-60"
                     >
                       {isSubmitting && (
                         <LoaderCircle className="size-3.5 animate-spin mr-2" />
                       )}
                       <span>
                         {isSubmitting
-                          ? "Submitting Enrolment…"
+                           ? "Submitting Enrolment…"
                           : "Complete Admission Registration"}
                       </span>
                     </Button>
@@ -671,11 +699,11 @@ export default function RegisterPage() {
                     className="group flex items-center justify-between rounded-xl border border-blue-200/80 bg-blue-50/50 px-3 py-2 transition hover:bg-blue-50 hover:border-blue-300"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="grid size-7.5 shrink-0 place-items-center rounded-lg bg-[#2525b8] text-white shadow-2xs">
+                      <div className="grid size-7.5 shrink-0 place-items-center rounded-lg bg-brand-blue text-white shadow-2xs">
                         <Users className="size-3.5" />
                       </div>
                       <div>
-                        <p className="text-2xs sm:text-xs font-bold text-slate-900 group-hover:text-[#2525b8] transition">
+                        <p className="text-2xs sm:text-xs font-bold text-slate-900 group-hover:text-brand-blue transition">
                           Access Student LMS Portal
                         </p>
                         <p className="text-3xs text-slate-500">
@@ -683,7 +711,7 @@ export default function RegisterPage() {
                         </p>
                       </div>
                     </div>
-                    <ArrowRight className="size-3.5 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-[#2525b8]" />
+                    <ArrowRight className="size-3.5 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-brand-blue" />
                   </Link>
                 </form>
               )}

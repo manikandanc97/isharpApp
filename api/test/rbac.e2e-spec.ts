@@ -4,6 +4,7 @@ import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { SupabaseTokenVerifier } from '../src/auth/supabase-token-verifier.service.js';
+import { StudentAccessResolver } from '../src/auth/student-access-resolver.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 
 const identities = {
@@ -22,6 +23,21 @@ const identities = {
     profileId: '20000000-0000-4000-8000-000000000005',
     roles: ['STUDENT'],
   },
+  externalUnpaid: {
+    authUserId: '00000000-0000-4000-8000-000000000007',
+    profileId: '20000000-0000-4000-8000-000000000007',
+    roles: ['STUDENT'],
+  },
+  externalPaid: {
+    authUserId: '00000000-0000-4000-8000-000000000008',
+    profileId: '20000000-0000-4000-8000-000000000008',
+    roles: ['STUDENT'],
+  },
+  externalExpired: {
+    authUserId: '00000000-0000-4000-8000-000000000009',
+    profileId: '20000000-0000-4000-8000-000000000009',
+    roles: ['STUDENT'],
+  },
   admin: {
     authUserId: '00000000-0000-4000-8000-000000000003',
     profileId: '20000000-0000-4000-8000-000000000003',
@@ -31,6 +47,11 @@ const identities = {
     authUserId: '00000000-0000-4000-8000-000000000004',
     profileId: '20000000-0000-4000-8000-000000000004',
     roles: ['SUPERADMIN'],
+  },
+  pendingGoogleUser: {
+    authUserId: '00000000-0000-4000-8000-000000000006',
+    profileId: null,
+    roles: [],
   },
 } as const;
 
@@ -53,6 +74,7 @@ describe('RBAC (e2e)', () => {
                 candidate.profileId === where.id,
             );
             if (!profile) return null;
+            if (where.authUserId && profile.profileId === null) return null;
             if (where.authUserId) {
               return {
                 id: profile.profileId,
@@ -71,12 +93,31 @@ describe('RBAC (e2e)', () => {
         ),
       },
       institutionMembership: {
-        findUnique: vi.fn(async ({ where }: { where: { userId: string } }) => ({
-          status:
-            where.userId === identities.revokedStudent.profileId
-              ? 'REVOKED'
-              : 'VERIFIED',
-        })),
+        findUnique: vi.fn(async ({ where }: { where: { userId: string } }) => {
+          const external = [
+            identities.externalUnpaid.profileId,
+            identities.externalPaid.profileId,
+            identities.externalExpired.profileId,
+          ].includes(where.userId as never);
+          return {
+            status:
+              where.userId === identities.revokedStudent.profileId
+                ? 'REVOKED'
+                : 'VERIFIED',
+            studentCategory: external ? 'EXTERNAL' : 'INTERNAL',
+            paymentStatus:
+              where.userId === identities.externalPaid.profileId ||
+              where.userId === identities.externalExpired.profileId
+                ? 'PAID'
+                : external
+                  ? 'PENDING'
+                  : 'NOT_REQUIRED',
+            paidAccessUntil:
+              where.userId === identities.externalExpired.profileId
+                ? new Date('2020-01-01T00:00:00Z')
+                : null,
+          };
+        }),
       },
       $queryRaw: vi.fn().mockResolvedValue([{ '?column?': 1 }]),
     };
@@ -93,6 +134,20 @@ describe('RBAC (e2e)', () => {
       .useValue(prisma)
       .overrideProvider(SupabaseTokenVerifier)
       .useValue(verifier)
+      .overrideProvider(StudentAccessResolver)
+      .useValue({
+        resolve: vi.fn(async (authUserId: string) => {
+          const profile = profiles.find(
+            (candidate) => candidate.authUserId === authUserId,
+          );
+          if (!profile || profile.profileId === null) return null;
+          return {
+            id: profile.profileId,
+            isActive: true,
+            userRoles: profile.roles.map((name) => ({ role: { name } })),
+          };
+        }),
+      })
       .compile();
     app = module.createNestApplication();
     await app.init();
@@ -116,10 +171,18 @@ describe('RBAC (e2e)', () => {
   it('allows a student on learning routes but denies admin routes', async () => {
     await get('/api/learning', 'student').expect(200);
     await get('/api/admin/content', 'student').expect(403);
+    await get('/api/admin/questions', 'student').expect(403);
   });
 
-  it('denies free learning access to a revoked membership', () =>
-    get('/api/learning', 'revokedStudent').expect(403));
+  it('protects the question bank from unauthenticated requests', () =>
+    get('/api/admin/questions').expect(401));
+
+  it('allows internal students free access and requires payment for external students', async () => {
+    await get('/api/learning', 'student').expect(200);
+    await get('/api/learning', 'externalUnpaid').expect(403);
+    await get('/api/learning', 'externalPaid').expect(200);
+    await get('/api/learning', 'externalExpired').expect(403);
+  });
 
   it('allows an admin on academic administration but denies system settings', async () => {
     await get('/api/admin/content', 'admin').expect(200);
@@ -130,6 +193,16 @@ describe('RBAC (e2e)', () => {
     await get('/api/learning', 'superadmin').expect(200);
     await get('/api/admin/content', 'superadmin').expect(200);
     await get('/api/system/settings', 'superadmin').expect(200);
+  });
+
+  it('authenticates a new Google identity without granting any role', async () => {
+    await get('/api/auth/me', 'pendingGoogleUser').expect(200, {
+      authUserId: identities.pendingGoogleUser.authUserId,
+      profileId: null,
+      roles: [],
+    });
+    await get('/api/learning', 'pendingGoogleUser').expect(403);
+    await get('/api/admin/content', 'pendingGoogleUser').expect(403);
   });
 
   it('blocks an ADMIN from granting SUPERADMIN', () =>

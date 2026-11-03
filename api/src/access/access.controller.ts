@@ -7,6 +7,27 @@ import { VerifiedMembershipGuard } from '../institution-memberships/verified-mem
 @Controller('api')
 @UseGuards(AuthGuard, RolesGuard)
 export class AccessController {
+  @Get('test/student')
+  @Roles('STUDENT')
+  studentTest() {
+    return { access: 'student', message: 'Student API access confirmed' };
+  }
+
+  @Get('test/admin')
+  @Roles('ADMIN')
+  adminTest() {
+    return { access: 'admin', message: 'Admin API access confirmed' };
+  }
+
+  @Get('test/superadmin')
+  @Roles('SUPERADMIN')
+  superadminTest() {
+    return {
+      access: 'superadmin',
+      message: 'Superadmin API access confirmed',
+    };
+  }
+
   @Get('learning')
   @Roles('STUDENT', 'ADMIN', 'SUPERADMIN')
   @UseGuards(VerifiedMembershipGuard)

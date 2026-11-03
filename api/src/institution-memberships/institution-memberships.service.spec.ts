@@ -77,6 +77,9 @@ describe('InstitutionMembershipsService', () => {
       ...pendingMembership,
       status: MembershipVerificationStatus.VERIFIED,
       method: MembershipVerificationMethod.TRUSTED_ROSTER,
+      studentCategory: 'INTERNAL',
+      paymentStatus: 'NOT_REQUIRED',
+      paidAccessUntil: null,
       verifiedAt: new Date('2026-10-31T01:00:00Z'),
     };
     const tx = {

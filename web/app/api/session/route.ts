@@ -1,13 +1,15 @@
+import type { NextRequest } from 'next/server';
+
 import { ApiClientError } from '@/lib/api-client';
 import type { AuthenticatedSession } from '@/lib/auth-session';
 import { getNestApiClient } from '@/lib/nest-api';
+import { getRequestAccessToken } from '@/lib/server-access-token';
 
 // Route is inherently dynamic (reads Authorization header per request)
 
-export async function GET(request: Request) {
-  const authorization = request.headers.get('authorization');
-  const match = authorization?.match(/^Bearer\s+(\S+)$/i);
-  if (!match) {
+export async function GET(request: NextRequest) {
+  const accessToken = await getRequestAccessToken(request);
+  if (!accessToken) {
     return Response.json(
       { message: 'Bearer access token is required' },
       { status: 401 },
@@ -17,7 +19,7 @@ export async function GET(request: Request) {
   try {
     const session = await getNestApiClient().request<AuthenticatedSession>(
       '/api/auth/me',
-      { accessToken: match[1], cache: 'no-store' },
+      { accessToken, cache: 'no-store' },
     );
     return Response.json(session, {
       headers: { 'Cache-Control': 'no-store, private' },

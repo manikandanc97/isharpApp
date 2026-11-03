@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,7 +11,7 @@ import {
   Star,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
-import { LoginForm } from "./login-form";
+import { LoginForm, OAuthAwareLoginForm } from "./login-form";
 
 export const metadata: Metadata = {
   title: "Student LMS Login | I-Sharp Academy",
@@ -37,9 +38,9 @@ const portalHighlights = [
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-[#e51d35] selection:text-white antialiased lg:h-svh lg:overflow-hidden">
+    <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-brand-red selection:text-white antialiased lg:h-svh lg:overflow-hidden">
       {/* 01. NAVIGATION HEADER (h-16, max-w-6xl aligned with main content & homepage) */}
-      <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-[0_1px_10px_-2px_rgba(15,23,42,0.03)]">
+      <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-xs">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
           <div className="flex items-center gap-3.5 sm:gap-4">
             <BrandLogo priority className="h-8.5 sm:h-9.5 w-auto" />
@@ -49,7 +50,7 @@ export default function LoginPage() {
             />
             {/* Dual instruction capsule */}
             <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-3xs font-medium text-slate-700 shadow-2xs">
-              <span className="size-1.5 rounded-full bg-[#2525b8] animate-pulse" />
+              <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
               <span className="font-bold text-slate-900">தமிழ்</span>
               <span className="text-slate-400">+</span>
               <span className="font-bold text-slate-900">English</span>
@@ -69,7 +70,7 @@ export default function LoginPage() {
             <span className="h-3.5 w-px bg-slate-200" aria-hidden="true" />
             <Link
               href="/register"
-              className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-[#e51d35] transition hover:bg-rose-100 hover:border-rose-300"
+              className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-brand-red transition hover:bg-rose-100 hover:border-rose-300"
             >
               <span>New Student</span>
               <ArrowRight className="size-3" />
@@ -89,10 +90,10 @@ export default function LoginPage() {
             {/* Eyebrow Pill */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 bg-white px-2.5 py-0.5 text-3xs font-bold tracking-wider text-slate-800 shadow-2xs uppercase">
-                <span className="size-1.5 rounded-full bg-[#e51d35] animate-pulse" />
+                <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
                 <span>Built for Ambitious Minds</span>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-3xs font-semibold text-[#2525b8]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-3xs font-semibold text-brand-blue">
                 <Sparkles className="size-2.5" />
                 Batch 2026 Admissions Open
               </span>
@@ -101,10 +102,10 @@ export default function LoginPage() {
             {/* Headline */}
             <h1
               id="brand-heading"
-              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-[34px] xl:text-[38px] lg:leading-[1.14]"
+              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl xl:text-4xl lg:leading-tight"
             >
               Your journey to{" "}
-              <span className="text-[#e51d35]">excellence</span> starts here.
+              <span className="text-brand-red">excellence</span> starts here.
             </h1>
 
             <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-sm">
@@ -114,14 +115,15 @@ export default function LoginPage() {
 
             {/* Feature Highlight Cards (Tightly spaced) */}
             <div className="mt-4 space-y-2 max-w-xl">
-              {portalHighlights.map((item) => {
+              {portalHighlights.map((item, idx) => {
                 const Icon = item.icon;
+                const isRed = idx % 2 === 0;
                 return (
                   <div
                     key={item.title}
                     className="flex items-center gap-3 rounded-xl border border-slate-200/90 bg-white/90 px-3 py-2 shadow-2xs backdrop-blur-xs transition hover:border-slate-300"
                   >
-                    <div className="grid size-7.5 shrink-0 place-items-center rounded-lg bg-blue-50 text-[#2525b8]">
+                    <div className={`grid size-7.5 shrink-0 place-items-center rounded-lg ${isRed ? "bg-rose-50 text-brand-red" : "bg-blue-50 text-brand-blue"}`}>
                       <Icon className="size-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -140,13 +142,13 @@ export default function LoginPage() {
             {/* Trust Metrics Pill */}
             <div className="mt-3.5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-3.5 py-2 shadow-2xs backdrop-blur-xs max-w-md">
               <div className="flex -space-x-1.5">
-                <span className="inline-grid size-6.5 place-items-center rounded-full bg-[#191747] text-3xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-6.5 place-items-center rounded-full bg-brand-navy text-3xs font-bold text-white ring-2 ring-white">
                   99%
                 </span>
-                <span className="inline-grid size-6.5 place-items-center rounded-full bg-[#2525b8] text-3xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-6.5 place-items-center rounded-full bg-brand-blue text-3xs font-bold text-white ring-2 ring-white">
                   AIR
                 </span>
-                <span className="inline-grid size-6.5 place-items-center rounded-full bg-[#e51d35] text-3xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-6.5 place-items-center rounded-full bg-brand-red text-3xs font-bold text-white ring-2 ring-white">
                   NEET
                 </span>
               </div>
@@ -165,8 +167,10 @@ export default function LoginPage() {
           </section>
 
           {/* Right Column: Refined LoginForm */}
-          <div className="flex w-full min-w-0 justify-center lg:col-span-6 lg:justify-end xl:col-span-5">
-            <LoginForm />
+          <div className="flex w-full min-w-0 flex-col items-center lg:col-span-6 lg:items-end xl:col-span-5">
+            <Suspense fallback={<LoginForm />}>
+              <OAuthAwareLoginForm />
+            </Suspense>
           </div>
         </div>
       </main>

@@ -44,7 +44,7 @@ const courses: readonly Course[] = [
     title: "10 மாதிரி தேர்வு - நீட் 2026",
     description: "தமிழ் கேள்விகள் மற்றும் ஆங்கிலத்தில் ஒரே பக்கத்தில் NCERT விளக்கம்.",
     icon: Languages,
-    accent: "blue",
+    accent: "red",
     duration: "Full Year · Live + Recorded",
     language: "தமிழ் Medium Core",
     targetAudience: "TN State Board & Tamil Medium Students",
@@ -284,14 +284,14 @@ export function AvailableCourses() {
           <div className="max-w-2xl">
             <Badge
               variant="outline"
-              className="inline-flex items-center gap-1.5 rounded-full border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold tracking-wide text-[#2525b8]"
+              className="inline-flex items-center gap-1.5 rounded-full border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold tracking-wide text-brand-red"
             >
-              <GraduationCap className="size-3.5 text-[#2525b8]" aria-hidden="true" />
+              <GraduationCap className="size-3.5 text-brand-red" aria-hidden="true" />
               <span>Curated Academic Programs</span>
             </Badge>
             <h2
               id="available-courses-title"
-              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-[32px]"
+              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl"
             >
               Academic Programs &amp; Test Series
             </h2>
@@ -306,7 +306,7 @@ export function AvailableCourses() {
               variant="outline"
               className="flex items-center gap-2 rounded-full border-slate-200 bg-slate-50/80 px-3.5 py-1.5 text-xs text-slate-700 shadow-2xs"
             >
-              <Users className="size-3.5 text-[#2525b8]" />
+              <Users className="size-3.5 text-brand-red" />
               <span>Batch 2026</span>
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
             </Badge>
@@ -329,7 +329,7 @@ export function AvailableCourses() {
                   aria-hidden="true"
                   className={cn(
                     "absolute inset-x-0 top-0 h-1.5 rounded-t-2xl transition-opacity",
-                    isBlue ? "bg-[#2525b8]" : "bg-[#e51d35]",
+                    isBlue ? "bg-brand-blue" : "bg-brand-red",
                   )}
                 />
 
@@ -341,8 +341,8 @@ export function AvailableCourses() {
                       className={cn(
                         "rounded-full px-3 py-0.5 text-2xs font-bold uppercase tracking-wider",
                         isBlue
-                          ? "border-blue-200 bg-blue-50 text-[#2525b8]"
-                          : "border-rose-200 bg-rose-50 text-[#e51d35]",
+                          ? "border-blue-200 bg-blue-50 text-brand-blue"
+                          : "border-rose-200 bg-rose-50 text-brand-red",
                       )}
                     >
                       {course.badge}
@@ -351,7 +351,7 @@ export function AvailableCourses() {
                     <div
                       className={cn(
                         "grid size-9 shrink-0 place-items-center rounded-xl text-white shadow-xs",
-                        isBlue ? "bg-[#2525b8]" : "bg-[#e51d35]",
+                        isBlue ? "bg-brand-blue" : "bg-brand-red",
                       )}
                     >
                       <Icon className="size-4.5" strokeWidth={2} aria-hidden="true" />
@@ -362,7 +362,7 @@ export function AvailableCourses() {
                   <h3
                     className={cn(
                       "mt-4 text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-snug transition-colors",
-                      isBlue ? "group-hover:text-[#2525b8]" : "group-hover:text-[#e51d35]",
+                      isBlue ? "group-hover:text-brand-blue" : "group-hover:text-brand-red",
                     )}
                   >
                     {course.title}

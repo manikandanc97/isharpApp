@@ -8,6 +8,6 @@ import { VerifiedMembershipGuard } from './verified-membership.guard.js';
   imports: [AuthModule],
   controllers: [InstitutionMembershipsController],
   providers: [InstitutionMembershipsService, VerifiedMembershipGuard],
-  exports: [VerifiedMembershipGuard],
+  exports: [InstitutionMembershipsService, VerifiedMembershipGuard],
 })
 export class InstitutionMembershipsModule {}

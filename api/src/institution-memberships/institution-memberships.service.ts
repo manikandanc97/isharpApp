@@ -9,6 +9,8 @@ import {
   MembershipVerificationMethod,
   MembershipVerificationStatus,
   Prisma,
+  StudentCategory,
+  StudentPaymentStatus,
 } from '../generated/prisma/client.js';
 import type { AuthUser } from '../auth/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -21,6 +23,9 @@ const membershipSelect = {
   verifiedAt: true,
   createdAt: true,
   updatedAt: true,
+  studentCategory: true,
+  paymentStatus: true,
+  paidAccessUntil: true,
 } satisfies Prisma.InstitutionMembershipSelect;
 
 @Injectable()
@@ -216,6 +221,9 @@ export class InstitutionMembershipsService {
         trustedRecordId: trustedRecord.id,
         verifiedAt: new Date(),
         verifiedById: null,
+        studentCategory: StudentCategory.INTERNAL,
+        paymentStatus: StudentPaymentStatus.NOT_REQUIRED,
+        paidAccessUntil: null,
       },
       select: membershipSelect,
     });
@@ -308,7 +316,9 @@ export class InstitutionMembershipsService {
     return {
       membership,
       eligibleForFreeAccess:
-        membership.status === MembershipVerificationStatus.VERIFIED,
+        membership.status === MembershipVerificationStatus.VERIFIED &&
+        'studentCategory' in membership &&
+        membership.studentCategory === StudentCategory.INTERNAL,
     };
   }
 

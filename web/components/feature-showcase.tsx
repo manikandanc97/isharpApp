@@ -67,7 +67,7 @@ const features: readonly FeatureItem[] = [
     icon: BookOpenCheck,
     image: "/experience/daily-practice.jpg",
     imageAlt: "Luxury 3D illustration of daily study calendar and milestone progress nodes",
-    accent: "blue",
+    accent: "red",
     metricBadge: {
       icon: Flame,
       label: "Habit consistency",
@@ -127,7 +127,7 @@ const features: readonly FeatureItem[] = [
     icon: Languages,
     image: "/experience/bilingual-learning.jpg",
     imageAlt: "Luxury 3D illustration of glowing bilingual typography ribbons and audio waves",
-    accent: "blue",
+    accent: "red",
     metricBadge: {
       icon: Sparkles,
       label: "Concept grasp speed",
@@ -157,7 +157,7 @@ const features: readonly FeatureItem[] = [
     icon: LineChart,
     image: "/experience/precision-analytics.jpg",
     imageAlt: "Luxury 3D illustration of holographic diagnostic charts and target reticle",
-    accent: "red",
+    accent: "blue",
     metricBadge: {
       icon: Zap,
       label: "Target precision",
@@ -286,8 +286,8 @@ export function FeatureShowcase() {
                 className={cn(
                   "size-2 rounded-full animate-pulse",
                   activeFeature.accent === "red"
-                    ? "bg-[#e51d35]"
-                    : "bg-[#2525b8]"
+                    ? "bg-brand-red"
+                    : "bg-brand-blue"
                 )}
                 aria-hidden="true"
               />
@@ -298,7 +298,7 @@ export function FeatureShowcase() {
 
             <h2
               id="feature-showcase-title"
-              className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-[32px] leading-tight"
+              className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl leading-tight"
             >
               Crafted for clarity.{" "}
               <span className="text-slate-500 font-semibold">
@@ -349,14 +349,14 @@ export function FeatureShowcase() {
                   onClick={() => goTo(index)}
                   onKeyDown={(event) => handleTabKeyDown(event, index)}
                   className={cn(
-                    "relative flex items-center justify-between px-3.5 py-3 text-left transition-all duration-300 sm:px-5 sm:py-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/30 focus-visible:ring-inset",
+                    "relative flex items-center justify-between px-3.5 py-3 text-left transition-all duration-300 sm:px-5 sm:py-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red/30 focus-visible:ring-inset",
                     isSelected
                       ? "bg-white text-foreground shadow-xs"
                       : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
                   )}
                 >
                   {/* Top indicator bar with smooth live progress */}
-                  <div className="absolute inset-x-0 top-0 h-[3px] bg-transparent">
+                  <div className="absolute inset-x-0 top-0 h-0.75 bg-transparent">
                     {isSelected && (
                       <div
                         className={cn(
@@ -414,7 +414,7 @@ export function FeatureShowcase() {
           {/* Smooth Sliding Track: 100% Equal Height & Buttery Smooth Motion */}
           <div className="relative overflow-hidden">
             <div
-              className="flex w-full transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:transition-none"
+              className="flex w-full transition-transform duration-500 ease-out motion-reduce:transition-none"
               style={{ transform: `translateX(-${activeIndex * 100}%)` }}
             >
               {features.map((feature, index) => {
@@ -457,10 +457,10 @@ export function FeatureShowcase() {
 
                         {/* Title & Description - Perfectly Symmetrical Height */}
                         <div>
-                          <h3 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-[25px] leading-tight min-h-[56px] flex items-center">
+                          <h3 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-2xl leading-tight min-h-14 flex items-center">
                             {feature.title}
                           </h3>
-                          <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm min-h-[40px] flex items-center">
+                          <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm min-h-10 flex items-center">
                             {feature.description}
                           </p>
                         </div>
@@ -470,7 +470,7 @@ export function FeatureShowcase() {
                           {feature.highlights.map((point) => (
                             <div
                               key={point}
-                              className="flex items-center gap-2.5 rounded-xl border border-black/5 bg-surface-soft/80 px-3 py-2 text-xs transition-colors hover:bg-surface-soft sm:text-[13px]"
+                              className="flex items-center gap-2.5 rounded-xl border border-black/5 bg-surface-soft/80 px-3 py-2 text-xs transition-colors hover:bg-surface-soft sm:text-xs"
                             >
                               <span
                                 className={cn(
@@ -524,9 +524,9 @@ export function FeatureShowcase() {
 
                     {/* Right Visual Column - Identical Frame Dimensions */}
                     <div className="relative flex items-center justify-center p-4 sm:p-6 lg:col-span-5 bg-slate-50">
-                      <div className="group/frame relative w-full max-w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-[#0f172a] shadow-sm transition-transform duration-500 hover:scale-[1.01]">
+                      <div className="group/frame relative w-full max-w-95 overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-sm transition-transform duration-500 hover:scale-102">
                         {/* 3D Generated Luxury Image */}
-                        <div className="relative h-[250px] sm:h-[280px] lg:h-[300px] w-full overflow-hidden">
+                        <div className="relative h-64 sm:h-70 lg:h-75 w-full overflow-hidden">
                           <Image
                             src={feature.image}
                             alt={feature.imageAlt}

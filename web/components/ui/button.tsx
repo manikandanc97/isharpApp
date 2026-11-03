@@ -8,18 +8,20 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[#191747] text-white shadow-xs hover:bg-[#2525b8] hover:shadow-md active:scale-[0.99]",
+          "bg-brand-red text-white shadow-xs hover:bg-brand-red-hover hover:shadow-md active:scale-95",
         primary:
-          "bg-[#e51d35] text-white shadow-xs hover:bg-[#c41328] hover:shadow-md active:scale-[0.99]",
+          "bg-brand-red text-white shadow-xs hover:bg-brand-red-hover hover:shadow-md active:scale-95",
         outline:
           "border-slate-300 bg-white text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-slate-400 hover:text-slate-900",
         secondary:
-          "bg-blue-50 text-[#2525b8] border border-blue-200/80 hover:bg-blue-100 hover:border-blue-300",
+          "bg-brand-blue text-white shadow-xs hover:bg-brand-blue-hover hover:shadow-md active:scale-95",
+        "secondary-soft":
+          "bg-blue-50 text-brand-blue border border-blue-200/80 hover:bg-blue-100 hover:border-blue-300",
         ghost:
           "hover:bg-slate-100 hover:text-slate-900 aria-expanded:bg-slate-100 aria-expanded:text-slate-900",
         destructive:
           "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 hover:border-rose-300",
-        link: "text-[#2525b8] underline-offset-4 hover:underline",
+        link: "text-brand-blue underline-offset-4 hover:underline hover:text-brand-blue-hover",
       },
       size: {
         default:

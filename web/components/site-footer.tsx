@@ -13,7 +13,7 @@ import {
 
 export function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden border-t border-slate-800 bg-[#070b14] text-white">
+    <footer className="relative overflow-hidden border-t border-slate-800 bg-slate-950 text-white">
       {/* Editorial Luxury Quote Bar */}
       <div className="border-b border-slate-800 bg-slate-900/50">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-5 text-center sm:px-8 md:flex-row md:text-left">
@@ -26,7 +26,7 @@ export function SiteFooter() {
                 &ldquo;Consistency beats intensity. When practice becomes reflex, rank becomes inevitable.&rdquo;
               </p>
               <p className="text-3xs sm:text-xs text-slate-400">
-                — I-Sharp Academic Directorate &amp; Faculty Council
+                — I-Sharp Academic Directorate
               </p>
             </div>
           </div>
@@ -52,17 +52,17 @@ export function SiteFooter() {
             </p>
             <div className="mt-6 flex flex-col gap-2.5 text-xs text-slate-300">
               <div className="flex items-start gap-2.5">
-                <Phone className="size-4 text-[#e51d35] shrink-0 mt-0.5" />
+                <Phone className="size-4 text-brand-red shrink-0 mt-0.5" />
                 <div className="flex flex-col">
                   <span>Helpline: <a href="tel:+919894850370" className="hover:text-white font-medium">+91 98948 50370</a> / <a href="tel:+918148217151" className="hover:text-white font-medium">+91 81482 17151</a></span>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
-                <Mail className="size-4 text-[#e51d35] shrink-0" />
+                <Mail className="size-4 text-blue-400 shrink-0" />
                 <a href="mailto:isharpacademy@gmail.com" className="hover:text-white">isharpacademy@gmail.com</a>
               </div>
               <div className="flex items-start gap-2.5">
-                <MapPin className="size-4 text-[#e51d35] shrink-0 mt-0.5" />
+                <MapPin className="size-4 text-brand-red shrink-0 mt-0.5" />
                 <span className="leading-snug">
                   2nd Floor, AK Complex, No.207, 6th Street, Cross Cut Rd, Gandhipuram, Coimbatore – 641012, Tamil Nadu
                 </span>
@@ -169,7 +169,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/administration" className="hover:text-white transition">
-                  Faculty &amp; Proctor SSO
+                  Administrator SSO
                 </Link>
               </li>
               <li>

@@ -13,7 +13,7 @@ export function BrandLogo({ className, priority = false }: BrandLogoProps) {
     <Link
       href="/"
       aria-label="I-Sharp Academy home"
-      className="inline-flex items-center py-1.5 px-0.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#2525b8]/30 transition-opacity hover:opacity-90"
+      className="inline-flex items-center py-1.5 px-0.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-brand-red/30 transition-opacity hover:opacity-90"
     >
       <Image
         src="/Isharp-Logo.webp"

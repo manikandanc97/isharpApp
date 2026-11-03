@@ -10,6 +10,7 @@ datasource db {
 model UserProfile {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   authUserId  String?  @unique(map: "user_profiles_auth_user_id_key") @map("auth_user_id") @db.Uuid
+  email       String?  @unique(map: "user_profiles_email_key") @db.VarChar(320)
   displayName String   @map("display_name") @db.VarChar(150)
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -19,6 +20,9 @@ model UserProfile {
   institutionMembership InstitutionMembership?        @relation("MembershipUser")
   verifiedMemberships   InstitutionMembership[]       @relation("MembershipVerifier")
   verificationAudits    MembershipVerificationAudit[] @relation("VerificationAuditActor")
+  authoredQuestions     Question[]                    @relation("QuestionAuthor")
+  createdMockTests      MockTest[]                    @relation("MockTestCreator")
+  studentAccessAudits   StudentAccessAudit[]          @relation("StudentAccessAuditActor")
 
   @@map("user_profiles")
 }
@@ -35,10 +39,25 @@ enum MembershipVerificationMethod {
   MANUAL_ADMIN
 }
 
+enum StudentCategory {
+  INTERNAL
+  EXTERNAL
+}
+
+enum StudentPaymentStatus {
+  NOT_REQUIRED
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
 model TrustedInstitutionStudent {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   studentId  String   @unique(map: "trusted_institution_students_student_id_key") @map("student_id") @db.VarChar(64)
   authUserId String?  @unique(map: "trusted_institution_students_auth_user_id_key") @map("auth_user_id") @db.Uuid
+  fullName   String?  @map("full_name") @db.VarChar(150)
+  email      String?  @unique(map: "trusted_institution_students_email_key") @db.VarChar(320)
   isActive   Boolean  @default(true) @map("is_active")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -46,6 +65,7 @@ model TrustedInstitutionStudent {
   membership InstitutionMembership?
 
   @@index([isActive], map: "trusted_institution_students_is_active_idx")
+  @@index([email, isActive], map: "trusted_institution_students_email_active_idx")
   @@map("trusted_institution_students")
 }
 
@@ -58,6 +78,9 @@ model InstitutionMembership {
   trustedRecordId String?                       @unique(map: "institution_memberships_trusted_record_id_key") @map("trusted_record_id") @db.Uuid
   verifiedById    String?                       @map("verified_by_id") @db.Uuid
   verifiedAt      DateTime?                     @map("verified_at") @db.Timestamptz(3)
+  studentCategory StudentCategory               @default(EXTERNAL) @map("student_category")
+  paymentStatus   StudentPaymentStatus          @default(PENDING) @map("payment_status")
+  paidAccessUntil DateTime?                     @map("paid_access_until") @db.Timestamptz(3)
   createdAt       DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -65,10 +88,32 @@ model InstitutionMembership {
   verifiedBy    UserProfile?                  @relation("MembershipVerifier", fields: [verifiedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
   trustedRecord TrustedInstitutionStudent?    @relation(fields: [trustedRecordId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   audits        MembershipVerificationAudit[]
+  accessAudits  StudentAccessAudit[]
 
   @@index([status], map: "institution_memberships_status_idx")
   @@index([verifiedById], map: "institution_memberships_verified_by_id_idx")
   @@map("institution_memberships")
+}
+
+model StudentAccessAudit {
+  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId          String               @map("membership_id") @db.Uuid
+  actorUserId           String?              @map("actor_user_id") @db.Uuid
+  previousCategory      StudentCategory      @map("previous_category")
+  newCategory           StudentCategory      @map("new_category")
+  previousPaymentStatus StudentPaymentStatus @map("previous_payment_status")
+  newPaymentStatus      StudentPaymentStatus @map("new_payment_status")
+  previousAccessUntil   DateTime?            @map("previous_access_until") @db.Timestamptz(3)
+  newAccessUntil        DateTime?            @map("new_access_until") @db.Timestamptz(3)
+  reason                String               @db.VarChar(500)
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  membership InstitutionMembership @relation(fields: [membershipId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actor      UserProfile?          @relation("StudentAccessAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([membershipId, createdAt], map: "student_access_audits_membership_created_idx")
+  @@index([actorUserId], map: "student_access_audits_actor_user_id_idx")
+  @@map("student_access_audits")
 }
 
 model MembershipVerificationAudit {
@@ -153,9 +198,10 @@ model CourseSubject {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  course   Course    @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  subject  Subject   @relation(fields: [subjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  chapters Chapter[]
+  course    Course     @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  subject   Subject    @relation(fields: [subjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  chapters  Chapter[]
+  questions Question[]
 
   @@unique([courseId, subjectId], map: "course_subjects_course_id_subject_id_key")
   @@index([subjectId], map: "course_subjects_subject_id_idx")
@@ -174,7 +220,129 @@ model Chapter {
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   courseSubject CourseSubject @relation(fields: [courseSubjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  questions     Question[]
 
   @@unique([courseSubjectId, position], map: "chapters_course_subject_id_position_key")
   @@map("chapters")
+}
+
+enum QuestionType {
+  SINGLE_CORRECT
+  MULTIPLE_CORRECT
+  NUMERICAL
+}
+
+enum QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionLanguage {
+  ENGLISH
+  TAMIL
+  BILINGUAL
+}
+
+enum MockTestStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Question {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalId       String             @unique(map: "questions_external_id_key") @map("external_id") @db.VarChar(64)
+  courseSubjectId  String             @map("course_subject_id") @db.Uuid
+  chapterId        String?            @map("chapter_id") @db.Uuid
+  type             QuestionType       @default(SINGLE_CORRECT)
+  language         QuestionLanguage   @default(BILINGUAL)
+  difficulty       QuestionDifficulty @default(MEDIUM)
+  textEn           String?            @map("text_en") @db.Text
+  textTa           String?            @map("text_ta") @db.Text
+  questionImageUrl String?            @map("question_image_url") @db.Text
+  solutionEn       String?            @map("solution_en") @db.Text
+  solutionTa       String?            @map("solution_ta") @db.Text
+  solutionImageUrl String?            @map("solution_image_url") @db.Text
+  numericalAnswer  String?            @map("numerical_answer") @db.VarChar(100)
+  correctMarks     Int                @default(4) @map("correct_marks") @db.SmallInt
+  negativeMarks    Int                @default(1) @map("negative_marks") @db.SmallInt
+  source           String?            @db.VarChar(200)
+  isActive         Boolean            @default(true) @map("is_active")
+  createdById      String             @map("created_by_id") @db.Uuid
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  courseSubject CourseSubject      @relation(fields: [courseSubjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  chapter       Chapter?           @relation(fields: [chapterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdBy     UserProfile        @relation("QuestionAuthor", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  options       QuestionOption[]
+  mockTests     MockTestQuestion[]
+
+  @@index([courseSubjectId, chapterId], map: "questions_course_subject_chapter_idx")
+  @@index([type, difficulty, isActive], map: "questions_type_difficulty_active_idx")
+  @@index([createdById], map: "questions_created_by_id_idx")
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questionId String   @map("question_id") @db.Uuid
+  label      String   @db.VarChar(8)
+  textEn     String?  @map("text_en") @db.Text
+  textTa     String?  @map("text_ta") @db.Text
+  imageUrl   String?  @map("image_url") @db.Text
+  isCorrect  Boolean  @default(false) @map("is_correct")
+  position   Int      @db.SmallInt
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([questionId, label], map: "question_options_question_id_label_key")
+  @@unique([questionId, position], map: "question_options_question_id_position_key")
+  @@map("question_options")
+}
+
+model MockTest {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String         @unique(map: "mock_tests_code_key") @db.VarChar(64)
+  title           String         @db.VarChar(200)
+  description     String?        @db.Text
+  durationMinutes Int            @default(180) @map("duration_minutes") @db.SmallInt
+  totalMarks      Int            @default(720) @map("total_marks") @db.SmallInt
+  status          MockTestStatus @default(DRAFT)
+  instructionsEn  String?        @map("instructions_en") @db.Text
+  instructionsTa  String?        @map("instructions_ta") @db.Text
+  scheduledAt     DateTime?      @map("scheduled_at") @db.Timestamptz(3)
+  availableUntil  DateTime?      @map("available_until") @db.Timestamptz(3)
+  createdById     String         @map("created_by_id") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  createdBy UserProfile        @relation("MockTestCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  questions MockTestQuestion[]
+
+  @@index([status, scheduledAt], map: "mock_tests_status_scheduled_at_idx")
+  @@index([createdById], map: "mock_tests_created_by_id_idx")
+  @@map("mock_tests")
+}
+
+model MockTestQuestion {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mockTestId    String   @map("mock_test_id") @db.Uuid
+  questionId    String   @map("question_id") @db.Uuid
+  position      Int      @db.SmallInt
+  section       String   @db.VarChar(50)
+  correctMarks  Int      @default(4) @map("correct_marks") @db.SmallInt
+  negativeMarks Int      @default(1) @map("negative_marks") @db.SmallInt
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  mockTest MockTest @relation(fields: [mockTestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([mockTestId, questionId], map: "mock_test_questions_test_question_key")
+  @@unique([mockTestId, position], map: "mock_test_questions_test_position_key")
+  @@index([questionId], map: "mock_test_questions_question_id_idx")
+  @@map("mock_test_questions")
 }

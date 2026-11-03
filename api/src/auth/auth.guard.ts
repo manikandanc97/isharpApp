@@ -6,16 +6,18 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { PrismaService } from '../prisma/prisma.service.js';
 import type { AuthenticatedRequest } from './auth-user.js';
+import { DevAuthService } from './dev-auth.service.js';
 import { isRoleName } from './role.js';
 import { SupabaseTokenVerifier } from './supabase-token-verifier.service.js';
+import { StudentAccessResolver } from './student-access-resolver.service.js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly tokenVerifier: SupabaseTokenVerifier,
-    private readonly prisma: PrismaService,
+    private readonly devAuth: DevAuthService,
+    private readonly studentAccess: StudentAccessResolver,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -26,15 +28,14 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Bearer access token is required');
     }
 
+    const devUser = this.devAuth.authenticate(match[1]);
+    if (devUser) {
+      (request as AuthenticatedRequest).user = devUser;
+      return true;
+    }
+
     const payload = await this.tokenVerifier.verify(match[1]);
-    const profile = await this.prisma.userProfile.findUnique({
-      where: { authUserId: payload.sub },
-      select: {
-        id: true,
-        isActive: true,
-        userRoles: { select: { role: { select: { name: true } } } },
-      },
-    });
+    const profile = await this.studentAccess.resolve(payload.sub!, payload);
 
     if (profile && !profile.isActive) {
       throw new ForbiddenException('User profile is inactive');

@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import {
   AlertCircle,
   ArrowRight,
@@ -15,11 +14,14 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { getAuthenticatedSession } from "@/lib/auth-session";
+import { oauthStatusMessages } from "@/lib/oauth-flow";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type FieldErrors = {
@@ -49,32 +51,13 @@ function validateIdentifier(value: string): string | undefined {
   }
 }
 
-function getSupabaseClient(rememberMe: boolean) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return createClient(url, anonKey, {
-    auth: {
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      persistSession: true,
-      storage: rememberMe ? window.localStorage : window.sessionStorage,
-    },
-  });
-}
-
-export function LoginForm() {
+export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string }) {
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [authError, setAuthError] = useState("");
+  const [authError, setAuthError] = useState(initialAuthError);
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -104,15 +87,6 @@ export function LoginForm() {
       return;
     }
 
-    const supabase = getSupabaseClient(rememberMe);
-
-    if (!supabase) {
-      setAuthError(
-        "Sign-in service is currently in preview mode. Please contact I-Sharp Academy support.",
-      );
-      return;
-    }
-
     setIsSubmitting(true);
 
     const cleanedIdentifier = identifier.trim();
@@ -121,6 +95,7 @@ export function LoginForm() {
       : { phone: normalizePhone(cleanedIdentifier), password };
 
     try {
+      const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
       if (!error) {
@@ -168,18 +143,10 @@ export function LoginForm() {
       return;
     }
 
-    const supabase = getSupabaseClient(true);
-
-    if (!supabase) {
-      setAuthError(
-        "Password reset is in preview mode. Please contact support.",
-      );
-      return;
-    }
-
     setIsResetting(true);
 
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.resetPasswordForEmail(
         identifier.trim(),
       );
@@ -198,17 +165,17 @@ export function LoginForm() {
   }
 
   const inputBaseStyle =
-    "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-[#2525b8] focus:ring-3 focus:ring-[#2525b8]/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60";
+    "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-blue focus:ring-3 focus:ring-brand-blue/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <section
       aria-labelledby="login-heading"
-      className="w-full min-w-0 max-w-sm sm:max-w-md rounded-2xl border border-slate-200/90 bg-white p-4.5 sm:p-5.5 lg:p-6 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.08)]"
+      className="w-full min-w-0 max-w-sm sm:max-w-md rounded-2xl border border-slate-200/90 bg-white p-4.5 sm:p-5.5 lg:p-6 shadow-card"
     >
       {/* Top Badge */}
       <div className="flex items-center justify-between">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-[#2525b8] uppercase">
-          <ShieldCheck className="size-3 text-[#2525b8]" />
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-brand-red uppercase">
+          <ShieldCheck className="size-3 text-brand-red" />
           <span>Student LMS Portal</span>
         </div>
         <span className="size-2 rounded-full bg-emerald-500 animate-pulse" title="System Operational" />
@@ -340,23 +307,13 @@ export function LoginForm() {
           )}
         </div>
 
-        {/* Remember Me and Forgot Password Row */}
+        {/* Session and password recovery */}
         <div className="flex items-center justify-between pt-0.5">
-          <label className="flex cursor-pointer items-center gap-1.5 text-2xs sm:text-xs text-slate-600 select-none whitespace-nowrap hover:text-slate-900">
-            <input
-              type="checkbox"
-              name="remember"
-              checked={rememberMe}
-              disabled={isSubmitting}
-              className="size-3.5 rounded border-slate-300 text-[#2525b8] accent-[#2525b8] focus:ring-[#2525b8]"
-              onChange={(event) => setRememberMe(event.target.checked)}
-            />
-            <span className="font-medium">Remember me</span>
-          </label>
+          <span className="text-2xs font-medium text-slate-500 sm:text-xs">Secure cookie session</span>
           <button
             type="button"
             disabled={isSubmitting || isResetting}
-            className="text-2xs sm:text-xs font-semibold text-[#2525b8] hover:underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
+            className="text-2xs sm:text-xs font-semibold text-brand-blue hover:text-brand-blue-hover hover:underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
             onClick={handleForgotPassword}
           >
             {isResetting ? "Sending link…" : "Forgot password?"}
@@ -390,7 +347,7 @@ export function LoginForm() {
           type="submit"
           size="default"
           disabled={isSubmitting || isResetting}
-          className="mt-1 h-10.5 w-full cursor-pointer rounded-full bg-[#191747] hover:bg-[#2525b8] text-xs sm:text-sm font-semibold text-white shadow-xs transition hover:shadow-md active:scale-[0.99] disabled:opacity-60"
+          className="mt-1 h-10.5 w-full cursor-pointer rounded-full bg-brand-red hover:bg-brand-red-hover text-xs sm:text-sm font-semibold text-white shadow-primary transition hover:shadow-md active:scale-95 disabled:opacity-60"
         >
           {isSubmitting && (
             <LoaderCircle
@@ -401,6 +358,12 @@ export function LoginForm() {
           <span>{isSubmitting ? "Authenticating…" : "Sign In to LMS"}</span>
         </Button>
       </form>
+
+      <div className="relative my-3 text-center">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t border-slate-200" /></div>
+        <span className="relative bg-white px-2.5 text-3xs font-bold uppercase tracking-wider text-slate-400">or</span>
+      </div>
+      <GoogleSignInButton onError={setAuthError} />
 
       {/* Divider */}
       <div className="relative my-2.5 sm:my-3 text-center">
@@ -415,14 +378,14 @@ export function LoginForm() {
       {/* Register Promotion Box */}
       <Link
         href="/register"
-        className="group flex items-center justify-between rounded-xl border border-rose-200/80 bg-rose-50/50 px-3 py-2 transition hover:bg-rose-50 hover:border-rose-300"
+        className="group flex items-center justify-between rounded-xl border border-blue-200/80 bg-blue-50/50 px-3 py-2 transition hover:bg-blue-50 hover:border-blue-300"
       >
         <div className="flex items-center gap-2.5">
-          <div className="grid size-7.5 shrink-0 place-items-center rounded-lg bg-[#e51d35] text-white shadow-2xs">
+          <div className="grid size-7.5 shrink-0 place-items-center rounded-lg bg-brand-blue text-white shadow-2xs">
             <UserPlus className="size-3.5" />
           </div>
           <div>
-            <p className="text-2xs sm:text-xs font-bold text-slate-900 group-hover:text-[#e51d35] transition">
+            <p className="text-2xs sm:text-xs font-bold text-slate-900 group-hover:text-brand-blue transition">
               Apply for 2026 Batch Admission
             </p>
             <p className="text-3xs text-slate-500">
@@ -430,7 +393,7 @@ export function LoginForm() {
             </p>
           </div>
         </div>
-        <ArrowRight className="size-3.5 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-[#e51d35]" />
+        <ArrowRight className="size-3.5 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-brand-blue" />
       </Link>
 
       {/* Help & Support Footer */}
@@ -446,4 +409,10 @@ export function LoginForm() {
       </div>
     </section>
   );
+}
+
+export function OAuthAwareLoginForm() {
+  const searchParams = useSearchParams();
+  const oauthState = searchParams.get("oauth");
+  return <LoginForm initialAuthError={oauthState ? oauthStatusMessages[oauthState] ?? "" : ""} />;
 }

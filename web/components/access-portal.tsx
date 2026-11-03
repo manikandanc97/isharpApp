@@ -32,26 +32,26 @@ const portalLinks: readonly PortalLink[] = [
   {
     title: "Student LMS Portal",
     badge: "Enrolled",
-    badgeColor: "bg-blue-50 text-[#2525b8] border-blue-200/80",
+    badgeColor: "bg-rose-50 text-brand-red border-rose-200/80",
     description: "Daily DPP drills, lectures & simulated tests",
     href: "/login",
     icon: Users,
-    solidBg: "bg-[#2525b8]",
-    accentBorder: "hover:border-[#2525b8]/50 hover:shadow-blue-500/5",
+    solidBg: "bg-brand-red",
+    accentBorder: "hover:border-brand-red/50 hover:shadow-rose-500/5",
   },
   {
     title: "New Student",
     badge: "Batch 2026",
-    badgeColor: "bg-rose-50 text-[#e51d35] border-rose-200/80",
+    badgeColor: "bg-blue-50 text-brand-blue border-blue-200/80",
     description: "Enroll in Tamil Medium & Bilingual batches",
     href: "/register",
     icon: UserPlus,
-    solidBg: "bg-[#e51d35]",
-    accentBorder: "hover:border-[#e51d35]/50 hover:shadow-rose-500/5",
+    solidBg: "bg-brand-blue",
+    accentBorder: "hover:border-brand-blue/50 hover:shadow-blue-500/5",
   },
   {
-    title: "Faculty & Administration",
-    badge: "Staff",
+    title: "Administration",
+    badge: "Admin",
     badgeColor: "bg-slate-100 text-slate-700 border-slate-200",
     description: "Curriculum tracking & question bank",
     href: "/administration",
@@ -65,11 +65,11 @@ export function AccessPortal() {
   return (
     <Card
       aria-labelledby="access-portal-title"
-      className="relative rounded-3xl border border-slate-200/85 bg-white p-5 sm:p-6 shadow-[0_16px_44px_-12px_rgba(25,23,71,0.09),0_2px_8px_rgba(0,0,0,0.02)] transition-all hover:shadow-[0_20px_52px_-12px_rgba(25,23,71,0.13)]"
+      className="relative rounded-3xl border border-slate-200/85 bg-white p-5 sm:p-6 shadow-card transition-all hover:shadow-card-hover"
     >
       {/* Top subtle luxury accent line */}
       <div
-        className="pointer-events-none absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#2525b8]/40 to-transparent"
+        className="pointer-events-none absolute -top-px left-8 right-8 h-px bg-brand-red/35"
         aria-hidden="true"
       />
 
@@ -94,8 +94,12 @@ export function AccessPortal() {
           </p>
         </div>
 
-        <div className="grid size-10.5 shrink-0 place-items-center rounded-2xl bg-[#2525b8] text-white shadow-xs">
-          <GraduationCap aria-hidden="true" className="size-5" strokeWidth={2} />
+        <div className="grid size-10.5 shrink-0 place-items-center rounded-2xl bg-brand-red text-white shadow-primary">
+          <GraduationCap
+            aria-hidden="true"
+            className="size-5"
+            strokeWidth={2}
+          />
         </div>
       </div>
 
@@ -110,7 +114,7 @@ export function AccessPortal() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "group flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/60 p-3 sm:p-3.5 transition-all duration-200 hover:bg-white hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2525b8]",
+                    "group flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/60 p-3 sm:p-3.5 transition-all duration-200 hover:bg-white hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red",
                     item.accentBorder,
                   )}
                 >
@@ -121,12 +125,16 @@ export function AccessPortal() {
                         item.solidBg,
                       )}
                     >
-                      <Icon aria-hidden="true" className="size-4.5" strokeWidth={2} />
+                      <Icon
+                        aria-hidden="true"
+                        className="size-4.5"
+                        strokeWidth={2}
+                      />
                     </span>
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900 group-hover:text-[#2525b8] sm:text-sm transition-colors leading-snug">
+                        <span className="text-xs font-bold text-slate-900 group-hover:text-brand-red sm:text-sm transition-colors leading-snug">
                           {item.title}
                         </span>
                         <Badge
@@ -145,7 +153,7 @@ export function AccessPortal() {
                     </div>
                   </div>
 
-                  <div className="grid size-7 shrink-0 place-items-center rounded-full border border-slate-200/80 bg-white text-slate-400 group-hover:border-[#2525b8] group-hover:bg-[#2525b8] group-hover:text-white transition-all shadow-2xs">
+                  <div className="grid size-7 shrink-0 place-items-center rounded-full border border-slate-200/80 bg-white text-slate-400 group-hover:border-brand-red group-hover:bg-brand-red group-hover:text-white transition-all shadow-2xs">
                     <ArrowRight
                       aria-hidden="true"
                       className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
@@ -167,7 +175,7 @@ export function AccessPortal() {
           <span>256-Bit Encrypted Access</span>
         </div>
         <div className="flex items-center gap-1 font-semibold text-slate-600">
-          <ShieldCheck className="size-3.5 text-[#2525b8]" />
+          <ShieldCheck className="size-3.5 text-brand-blue" />
           <span>Official I-Sharp ID</span>
         </div>
       </div>

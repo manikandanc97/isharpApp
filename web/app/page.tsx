@@ -20,27 +20,13 @@ import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-white font-sans text-slate-900 selection:bg-[#e51d35] selection:text-white antialiased">
+    <div className="flex min-h-screen flex-col bg-white font-sans text-slate-900 selection:bg-brand-red selection:text-white antialiased">
       {/* 01. ENTERPRISE SITE HEADER */}
       <SiteHeader />
 
       <main className="flex flex-1 flex-col">
         {/* 02. SECTION 1: ARCHITECTURAL ENTERPRISE HERO (Optimized for 100% Laptop Viewport Fit) */}
-        <section className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-slate-200/90 bg-gradient-to-br from-[#dbe7f6] via-[#ebf1f9] to-[#f6e4ea] py-8 lg:py-0">
-          {/* Luxury Ambient Lighting Glows (Deeper Sapphire & Ruby Tints) */}
-          <div
-            className="pointer-events-none absolute -top-36 -left-24 h-[480px] w-[480px] rounded-full bg-gradient-to-br from-[#2525b8]/20 via-blue-400/22 to-transparent blur-3xl"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute -bottom-36 -right-24 h-[480px] w-[480px] rounded-full bg-gradient-to-tl from-[#e51d35]/18 via-rose-300/20 to-transparent blur-3xl"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full max-w-6xl bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.35)_0%,transparent_75%)]"
-            aria-hidden="true"
-          />
-
+        <section className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-slate-200 bg-slate-50 py-8 lg:py-0">
           <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:gap-14">
             {/* Left Column: Authoritative Academic Value Proposition */}
             <div className="flex flex-col lg:col-span-7">
@@ -48,19 +34,19 @@ export default function Home() {
               <div className="flex items-center">
                 <Badge
                   variant="outline"
-                  className="inline-flex items-center gap-2 rounded-full border-blue-200/90 bg-white px-4 py-1.5 text-xs font-semibold text-[#1a187a] shadow-xs backdrop-blur-md"
+                  className="inline-flex items-center gap-2 rounded-full border-rose-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-800 shadow-xs"
                 >
-                  <span className="flex size-2 rounded-full bg-[#e51d35] animate-pulse shadow-[0_0_8px_rgba(229,29,53,0.5)]" />
+                  <span className="flex size-2 rounded-full bg-brand-red animate-pulse shadow-sm shadow-brand-red/50" />
                   <span className="tracking-wide">Premier Bilingual NEET &amp; JEE Platform</span>
                   <span className="h-3.5 w-px bg-slate-200" aria-hidden="true" />
-                  <span className="text-[#2525b8] font-bold">Batch 2026</span>
+                  <span className="text-brand-red font-bold">Batch 2026</span>
                 </Badge>
               </div>
 
               {/* Authoritative Headline */}
-              <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-[42px] lg:leading-[1.16]">
+              <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-4xl lg:leading-tight">
                 Practical learning engineered for{" "}
-                <span className="text-[#e51d35]">
+                <span className="text-brand-red">
                   top percentile success.
                 </span>
               </h1>
@@ -95,7 +81,7 @@ export default function Home() {
                   render={
                     <Link
                       href="#academy"
-                      className="group inline-flex items-center gap-2 rounded-full bg-[#2525b8] hover:bg-[#1a187a] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.98]"
+                      className="group inline-flex items-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-hover px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-primary hover:shadow-primary-hover transition-all duration-200 active:scale-95"
                     >
                       <span>Explore Academy Portal</span>
                       <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -108,7 +94,7 @@ export default function Home() {
                   render={
                     <Link
                       href="#courses"
-                      className="inline-flex items-center rounded-full border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98]"
+                      className="inline-flex items-center rounded-full border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 shadow-2xs transition-all duration-200 hover:bg-blue-50/50 hover:border-brand-blue/30 hover:text-brand-blue active:scale-95"
                     >
                       <span>View 2026 Curriculums</span>
                     </Link>
@@ -128,7 +114,7 @@ export default function Home() {
                 </div>
                 <Separator orientation="vertical" className="h-3.5 bg-slate-300" />
                 <div className="flex items-center gap-1.5 font-medium">
-                  <Users className="size-3.5 text-[#2525b8]" />
+                  <Users className="size-3.5 text-brand-blue" />
                   <span>1,000+ Active Daily Aspirants</span>
                 </div>
                 <Separator orientation="vertical" className="h-3.5 bg-slate-300" />
