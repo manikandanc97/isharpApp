@@ -120,7 +120,7 @@ export default function RegisterPage() {
               aria-hidden="true"
             />
             {/* Dual instruction capsule */}
-            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-3xs font-medium text-slate-700 shadow-2xs">
+            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs">
               <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
               <span className="font-bold text-slate-900">தமிழ்</span>
               <span className="text-slate-400">+</span>
@@ -159,12 +159,12 @@ export default function RegisterPage() {
               <div>
                 {/* Eyebrow badge */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-brand-red uppercase shadow-2xs">
-                    <GraduationCap className="size-3 text-brand-red" />
+                  <div className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-brand-red uppercase shadow-2xs">
+                    <GraduationCap className="size-3.5 text-brand-red" />
                     <span>Cohort 2026 Admissions Open</span>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-3xs font-semibold text-brand-blue">
-                    <Sparkles className="size-2.5" />
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-brand-blue">
+                    <Sparkles className="size-3" />
                     Limited Seats
                   </span>
                 </div>
@@ -172,7 +172,7 @@ export default function RegisterPage() {
                 <h1 className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl leading-tight">
                   Student Enrolment &amp; Admissions
                 </h1>
-                <p className="mt-1 text-2xs leading-relaxed text-slate-600 sm:text-xs">
+                <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-sm">
                   Join hundreds of aspiring doctors and engineers in our calibrated bilingual
                   NEET &amp; JEE learning ecosystem.
                 </p>
@@ -189,7 +189,7 @@ export default function RegisterPage() {
                         <p className="text-xs font-bold text-slate-900">
                           {item.title}
                         </p>
-                        <p className="text-3xs text-slate-500 truncate sm:text-clip">
+                        <p className="text-xs text-slate-500 truncate sm:text-clip">
                           {item.desc}
                         </p>
                       </div>
@@ -201,7 +201,7 @@ export default function RegisterPage() {
               {/* Immediate Academic Helpline Card */}
               <div className="mt-4 rounded-xl bg-brand-navy text-white p-3.5 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <p className="text-3xs uppercase font-bold tracking-wider text-slate-300">
+                  <p className="text-xs uppercase font-semibold tracking-wider text-slate-300">
                     Immediate Academic Helpline
                   </p>
                   <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                     >
                       +91 98948 50370 / +91 81482 17151
                     </a>
-                    <p className="text-3xs text-slate-300">
+                    <p className="text-xs text-slate-300">
                       Coimbatore Campus · Mon - Sat (9 AM - 6 PM), Sun (9 AM - 4 PM)
                     </p>
                   </div>
@@ -236,13 +236,13 @@ export default function RegisterPage() {
                   <h2 className="mt-3 text-lg font-extrabold text-slate-900 sm:text-xl">
                     Application Successfully Registered!
                   </h2>
-                  <p className="mt-1 text-2xs leading-relaxed text-slate-600 max-w-md mx-auto sm:text-xs">
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600 max-w-md mx-auto sm:text-sm">
                     Thank you, <strong className="text-slate-900">{formData.studentName}</strong>.
                     We have reserved your application for{" "}
                     <strong className="text-brand-blue">{formData.academicProgram}</strong> ({formData.targetYear}).
                   </p>
 
-                  <div className="mt-3.5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-left max-w-md mx-auto text-3xs sm:text-2xs space-y-1.5">
+                  <div className="mt-3.5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-left max-w-md mx-auto text-xs space-y-1.5">
                     <p className="font-bold text-slate-900">What happens next?</p>
                     <ul className="space-y-1 text-slate-600">
                       <li className="flex items-center gap-1.5">
@@ -284,7 +284,7 @@ export default function RegisterPage() {
                         instructionLanguage: "Bilingual (தமிழ் + English)",
                       });
                     }}
-                    className="mt-3 block mx-auto text-3xs font-semibold text-slate-400 hover:text-slate-600 transition"
+                    className="mt-3 block mx-auto text-xs font-medium text-slate-400 hover:text-slate-600 transition"
                   >
                     Register another student
                   </button>
@@ -294,18 +294,18 @@ export default function RegisterPage() {
                 <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3" noValidate>
                   {/* Top Card Badge */}
                   <div className="flex items-center justify-between">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-brand-red uppercase">
-                      <ShieldCheck className="size-3 text-brand-red" />
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-brand-red uppercase">
+                      <ShieldCheck className="size-3.5 text-brand-red" />
                       <span>Direct Admission 2026</span>
                     </div>
-                    <span className="text-3xs font-medium text-slate-400">Step 1 of 1</span>
+                    <span className="text-xs font-medium text-slate-400">Step 1 of 1</span>
                   </div>
 
                   <div>
                     <h2 className="mt-1 text-lg font-extrabold text-slate-900 sm:text-xl">
                       Academic Enrolment Form
                     </h2>
-                    <p className="text-2xs text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Enter details below to register for the upcoming batch.
                     </p>
                   </div>
@@ -316,12 +316,12 @@ export default function RegisterPage() {
                       onError={setOauthError}
                       className="bg-white"
                     />
-                    <p className="mt-1.5 text-center text-3xs leading-relaxed text-slate-500">
+                    <p className="mt-1.5 text-center text-xs leading-relaxed text-slate-500">
                       Creates your secure LMS identity. Internal student emails receive free access automatically; other accounts use a paid plan.
                     </p>
                     {oauthError && (
-                      <p role="alert" className="mt-2 flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50 p-2 text-2xs text-rose-700">
-                        <AlertCircle className="mt-0.5 size-3 shrink-0" />
+                      <p role="alert" className="mt-2 flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">
+                        <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
                         <span>{oauthError}</span>
                       </p>
                     )}
@@ -331,7 +331,7 @@ export default function RegisterPage() {
                     <div className="absolute inset-0 flex items-center" aria-hidden="true">
                       <div className="w-full border-t border-slate-200" />
                     </div>
-                    <span className="relative bg-white px-2.5 text-3xs font-bold uppercase tracking-wider text-slate-400">
+                    <span className="relative bg-white px-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
                       or register with details
                     </span>
                   </div>
@@ -341,7 +341,7 @@ export default function RegisterPage() {
                     <div className="space-y-1">
                       <label
                         htmlFor="reg-name"
-                        className="block text-2xs sm:text-xs font-semibold text-slate-700"
+                        className="block text-xs sm:text-sm font-semibold text-slate-700"
                       >
                         Student Full Name *
                       </label>
@@ -379,8 +379,8 @@ export default function RegisterPage() {
                         />
                       </div>
                       {formErrors.name && (
-                        <p className="flex items-center gap-1 text-2xs font-medium text-rose-600">
-                          <AlertCircle className="size-3 shrink-0" />
+                        <p className="flex items-center gap-1 text-xs font-medium text-rose-600">
+                          <AlertCircle className="size-3.5 shrink-0" />
                           <span>{formErrors.name}</span>
                         </p>
                       )}
@@ -389,7 +389,7 @@ export default function RegisterPage() {
                     <div className="space-y-1">
                       <label
                         htmlFor="reg-phone"
-                        className="block text-2xs sm:text-xs font-semibold text-slate-700"
+                        className="block text-xs sm:text-sm font-semibold text-slate-700"
                       >
                         Mobile Number *
                       </label>
@@ -468,12 +468,12 @@ export default function RegisterPage() {
                         />
                         <div className="pointer-events-none absolute left-2.5 top-1/2 flex -translate-y-1/2 items-center gap-1 text-slate-400">
                           <Phone className="size-3.5 text-slate-400" aria-hidden="true" />
-                          <span className="text-2xs sm:text-xs font-bold text-slate-600 border-r border-slate-200 pr-1.5">+91</span>
+                          <span className="text-xs sm:text-sm font-semibold text-slate-600 border-r border-slate-200 pr-1.5">+91</span>
                         </div>
                       </div>
                       {formErrors.phone && (
-                        <p className="flex items-center gap-1 text-2xs font-medium text-rose-600">
-                          <AlertCircle className="size-3 shrink-0" />
+                        <p className="flex items-center gap-1 text-xs font-medium text-rose-600">
+                          <AlertCircle className="size-3.5 shrink-0" />
                           <span>{formErrors.phone}</span>
                         </p>
                       )}
@@ -485,7 +485,7 @@ export default function RegisterPage() {
                     <div className="space-y-1">
                       <label
                         htmlFor="reg-email"
-                        className="block text-2xs sm:text-xs font-semibold text-slate-700"
+                        className="block text-xs sm:text-sm font-semibold text-slate-700"
                       >
                         Email <span className="font-normal text-slate-400">(optional)</span>
                       </label>
@@ -522,8 +522,8 @@ export default function RegisterPage() {
                         />
                       </div>
                       {formErrors.email && (
-                        <p className="flex items-center gap-1 text-2xs font-medium text-rose-600">
-                          <AlertCircle className="size-3 shrink-0" />
+                        <p className="flex items-center gap-1 text-xs font-medium text-rose-600">
+                          <AlertCircle className="size-3.5 shrink-0" />
                           <span>{formErrors.email}</span>
                         </p>
                       )}
@@ -531,7 +531,7 @@ export default function RegisterPage() {
 
                     <div className="space-y-1">
                       <label
-                        className="block text-2xs sm:text-xs font-semibold text-slate-700"
+                        className="block text-xs sm:text-sm font-semibold text-slate-700"
                       >
                         Academic Program *
                       </label>
@@ -584,7 +584,7 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                     <div className="space-y-1">
                       <label
-                        className="block text-2xs sm:text-xs font-semibold text-slate-700"
+                        className="block text-xs sm:text-sm font-semibold text-slate-700"
                       >
                         Target Examination Year
                       </label>
@@ -619,7 +619,7 @@ export default function RegisterPage() {
 
                     <div className="space-y-1">
                       <label
-                        className="block text-2xs sm:text-xs font-semibold text-slate-700"
+                        className="block text-xs sm:text-sm font-semibold text-slate-700"
                       >
                         Instruction Language
                       </label>
@@ -678,7 +678,7 @@ export default function RegisterPage() {
                           : "Complete Admission Registration"}
                       </span>
                     </Button>
-                    <p className="mt-1.5 text-center text-3xs text-slate-400">
+                    <p className="mt-1.5 text-center text-xs text-slate-500">
                       By registering, you agree to receive academic updates &amp; guidance from I-Sharp Academy.
                     </p>
                   </div>
@@ -688,7 +688,7 @@ export default function RegisterPage() {
                     <div className="absolute inset-0 flex items-center" aria-hidden="true">
                       <div className="w-full border-t border-slate-200" />
                     </div>
-                    <span className="relative bg-white px-2.5 text-3xs font-bold uppercase tracking-wider text-slate-400">
+                    <span className="relative bg-white px-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
                       Already Enrolled?
                     </span>
                   </div>
@@ -703,10 +703,10 @@ export default function RegisterPage() {
                         <Users className="size-3.5" />
                       </div>
                       <div>
-                        <p className="text-2xs sm:text-xs font-bold text-slate-900 group-hover:text-brand-blue transition">
+                        <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-brand-blue transition">
                           Access Student LMS Portal
                         </p>
-                        <p className="text-3xs text-slate-500">
+                        <p className="text-xs text-slate-500">
                           Sign in with your registered email or mobile
                         </p>
                       </div>

@@ -291,7 +291,7 @@ export function FeatureShowcase() {
                 )}
                 aria-hidden="true"
               />
-              <span className="text-3xs font-bold tracking-wider text-slate-800 uppercase">
+              <span className="text-xs font-semibold tracking-wide text-slate-800 uppercase">
                 The I-Sharp Learning Ecosystem
               </span>
             </div>
@@ -375,7 +375,7 @@ export function FeatureShowcase() {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
                       className={cn(
-                        "text-3xs font-mono font-bold tracking-wider shrink-0 transition-colors duration-300",
+                        "text-xs font-mono font-semibold tracking-wider shrink-0 transition-colors duration-300",
                         isSelected
                           ? feature.accent === "red"
                             ? "text-brand-red"
@@ -389,7 +389,7 @@ export function FeatureShowcase() {
                       <p className="truncate text-xs font-semibold sm:text-sm text-foreground">
                         {feature.tabTitle}
                       </p>
-                      <p className="hidden text-3xs text-muted-foreground sm:block truncate">
+                      <p className="hidden text-xs text-muted-foreground sm:block truncate">
                         {feature.tabSubtitle}
                       </p>
                     </div>
@@ -440,7 +440,7 @@ export function FeatureShowcase() {
                         <div className="flex items-center gap-2.5">
                           <span
                             className={cn(
-                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-3xs font-bold tracking-wider uppercase transition-colors duration-300",
+                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-colors duration-300",
                               feature.accent === "red"
                                 ? "bg-brand-red/10 text-brand-red border border-brand-red/20"
                                 : "bg-brand-blue/10 text-brand-blue border border-brand-blue/20"
@@ -450,7 +450,7 @@ export function FeatureShowcase() {
                             {feature.category}
                           </span>
 
-                          <span className="text-3xs font-semibold text-muted-foreground">
+                          <span className="text-xs font-medium text-muted-foreground">
                             Phase {feature.number} of 04
                           </span>
                         </div>
@@ -515,7 +515,7 @@ export function FeatureShowcase() {
                             )}
                             aria-hidden="true"
                           />
-                          <span className="text-2xs sm:text-xs">
+                          <span className="text-xs">
                             {feature.highlightBadge.label}
                           </span>
                         </div>
@@ -557,12 +557,12 @@ export function FeatureShowcase() {
                               )}
                               aria-hidden="true"
                             />
-                            <span className="text-3xs font-semibold tracking-wider uppercase">
+                            <span className="text-xs font-semibold tracking-wider uppercase">
                               Live Environment
                             </span>
                           </div>
 
-                          <span className="text-3xs font-mono font-medium text-white/70 bg-black/45 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10">
+                          <span className="text-xs font-mono font-medium text-white/80 bg-black/45 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10">
                             IS-{feature.id.toUpperCase()}
                           </span>
                         </div>
@@ -582,7 +582,7 @@ export function FeatureShowcase() {
                                 <MetricIcon className="size-3.5" aria-hidden="true" />
                               </div>
                               <div>
-                                <p className="text-3xs font-medium text-white/70 uppercase tracking-wider">
+                                <p className="text-xs font-medium text-white/70 uppercase tracking-wider">
                                   {feature.metricBadge.label}
                                 </p>
                                 <p className="text-xs font-bold tracking-tight text-white">
@@ -591,7 +591,7 @@ export function FeatureShowcase() {
                               </div>
                             </div>
 
-                            <span className="inline-block rounded bg-white/15 px-1.5 py-0.5 text-3xs font-semibold text-white uppercase tracking-wider">
+                            <span className="inline-block rounded bg-white/15 px-1.5 py-0.5 text-xs font-semibold text-white uppercase tracking-wider">
                               Verified
                             </span>
                           </div>
@@ -614,7 +614,7 @@ export function FeatureShowcase() {
               <span>/</span>
               <span className="font-mono">0{features.length}</span>
               <span className="mx-2 hidden h-3 w-px bg-black/15 sm:inline-block" />
-              <span className="hidden text-3xs sm:inline-block font-medium">
+              <span className="hidden text-xs sm:inline-block font-medium">
                 {activeFeature.category}
               </span>
             </div>

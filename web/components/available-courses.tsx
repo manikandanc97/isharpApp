@@ -339,7 +339,7 @@ export function AvailableCourses() {
                     <Badge
                       variant="outline"
                       className={cn(
-                        "rounded-full px-3 py-0.5 text-2xs font-bold uppercase tracking-wider",
+                        "rounded-full px-3 py-0.5 text-xs font-semibold uppercase tracking-wider",
                         isBlue
                           ? "border-blue-200 bg-blue-50 text-brand-blue"
                           : "border-rose-200 bg-rose-50 text-brand-red",
@@ -377,16 +377,16 @@ export function AvailableCourses() {
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
-                      className="inline-flex items-center gap-1.5 rounded-md border-slate-200 bg-slate-50 px-2.5 py-1 text-3xs font-semibold text-slate-700"
+                      className="inline-flex items-center gap-1.5 rounded-md border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
                     >
-                      <Languages className="size-3 text-slate-500" />
+                      <Languages className="size-3.5 text-slate-500" />
                       <span>{course.language}</span>
                     </Badge>
                     <Badge
                       variant="outline"
-                      className="inline-flex items-center gap-1.5 rounded-md border-slate-200 bg-slate-50 px-2.5 py-1 text-3xs font-semibold text-slate-700"
+                      className="inline-flex items-center gap-1.5 rounded-md border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
                     >
-                      <Clock3 className="size-3 text-slate-500" />
+                      <Clock3 className="size-3.5 text-slate-500" />
                       <span>{course.duration}</span>
                     </Badge>
                   </div>
@@ -396,7 +396,7 @@ export function AvailableCourses() {
 
                   {/* Key Highlights / Deliverables */}
                   <div>
-                    <p className="text-3xs font-bold uppercase tracking-wider text-slate-400">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                       Program Inclusions:
                     </p>
                     <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
@@ -416,7 +416,7 @@ export function AvailableCourses() {
                     <span className="font-medium truncate pr-2">
                       {course.targetAudience}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 shrink-0 text-3xs font-semibold text-emerald-700">
+                    <span className="inline-flex items-center gap-1.5 shrink-0 text-xs font-semibold text-emerald-700">
                       <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       <span>Batch 2026</span>
                     </span>

@@ -49,7 +49,7 @@ export default function LoginPage() {
               aria-hidden="true"
             />
             {/* Dual instruction capsule */}
-            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-3xs font-medium text-slate-700 shadow-2xs">
+            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs">
               <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
               <span className="font-bold text-slate-900">தமிழ்</span>
               <span className="text-slate-400">+</span>
@@ -89,12 +89,12 @@ export default function LoginPage() {
           >
             {/* Eyebrow Pill */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 bg-white px-2.5 py-0.5 text-3xs font-bold tracking-wider text-slate-800 shadow-2xs uppercase">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 bg-white px-2.5 py-0.5 text-xs font-semibold tracking-wide text-slate-800 shadow-2xs uppercase">
                 <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
                 <span>Built for Ambitious Minds</span>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-3xs font-semibold text-brand-blue">
-                <Sparkles className="size-2.5" />
+              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-brand-blue">
+                <Sparkles className="size-3" />
                 Batch 2026 Admissions Open
               </span>
             </div>
@@ -130,7 +130,7 @@ export default function LoginPage() {
                       <p className="text-xs font-bold text-slate-900">
                         {item.title}
                       </p>
-                      <p className="text-3xs text-slate-500 truncate sm:text-clip">
+                      <p className="text-xs text-slate-500 truncate sm:text-clip">
                         {item.sub}
                       </p>
                     </div>
@@ -142,13 +142,13 @@ export default function LoginPage() {
             {/* Trust Metrics Pill */}
             <div className="mt-3.5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-3.5 py-2 shadow-2xs backdrop-blur-xs max-w-md">
               <div className="flex -space-x-1.5">
-                <span className="inline-grid size-6.5 place-items-center rounded-full bg-brand-navy text-3xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-navy text-xs font-bold text-white ring-2 ring-white">
                   99%
                 </span>
-                <span className="inline-grid size-6.5 place-items-center rounded-full bg-brand-blue text-3xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-blue text-xs font-bold text-white ring-2 ring-white">
                   AIR
                 </span>
-                <span className="inline-grid size-6.5 place-items-center rounded-full bg-brand-red text-3xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-red text-xs font-bold text-white ring-2 ring-white">
                   NEET
                 </span>
               </div>
@@ -157,9 +157,9 @@ export default function LoginPage() {
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="size-3 fill-amber-400 text-amber-400" />
                   ))}
-                  <span className="ml-1 text-2xs font-bold text-slate-800">4.9 / 5.0</span>
+                  <span className="ml-1 text-xs font-bold text-slate-800">4.9 / 5.0</span>
                 </div>
-                <p className="text-3xs text-slate-500">
+                <p className="text-xs text-slate-500">
                   Trusted by 1,200+ NEET &amp; JEE aspirants across Tamil Nadu
                 </p>
               </div>

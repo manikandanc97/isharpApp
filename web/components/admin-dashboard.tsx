@@ -2,7 +2,6 @@
 
 import {
   AlertCircle,
-  Archive,
   ArrowRight,
   BarChart3,
   Bell,
@@ -43,6 +42,13 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { AuthenticatedSession } from "@/lib/auth-session";
 import { hasRequiredRole } from "@/lib/role-policy";
 
@@ -80,6 +86,7 @@ type Membership = {
 type User = {
   id: string;
   displayName: string;
+  email?: string | null;
   isActive: boolean;
   createdAt: string;
   roles: string[];
@@ -92,6 +99,24 @@ type User = {
     paidAccessUntil: string | null;
   } | null;
 };
+type InternalStudent = {
+  id: string;
+  studentId: string;
+  fullName: string | null;
+  email: string | null;
+  authUserId: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+type StudentDirectoryEntry =
+  | { kind: "account"; id: string; createdAt: string; user: User }
+  | {
+      kind: "roster";
+      id: string;
+      createdAt: string;
+      student: InternalStudent;
+    };
 type Course = {
   id: string;
   code: string;
@@ -105,17 +130,6 @@ type Course = {
     _count: { chapters: number };
   }[];
 };
-type InternalStudent = {
-  id: string;
-  studentId: string;
-  fullName: string;
-  email: string;
-  authUserId: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
 function isStudentAccount(user: User) {
   return (
     user.roles.includes("STUDENT") &&
@@ -166,6 +180,7 @@ export function AdminDashboard({
   const [session, setSession] = useState<AuthenticatedSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -247,10 +262,48 @@ export function AdminDashboard({
   }
 
   async function signOut() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/administration");
-    router.refresh();
+    if (signingOut) return;
+    setSigningOut(true);
+    setError("");
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Sign out failed. Please try again.");
+      router.replace("/administration");
+      router.refresh();
+    } catch (signOutError) {
+      setError(
+        signOutError instanceof Error
+          ? signOutError.message
+          : "Sign out failed. Please try again.",
+      );
+      setSigningOut(false);
+    }
   }
+
+  const pendingNotificationCount = overview?.metrics.pendingVerifications ?? 0;
+  const recentPendingVerifications = useMemo(
+    () =>
+      overview?.recentVerifications
+        .filter((membership) => membership.status === "PENDING")
+        .slice(0, 4) ?? [],
+    [overview],
+  );
+  const administratorLabel = session?.roles.includes("SUPERADMIN")
+    ? "Super Administrator"
+    : "Administrator";
+  const studentDirectoryCount = useMemo(() => {
+    const accountStudentIds = new Set(
+      users
+        .map((user) => user.institutionMembership?.studentId)
+        .filter((studentId): studentId is string => Boolean(studentId)),
+    );
+    return (
+      users.length +
+      internalStudents.filter(
+        (student) => !accountStudentIds.has(student.studentId),
+      ).length
+    );
+  }, [internalStudents, users]);
 
   async function setUserActive(user: User) {
     try {
@@ -403,11 +456,11 @@ export function AdminDashboard({
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
               </span>
-              <span className="text-2xs font-bold text-slate-700">
+              <span className="text-xs font-bold text-slate-700">
                 Command Engine
               </span>
             </div>
-            <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-3xs font-bold uppercase tracking-wider text-emerald-700">
+            <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-700">
               Active
             </span>
           </div>
@@ -415,7 +468,7 @@ export function AdminDashboard({
 
         {/* Navigation Workspace Links */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3">
-          <p className="px-3 text-2xs font-bold uppercase tracking-eyebrow text-slate-400">
+          <p className="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Workspace
           </p>
           <nav className="mt-2.5 space-y-1.5">
@@ -451,10 +504,11 @@ export function AdminDashboard({
                       {item.label}
                     </span>
                     <span
-                      className={`text-2xs font-medium leading-4 truncate transition-colors duration-150 ${isActive ? "text-rose-100" : "text-slate-400"}`}
+                      className={`text-xs font-medium leading-4 truncate transition-colors duration-150 ${isActive ? "text-rose-100" : "text-slate-400"}`}
                     >
                       {key === "overview" && "Metrics & telemetry"}
-                      {key === "students" && `${users.length} accounts`}
+                      {key === "students" &&
+                        `${studentDirectoryCount} students`}
                       {key === "courses" && `${courses.length} courses`}
                     </span>
                   </div>
@@ -475,21 +529,27 @@ export function AdminDashboard({
                 <p className="truncate text-xs font-bold text-slate-900">
                   Administrator
                 </p>
-                <span className="rounded bg-rose-50 px-1 py-0.2 text-3xs font-black uppercase tracking-wider text-brand-red">
+                <span className="rounded bg-rose-50 px-1 py-0.2 text-xs font-bold uppercase tracking-wider text-brand-red">
                   ROOT
                 </span>
               </div>
-              <p className="truncate text-2xs text-slate-500">
+              <p className="truncate text-xs text-slate-500">
                 {session?.roles.join(" · ") ?? "Admin Session"}
               </p>
             </div>
           </div>
           <button
-            onClick={signOut}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold text-slate-500 transition hover:bg-red-50 hover:text-red-700"
+            type="button"
+            onClick={() => void signOut()}
+            disabled={signingOut}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold text-slate-500 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-wait disabled:opacity-60"
           >
-            <LogOut className="size-3.5" />
-            <span>Sign out</span>
+            {signingOut ? (
+              <LoaderCircle className="size-3.5 animate-spin" />
+            ) : (
+              <LogOut className="size-3.5" />
+            )}
+            <span>{signingOut ? "Signing out…" : "Sign out"}</span>
           </button>
         </div>
       </aside>
@@ -517,11 +577,11 @@ export function AdminDashboard({
             </button>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-2xs font-bold uppercase tracking-label text-brand-red">
+                <span className="text-xs font-semibold uppercase tracking-wider text-brand-red">
                   Admin Console
                 </span>
                 <span className="text-slate-300">/</span>
-                <span className="text-2xs font-bold uppercase tracking-label text-slate-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {sectionMeta[section].label}
                 </span>
               </div>
@@ -556,27 +616,205 @@ export function AdminDashboard({
               />
             </button>
 
-            {/* Notification Bell */}
-            <button
-              onClick={() => navigateToSection("students")}
-              className="relative grid size-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:border-brand-blue/40 hover:text-brand-blue active:scale-95"
-              title={`${internalStudents.filter((item) => item.isActive).length} active internal students`}
-              aria-label="Notifications"
-            >
-              <Bell className="size-4" />
-              {internalStudents.some((item) => item.isActive) && (
-                <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-brand-red ring-2 ring-white" />
-              )}
-            </button>
+            {/* Notification action center */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="relative grid size-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs outline-none transition hover:border-brand-blue/40 hover:text-brand-blue focus-visible:ring-2 focus-visible:ring-brand-blue/30 data-popup-open:border-brand-blue/40 data-popup-open:text-brand-blue"
+                aria-label={
+                  pendingNotificationCount
+                    ? `Notifications: ${pendingNotificationCount} pending reviews`
+                    : "Notifications: no pending reviews"
+                }
+                title="Open notifications"
+              >
+                <Bell className="size-4" />
+                {pendingNotificationCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex min-w-4.5 items-center justify-center rounded-full bg-brand-red px-1 text-[9px] font-black leading-4.5 text-white ring-2 ring-white">
+                    {pendingNotificationCount > 99
+                      ? "99+"
+                      : pendingNotificationCount}
+                  </span>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={10}
+                className="rounded-2xl border border-slate-200 bg-white p-0 shadow-xl"
+                style={{ width: "min(24rem, calc(100vw - 2rem))" }}
+              >
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3.5">
+                  <div>
+                    <p className="text-sm font-black text-slate-950">
+                      Notifications
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-slate-500">
+                      Administrative items requiring attention
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void loadAll(true);
+                    }}
+                    disabled={refreshing}
+                    className="grid size-8 place-items-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-brand-blue disabled:cursor-wait disabled:opacity-50"
+                    aria-label="Refresh notifications"
+                    title="Refresh notifications"
+                  >
+                    <RefreshCw
+                      className={`size-3.5 ${refreshing ? "animate-spin" : ""}`}
+                    />
+                  </button>
+                </div>
 
-            {/* Profile Pill */}
-            <div className="ml-1 hidden items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pr-3 pl-1.5 sm:flex shadow-2xs">
-              <div className="grid size-7 place-items-center rounded-full bg-blue-50 text-brand-blue">
-                <CircleUserRound className="size-4.5" />
-              </div>
-              <span className="text-xs font-bold text-slate-800">Admin</span>
-              <ChevronDown className="size-3 text-slate-400" />
-            </div>
+                <div className="max-h-80 overflow-y-auto p-2">
+                  {pendingNotificationCount === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <div className="mx-auto grid size-10 place-items-center rounded-full bg-emerald-50 text-emerald-700">
+                        <Check className="size-4.5" />
+                      </div>
+                      <p className="mt-3 text-xs font-bold text-slate-800">
+                        You are all caught up
+                      </p>
+                      <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                        There are no pending student verifications.
+                      </p>
+                    </div>
+                  ) : recentPendingVerifications.length ? (
+                    recentPendingVerifications.map((membership) => (
+                      <DropdownMenuItem
+                        key={membership.id}
+                        onClick={() => navigateToSection("students")}
+                        className="cursor-pointer gap-3 rounded-xl px-3 py-3 focus:bg-amber-50"
+                      >
+                        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-700">
+                          <Clock3 className="size-4" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-xs font-bold text-slate-900">
+                            {membership.user.displayName}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[10px] text-slate-500">
+                            {membership.studentId} · Verification pending
+                          </span>
+                        </span>
+                        <ChevronRight className="size-3.5 text-slate-300" />
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <DropdownMenuItem
+                      onClick={() => navigateToSection("students")}
+                      className="cursor-pointer gap-3 rounded-xl px-3 py-3 focus:bg-amber-50"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-700">
+                        <Clock3 className="size-4" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold text-slate-900">
+                          {pendingNotificationCount} verification
+                          {pendingNotificationCount === 1 ? "" : "s"} pending
+                        </span>
+                        <span className="mt-0.5 block text-[10px] text-slate-500">
+                          Open student management to review the queue.
+                        </span>
+                      </span>
+                      <ChevronRight className="size-3.5 text-slate-300" />
+                    </DropdownMenuItem>
+                  )}
+                </div>
+
+                <DropdownMenuSeparator className="m-0" />
+                <div className="p-2">
+                  <DropdownMenuItem
+                    onClick={() => navigateToSection("students")}
+                    className="cursor-pointer justify-center rounded-lg px-3 py-2.5 text-xs font-bold text-brand-blue focus:bg-blue-50 focus:text-brand-blue"
+                  >
+                    Open student management
+                    <ArrowRight className="ml-1 size-3.5" />
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Administrator account menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="group ml-0.5 flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pr-2 pl-1.5 shadow-2xs outline-none transition hover:border-brand-blue/40 focus-visible:ring-2 focus-visible:ring-brand-blue/30 data-popup-open:border-brand-blue/40 sm:ml-1 sm:pr-3"
+                aria-label="Open administrator account menu"
+              >
+                <span className="grid size-7 place-items-center rounded-full bg-blue-50 text-brand-blue">
+                  <CircleUserRound className="size-4.5" />
+                </span>
+                <span className="hidden text-xs font-bold text-slate-800 sm:inline">
+                  Admin
+                </span>
+                <ChevronDown className="hidden size-3 text-slate-400 transition-transform group-data-popup-open:rotate-180 sm:block" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={10}
+                className="rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
+                style={{ width: "min(19rem, calc(100vw - 2rem))" }}
+              >
+                <div className="px-2 py-2.5">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-blue text-white shadow-xs">
+                      <ShieldCheck className="size-4.5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-black text-slate-950">
+                        {administratorLabel}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[10px] text-slate-500">
+                        {session?.roles.join(" · ") || "ADMIN"} · Secure session
+                      </span>
+                    </span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => navigateToSection("overview")}
+                  className="cursor-pointer gap-2.5 rounded-lg px-2.5 py-2.5 text-xs font-semibold focus:bg-blue-50"
+                >
+                  <LayoutDashboard className="size-4 text-slate-500" />
+                  Dashboard overview
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigateToSection("students")}
+                  className="cursor-pointer gap-2.5 rounded-lg px-2.5 py-2.5 text-xs font-semibold focus:bg-blue-50"
+                >
+                  <Users className="size-4 text-slate-500" />
+                  Student management
+                  {pendingNotificationCount > 0 && (
+                    <span className="ml-auto rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-black text-amber-800">
+                      {pendingNotificationCount}
+                    </span>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigateToSection("courses")}
+                  className="cursor-pointer gap-2.5 rounded-lg px-2.5 py-2.5 text-xs font-semibold focus:bg-blue-50"
+                >
+                  <BookOpen className="size-4 text-slate-500" />
+                  Course management
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => void signOut()}
+                  disabled={signingOut}
+                  variant="destructive"
+                  className="cursor-pointer gap-2.5 rounded-lg px-2.5 py-2.5 text-xs font-bold"
+                >
+                  {signingOut ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : (
+                    <LogOut className="size-4" />
+                  )}
+                  {signingOut ? "Signing out…" : "Sign out securely"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -622,13 +860,19 @@ export function AdminDashboard({
                 <div className="space-y-6">
                   <Students
                     users={users}
+                    internalStudents={internalStudents}
                     currentProfileId={session?.profileId}
                     canManagePrivileged={
                       session?.roles.includes("SUPERADMIN") ?? false
                     }
                     onToggle={setUserActive}
                     onManageAccess={manageStudentAccess}
-                    onChanged={() => loadAll(true)}
+                    onRosterCreated={(student) =>
+                      setInternalStudents((current) => [
+                        student,
+                        ...current.filter((item) => item.id !== student.id),
+                      ])
+                    }
                     onNotice={showNotice}
                     onError={setError}
                   />
@@ -718,11 +962,11 @@ function Overview({
             </div>
           </div>
           <div className="mt-3.5 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-2xs font-bold text-emerald-700">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
               <span className="size-1.5 rounded-full bg-emerald-500" />
               {overview.metrics.activeUsers} active
             </span>
-            <span className="text-2xs text-slate-400">registered learners</span>
+            <span className="text-xs text-slate-400">registered learners</span>
           </div>
         </div>
 
@@ -752,15 +996,15 @@ function Overview({
               (user) =>
                 user.institutionMembership?.studentCategory === "INTERNAL",
             ) ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-2xs font-bold text-amber-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
                 Requires attention
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-2xs font-bold text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                 <Check className="size-3" /> All verified
               </span>
             )}
-            <span className="text-2xs text-slate-400">
+            <span className="text-xs text-slate-400">
               automatic free access
             </span>
           </div>
@@ -782,10 +1026,10 @@ function Overview({
             </div>
           </div>
           <div className="mt-3.5 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-2xs font-bold text-emerald-700">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
               {overview.metrics.subjects} subjects
             </span>
-            <span className="text-2xs text-slate-400">syllabus offerings</span>
+            <span className="text-xs text-slate-400">syllabus offerings</span>
           </div>
         </div>
 
@@ -811,7 +1055,7 @@ function Overview({
                 style={{ width: `${accessRate}%` }}
               />
             </div>
-            <div className="mt-2 flex justify-between text-2xs text-slate-400">
+            <div className="mt-2 flex justify-between text-xs text-slate-400">
               <span>Active accounts</span>
               <span className="font-bold text-slate-600">
                 {overview.metrics.activeUsers}/{overview.metrics.users || 1}
@@ -904,20 +1148,22 @@ function Overview({
 
 function Students({
   users,
+  internalStudents,
   currentProfileId,
   canManagePrivileged,
   onToggle,
   onManageAccess,
-  onChanged,
+  onRosterCreated,
   onNotice,
   onError,
 }: {
   users: User[];
+  internalStudents: InternalStudent[];
   currentProfileId?: string | null;
   canManagePrivileged: boolean;
   onToggle: (user: User) => void;
   onManageAccess: (user: User) => void;
-  onChanged: () => Promise<void>;
+  onRosterCreated: (student: InternalStudent) => void;
   onNotice: (message: string) => void;
   onError: (message: string) => void;
 }) {
@@ -926,33 +1172,69 @@ function Students({
   const [studentType, setStudentType] = useState<
     "ALL" | "INTERNAL" | "EXTERNAL"
   >("ALL");
-  const filtered = useMemo(
-    () =>
-      users.filter(
+  const filtered = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const linkedStudentIds = new Set(
+      users
+        .map((user) => user.institutionMembership?.studentId)
+        .filter((studentId): studentId is string => Boolean(studentId)),
+    );
+    const accountEntries: StudentDirectoryEntry[] = users
+      .filter(
         (user) =>
           (studentType === "ALL" ||
             user.institutionMembership?.studentCategory === studentType) &&
-          `${user.displayName} ${user.institutionMembership?.studentId ?? ""}`
+          `${user.displayName} ${user.email ?? ""} ${user.institutionMembership?.studentId ?? ""}`
             .toLowerCase()
-            .includes(query.toLowerCase()),
-      ),
-    [query, studentType, users],
-  );
+            .includes(normalizedQuery),
+      )
+      .map((user) => ({
+        kind: "account",
+        id: `account-${user.id}`,
+        createdAt: user.createdAt,
+        user,
+      }));
+    const rosterEntries: StudentDirectoryEntry[] = internalStudents
+      .filter(
+        (student) =>
+          !linkedStudentIds.has(student.studentId) &&
+          studentType !== "EXTERNAL" &&
+          `${student.fullName ?? ""} ${student.email ?? ""} ${student.studentId}`
+            .toLowerCase()
+            .includes(normalizedQuery),
+      )
+      .map((student) => ({
+        kind: "roster",
+        id: `roster-${student.id}`,
+        createdAt: student.createdAt,
+        student,
+      }));
+
+    return [...accountEntries, ...rosterEntries].sort(
+      (left, right) =>
+        new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+    );
+  }, [internalStudents, query, studentType, users]);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const paginatedUsers = filtered.slice(
+  const paginatedEntries = filtered.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
 
   return (
     <LightLuxuryPanel
-      title="Student accounts"
-      description="Search student logins, inspect access and suspend or restore eligible students."
+      title="Student directory"
+      description="Manage pre-approved internal students and linked student login accounts in one place."
       headerAction={
         <InternalStudentManager
-          onChanged={onChanged}
+          onCreated={(student) => {
+            onRosterCreated(student);
+            setQuery("");
+            setStudentType("INTERNAL");
+            setPage(1);
+          }}
           onNotice={onNotice}
           onError={onError}
         />
@@ -970,7 +1252,7 @@ function Students({
         <span className="text-xs font-semibold text-slate-500">
           Showing{" "}
           <span className="font-bold text-slate-800">
-            {paginatedUsers.length}
+              {paginatedEntries.length}
           </span>{" "}
           of {filtered.length} students
         </span>
@@ -998,7 +1280,7 @@ function Students({
       <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200">
         <table className="w-full min-w-4xl text-left">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/70 text-2xs uppercase tracking-wider text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50/70 text-xs uppercase tracking-wider text-slate-500">
               <th className="py-3 px-4 font-bold">User</th>
               <th className="py-3 px-4 font-bold">Student ID</th>
               <th className="py-3 px-4 font-bold">Role</th>
@@ -1009,7 +1291,67 @@ function Students({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {paginatedUsers.map((user) => {
+            {paginatedEntries.map((entry) => {
+              if (entry.kind === "roster") {
+                const student = entry.student;
+                return (
+                  <tr
+                    key={entry.id}
+                    className="transition hover:bg-blue-50/30"
+                  >
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="grid size-9 shrink-0 place-items-center rounded-full bg-blue-50 text-xs font-bold text-brand-blue">
+                          {initials(student.fullName || student.email || "IS")}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-900">
+                            {student.fullName || "Internal student"}
+                          </p>
+                          <p className="max-w-56 truncate text-xs text-slate-400">
+                            {student.email || "No login email"}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-xs font-semibold text-slate-600">
+                      {student.studentId}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                        Awaiting login
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="rounded-full border border-blue-200/80 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-brand-blue">
+                        INTERNAL · FREE
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700">
+                        <ShieldCheck className="size-3.5" /> Pre-approved
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-xs font-bold ${student.isActive ? "text-emerald-700" : "text-red-700"}`}
+                      >
+                        <span
+                          className={`size-1.5 rounded-full ${student.isActive ? "bg-emerald-500" : "bg-red-500"}`}
+                        />
+                        {student.isActive ? "Ready to link" : "Inactive"}
+                      </span>
+                      <p className="mt-1 text-xs font-semibold text-emerald-600">
+                        Free access on login
+                      </p>
+                    </td>
+                    <td className="py-3.5 px-4 text-right text-xs font-medium text-slate-400">
+                      Login not linked
+                    </td>
+                  </tr>
+                );
+              }
+              const user = entry.user;
               const privileged = user.roles.some(
                 (role) => role === "ADMIN" || role === "SUPERADMIN",
               );
@@ -1017,7 +1359,7 @@ function Students({
                 user.id !== currentProfileId &&
                 (!privileged || canManagePrivileged);
               return (
-                <tr key={user.id} className="transition hover:bg-slate-50/60">
+                <tr key={entry.id} className="transition hover:bg-slate-50/60">
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-3">
                       <div className="grid size-9 shrink-0 place-items-center rounded-full bg-rose-50 text-xs font-bold text-brand-red">
@@ -1027,7 +1369,7 @@ function Students({
                         <p className="text-sm font-bold text-slate-900">
                           {user.displayName}
                         </p>
-                        <p className="text-2xs text-slate-400">
+                        <p className="text-xs text-slate-400">
                           Joined {formatDate(user.createdAt)}
                         </p>
                       </div>
@@ -1038,7 +1380,7 @@ function Students({
                   </td>
                   <td className="py-3.5 px-4 text-xs font-medium text-slate-600">
                     {user.roles.length ? (
-                      <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-2xs font-bold text-slate-700">
+                      <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
                         {user.roles.join(", ")}
                       </span>
                     ) : (
@@ -1048,7 +1390,7 @@ function Students({
                   <td className="py-3.5 px-4">
                     {user.institutionMembership ? (
                       <span
-                        className={`rounded-full px-2.5 py-1 text-2xs font-extrabold ${user.institutionMembership.studentCategory === "INTERNAL" ? "bg-blue-50 text-brand-blue border border-blue-200/80" : "bg-violet-50 text-violet-700"}`}
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${user.institutionMembership.studentCategory === "INTERNAL" ? "bg-blue-50 text-brand-blue border border-blue-200/80" : "bg-violet-50 text-violet-700"}`}
                       >
                         {user.institutionMembership.studentCategory ===
                         "INTERNAL"
@@ -1083,7 +1425,7 @@ function Students({
                     </span>
                     {user.institutionMembership && (
                       <p
-                        className={`mt-1 text-2xs font-bold ${user.institutionMembership.studentCategory === "INTERNAL" || user.institutionMembership.paymentStatus === "PAID" ? "text-emerald-600" : "text-amber-600"}`}
+                        className={`mt-1 text-xs font-semibold ${user.institutionMembership.studentCategory === "INTERNAL" || user.institutionMembership.paymentStatus === "PAID" ? "text-emerald-600" : "text-amber-600"}`}
                       >
                         {user.institutionMembership.studentCategory ===
                         "INTERNAL"
@@ -1125,7 +1467,9 @@ function Students({
             })}
           </tbody>
         </table>
-        {!filtered.length && <LightEmpty text="No matching users found." />}
+        {!filtered.length && (
+          <LightEmpty text="No matching students found." />
+        )}
       </div>
       <TablePagination
         page={currentPage}
@@ -1138,44 +1482,50 @@ function Students({
 }
 
 function InternalStudentManager({
-  onChanged,
+  onCreated,
   onNotice,
   onError,
 }: {
-  onChanged: () => Promise<void>;
+  onCreated: (student: InternalStudent) => void;
   onNotice: (message: string) => void;
   onError: (message: string) => void;
 }) {
   const [editing, setEditing] = useState<"new" | null>(null);
   const [form, setForm] = useState({ fullName: "", email: "", studentId: "" });
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
 
   function openCreate() {
     setForm({ fullName: "", email: "", studentId: "" });
+    setFormError("");
     setEditing("new");
   }
 
   async function saveStudent() {
     if (!editing) return;
     setSaving(true);
+    setFormError("");
     try {
-      await api("internal-students", {
-          method: "POST",
-          body: JSON.stringify({
-            fullName: form.fullName,
-            email: form.email,
-            studentId: form.studentId,
-          }),
-        });
+      const created = await api<InternalStudent>("internal-students", {
+        method: "POST",
+        body: JSON.stringify({
+          fullName: form.fullName,
+          email: form.email,
+          studentId: form.studentId,
+        }),
+      });
+      onCreated(created);
       setEditing(null);
-      onNotice("Internal student added.");
-      await onChanged();
+      onNotice(
+        `${created.fullName || "Internal student"} was added to the roster.`,
+      );
     } catch (error) {
-      onError(
+      const message =
         error instanceof Error
           ? error.message
-          : "Internal student could not be saved",
-      );
+          : "Internal student could not be saved";
+      setFormError(message);
+      onError(message);
     } finally {
       setSaving(false);
     }
@@ -1201,102 +1551,127 @@ function InternalStudentManager({
           className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:max-w-lg"
         >
           {editing && (
-            <>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                void saveStudent();
+              }}
+            >
               <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-2xs font-black uppercase tracking-label text-brand-red">
-                  Internal student
-                </p>
-                <DialogTitle className="mt-1 text-xl leading-tight font-black text-slate-900">
-                  Add internal student
-                </DialogTitle>
-                <DialogDescription className="mt-1 text-xs leading-5 text-slate-500">
-                  The login is connected automatically when this email signs in.
-                </DialogDescription>
-              </div>
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => setEditing(null)}
-                className="grid size-9 place-items-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"
-                aria-label="Close student form"
-              >
-                <X className="size-4" />
-              </button>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-brand-red">
+                    Internal student
+                  </p>
+                  <DialogTitle className="mt-1 text-xl leading-tight font-black text-slate-900">
+                    Add internal student
+                  </DialogTitle>
+                  <DialogDescription className="mt-1 text-xs leading-5 text-slate-500">
+                    The roster entry appears immediately. The login is linked
+                    automatically when this email signs in.
+                  </DialogDescription>
+                </div>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setEditing(null)}
+                  className="grid size-9 place-items-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"
+                  aria-label="Close student form"
+                >
+                  <X className="size-4" />
+                </button>
               </div>
 
               <div className="mt-6 space-y-4">
-              <label className="grid gap-1.5 text-xs font-bold text-slate-700">
-                Student name
-                <input
-                  autoFocus
-                  className="h-11 rounded-xl border border-slate-300 px-3.5 font-medium outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
-                  value={form.fullName}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      fullName: event.target.value,
-                    }))
-                  }
-                  placeholder="Student name"
-                />
-              </label>
-              <label className="grid gap-1.5 text-xs font-bold text-slate-700">
-                Login email
-                <input
-                  className="h-11 rounded-xl border border-slate-300 px-3.5 font-medium outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500"
-                  type="email"
-                  value={form.email}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      email: event.target.value,
-                    }))
-                  }
-                  placeholder="student@example.com"
-                />
-              </label>
-              <label className="grid gap-1.5 text-xs font-bold text-slate-700">
-                Student ID{" "}
-                <span className="font-medium text-slate-400">(optional)</span>
-                <input
-                  className="h-11 rounded-xl border border-slate-300 px-3.5 font-medium uppercase outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
-                  value={form.studentId}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      studentId: event.target.value,
-                    }))
-                  }
-                  placeholder="Auto-generated when empty"
-                />
-              </label>
+                <label className="grid gap-1.5 text-xs font-bold text-slate-700">
+                  Student name
+                  <input
+                    autoFocus
+                    required
+                    minLength={2}
+                    maxLength={150}
+                    autoComplete="name"
+                    className="h-11 rounded-xl border border-slate-300 px-3.5 font-medium outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
+                    value={form.fullName}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        fullName: event.target.value,
+                      }))
+                    }
+                    placeholder="Student name"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs font-bold text-slate-700">
+                  Login email
+                  <input
+                    required
+                    maxLength={320}
+                    autoComplete="email"
+                    className="h-11 rounded-xl border border-slate-300 px-3.5 font-medium outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
+                    type="email"
+                    value={form.email}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        email: event.target.value,
+                      }))
+                    }
+                    placeholder="student@example.com"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs font-bold text-slate-700">
+                  Student ID{" "}
+                  <span className="font-medium text-slate-400">(optional)</span>
+                  <input
+                    maxLength={64}
+                    className="h-11 rounded-xl border border-slate-300 px-3.5 font-medium uppercase outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
+                    value={form.studentId}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        studentId: event.target.value,
+                      }))
+                    }
+                    placeholder="Auto-generated when empty"
+                  />
+                </label>
               </div>
 
+              {formError && (
+                <div
+                  role="alert"
+                  className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-800"
+                >
+                  <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-600" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
               <div className="mt-7 flex justify-end gap-3 border-t border-slate-100 pt-5">
-              <Button
-                variant="outline"
-                disabled={saving}
-                onClick={() => setEditing(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                disabled={
-                  saving ||
-                  form.fullName.trim().length < 2 ||
-                  !form.email.includes("@")
-                }
-                onClick={() => void saveStudent()}
-                className="bg-brand-red text-white hover:bg-brand-red-hover"
-              >
-                {saving && (
-                  <LoaderCircle className="mr-2 size-4 animate-spin" />
-                )}
-                Add student
-              </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => setEditing(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={
+                    saving ||
+                    form.fullName.trim().length < 2 ||
+                    !form.email.includes("@")
+                  }
+                  className="bg-brand-red text-white hover:bg-brand-red-hover"
+                >
+                  {saving && (
+                    <LoaderCircle className="mr-2 size-4 animate-spin" />
+                  )}
+                  {saving ? "Adding student…" : "Add student"}
+                </Button>
               </div>
-            </>
+            </form>
           )}
         </DialogContent>
       </Dialog>
@@ -1350,7 +1725,7 @@ function Verification({
                   {status === "ALL" ? "All claims" : titleCase(status)}
                 </span>
                 <span
-                  className={`ml-1.5 rounded-full px-1.5 py-0.2 text-2xs ${isSelected ? "bg-white/20" : "bg-slate-100"}`}
+                  className={`ml-1.5 rounded-full px-1.5 py-0.2 text-xs ${isSelected ? "bg-white/20" : "bg-slate-100"}`}
                 >
                   {count}
                 </span>
@@ -1427,7 +1802,6 @@ function Verification({
 function Courses({
   courses,
   onCreate,
-  onToggle,
 }: {
   courses: Course[];
   onCreate: (data: {
@@ -1435,16 +1809,13 @@ function Courses({
     title: string;
     description: string;
   }) => Promise<void>;
-  onToggle: (course: Course) => Promise<void>;
+  onToggle?: (course: Course) => Promise<void>;
 }) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<"ALL" | "PUBLISHED" | "ARCHIVED">("ALL");
   const [form, setForm] = useState({ code: "", title: "", description: "" });
 
-  const publishedCourses = courses.filter((course) => course.isActive).length;
   const totalSubjects = courses.reduce(
     (total, course) => total + course.courseSubjects.length,
     0,
@@ -1460,18 +1831,15 @@ function Courses({
   );
   const visibleCourses = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return courses.filter((course) => {
-      const matchesStatus =
-        status === "ALL" ||
-        (status === "PUBLISHED" ? course.isActive : !course.isActive);
-      const matchesQuery =
-        !normalizedQuery ||
-        `${course.code} ${course.title} ${course.description ?? ""}`
-          .toLowerCase()
-          .includes(normalizedQuery);
-      return matchesStatus && matchesQuery;
-    });
-  }, [courses, query, status]);
+    if (!normalizedQuery) {
+      return courses;
+    }
+    return courses.filter((course) =>
+      `${course.code} ${course.title} ${course.description ?? ""}`
+        .toLowerCase()
+        .includes(normalizedQuery),
+    );
+  }, [courses, query]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -1485,21 +1853,12 @@ function Courses({
     }
   }
 
-  async function toggle(course: Course) {
-    setUpdatingId(course.id);
-    try {
-      await onToggle(course);
-    } finally {
-      setUpdatingId(null);
-    }
-  }
-
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_16px_45px_-36px_rgba(15,23,42,0.45)]">
       <div className="border-b border-slate-200 bg-[#fbfbfa] px-5 py-7 sm:px-7 lg:px-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-700">
+            <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-700">
               <BookOpenCheck className="size-3.5" />
               Academic operations
             </div>
@@ -1545,7 +1904,7 @@ function Courses({
                 managed after creation.
               </p>
             </div>
-            <span className="hidden rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700 sm:inline-flex">
+            <span className="hidden rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-700 sm:inline-flex">
               Required fields marked *
             </span>
           </div>
@@ -1598,8 +1957,8 @@ function Courses({
             tone: "text-indigo-700 bg-indigo-50",
           },
           {
-            label: "Published",
-            value: publishedCourses,
+            label: "Active courses",
+            value: courses.filter((c) => c.isActive).length,
             icon: Check,
             tone: "text-emerald-700 bg-emerald-50",
           },
@@ -1631,7 +1990,7 @@ function Courses({
                 <p className="text-2xl font-black tracking-tight text-slate-950">
                   {metric.value}
                 </p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {metric.label}
                 </p>
               </div>
@@ -1641,7 +2000,7 @@ function Courses({
       </div>
 
       <div className="bg-white p-5 sm:p-7">
-        <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-base font-black text-slate-950">
               Course registry
@@ -1650,32 +2009,14 @@ function Courses({
               {visibleCourses.length} of {courses.length} curriculum records
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <div className="relative min-w-0 sm:w-72">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search code or course name"
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs font-medium outline-none transition focus:border-indigo-400 focus:ring-3 focus:ring-indigo-100"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(["ALL", "PUBLISHED", "ARCHIVED"] as const).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setStatus(item)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-                    status === item
-                      ? "border-brand-blue bg-brand-blue text-white"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-brand-blue"
-                  }`}
-                >
-                  {item === "ALL" ? "All courses" : titleCase(item)}
-                </button>
-              ))}
-            </div>
+          <div className="relative min-w-0 sm:w-80">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search code or course name"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs font-medium outline-none transition focus:border-indigo-400 focus:ring-3 focus:ring-indigo-100"
+            />
           </div>
         </div>
 
@@ -1697,16 +2038,12 @@ function Courses({
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-black tracking-wide text-slate-600">
+                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold tracking-wide text-slate-600">
                           {course.code}
                         </span>
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${course.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
-                        >
-                          <span
-                            className={`size-1.5 rounded-full ${course.isActive ? "bg-emerald-500" : "bg-slate-400"}`}
-                          />
-                          {course.isActive ? "Published" : "Archived"}
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                          <span className="size-1.5 rounded-full bg-emerald-500" />
+                          Active Course
                         </span>
                       </div>
                       <h4 className="mt-2 truncate text-base font-black text-slate-950 sm:text-lg">
@@ -1720,7 +2057,7 @@ function Courses({
                   </div>
 
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
-                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
                       <span>Curriculum coverage</span>
                       <span>{chapters} chapters</span>
                     </div>
@@ -1729,7 +2066,7 @@ function Courses({
                         course.courseSubjects.slice(0, 4).map((item) => (
                           <span
                             key={item.id}
-                            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600"
+                            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600"
                           >
                             {item.subject.name}
                           </span>
@@ -1742,34 +2079,15 @@ function Courses({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 lg:justify-end">
+                  <div className="flex items-center justify-between gap-4 lg:justify-end">
                     <div className="text-right">
                       <p className="text-lg font-black text-slate-950">
                         {course.courseSubjects.length}
                       </p>
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                         Subjects
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      disabled={updatingId === course.id}
-                      onClick={() => void toggle(course)}
-                      className={`inline-flex h-9 items-center gap-1.5 rounded-xl border px-3.5 text-xs font-bold transition active:scale-95 disabled:opacity-60 ${
-                        course.isActive
-                          ? "border-slate-200 bg-white text-slate-700 hover:border-rose-200 hover:bg-rose-50 hover:text-brand-red"
-                          : "border-brand-blue bg-brand-blue text-white shadow-xs hover:bg-brand-blue-hover"
-                      }`}
-                    >
-                      {updatingId === course.id ? (
-                        <LoaderCircle className="size-3.5 animate-spin" />
-                      ) : course.isActive ? (
-                        <Archive className="size-3.5" />
-                      ) : (
-                        <Check className="size-3.5" />
-                      )}
-                      <span>{course.isActive ? "Archive" : "Publish"}</span>
-                    </button>
                     <ChevronRight className="hidden size-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-indigo-500 sm:block" />
                   </div>
                 </div>
@@ -1863,7 +2181,7 @@ function QuickControlButton({
           <p className="truncate text-xs font-bold text-slate-800 group-hover:text-brand-blue transition-colors">
             {title}
           </p>
-          <p className="truncate text-2xs text-slate-400">{subtitle}</p>
+          <p className="truncate text-xs text-slate-400">{subtitle}</p>
         </div>
       </div>
       <ArrowRight className="size-3.5 text-slate-400 transition group-hover:translate-x-1 group-hover:text-brand-blue" />
@@ -1908,7 +2226,7 @@ function LightField({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-2xs font-bold uppercase tracking-wider text-slate-500">
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
         {label}
       </span>
       <input
@@ -1931,7 +2249,7 @@ function LightStatusBadge({ status }: { status: Membership["status"] }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-3xs font-black uppercase tracking-wider ring-1 ${styles[status]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider ring-1 ${styles[status]}`}
     >
       <span
         className={`size-1.5 rounded-full ${

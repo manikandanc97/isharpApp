@@ -11,10 +11,10 @@
   --font-mono: var(--font-poppins);
   --font-heading: var(--font-poppins);
   --breakpoint-xs: 22.5rem;
-  --text-2xs: 0.625rem;
-  --text-2xs--line-height: 0.875rem;
-  --text-3xs: 0.5625rem;
-  --text-3xs--line-height: 0.75rem;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-3xs: 0.6875rem;
+  --text-3xs--line-height: 1rem;
   --tracking-label: 0.16em;
   --tracking-eyebrow: 0.18em;
   --tracking-heading: -0.04em;
@@ -206,5 +206,47 @@
     html {
       scroll-behavior: auto;
     }
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-115%);
+  }
+
+  100% {
+    transform: translateX(115%);
+  }
+}
+
+@layer components {
+  [data-slot="skeleton"][data-shimmer="true"]::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    transform: translateX(-115%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.68),
+      transparent
+    );
+    animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  }
+
+  .dark [data-slot="skeleton"][data-shimmer="true"]::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.08),
+      transparent
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="skeleton"][data-shimmer="true"]::after {
+    animation: none;
+    opacity: 0;
   }
 }

@@ -61,7 +61,7 @@ describe('QuestionBankService validation', () => {
     expect(save).toHaveBeenCalledWith(
       'profile-id',
       { externalId: 'EXISTING-1' },
-      { skipExisting: true },
+      { skipExisting: true, createMissingChapter: true },
     );
     expect(result).toMatchObject({
       imported: 0,
@@ -101,6 +101,80 @@ describe('QuestionBankService validation', () => {
       ],
     });
     save.mockRestore();
+  });
+
+  it('creates a missing chapter during bulk import and maps the question', async () => {
+    const tx = {
+      question: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: 'question-1' }),
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'question-1',
+          externalId: 'NEW-1',
+          options: [],
+        }),
+      },
+      chapter: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        aggregate: vi.fn().mockResolvedValue({ _max: { position: 2 } }),
+        create: vi.fn().mockResolvedValue({
+          id: 'chapter-3',
+          title: 'Laws of Motion',
+        }),
+      },
+      questionOption: {
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+        createMany: vi.fn().mockResolvedValue({ count: 2 }),
+      },
+    };
+    const prisma = {
+      courseSubject: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'course-subject-1',
+          chapters: [],
+        }),
+      },
+      $transaction: vi.fn(
+        async (callback: (client: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+      ),
+    };
+    const importService = new QuestionBankService(
+      prisma as unknown as PrismaService,
+      new ConfigService(),
+    );
+
+    const saved = await importService.saveQuestion(
+      'profile-id',
+      {
+        externalId: 'NEW-1',
+        courseCode: 'NEET',
+        subjectCode: 'PHYSICS',
+        chapterTitle: 'Laws of Motion',
+        textEn: 'Question',
+        solutionEn: 'Solution',
+        options: [
+          { label: 'A', textEn: 'One', isCorrect: true },
+          { label: 'B', textEn: 'Two', isCorrect: false },
+        ],
+      },
+      { skipExisting: true, createMissingChapter: true },
+    );
+
+    expect(tx.chapter.create).toHaveBeenCalledWith({
+      data: {
+        courseSubjectId: 'course-subject-1',
+        title: 'Laws of Motion',
+        position: 3,
+      },
+    });
+    expect(tx.question.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ chapterId: 'chapter-3' }),
+    });
+    expect(saved).toMatchObject({
+      externalId: 'NEW-1',
+      importMeta: { createdChapter: 'Laws of Motion' },
+    });
   });
 
   it('rejects executable or unsupported media', async () => {

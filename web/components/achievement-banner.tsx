@@ -89,7 +89,7 @@ export function AchievementBanner() {
           <div className="flex flex-col lg:col-span-5">
             <div>
               {/* Enterprise Obsidian Eyebrow */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-3xs font-bold tracking-wider uppercase text-amber-300">
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-wide uppercase text-amber-300">
                 <Trophy className="size-3 text-amber-400" aria-hidden="true" />
                 <span>Audited Academic Track Record</span>
               </div>
@@ -120,10 +120,10 @@ export function AchievementBanner() {
                     <CheckCircle2 className="size-3.5" aria-hidden="true" />
                   </span>
                   <div>
-                    <h3 className="text-xs font-bold text-white">
+                    <h3 className="text-xs sm:text-sm font-bold text-white">
                       {pillar.title}
                     </h3>
-                    <p className="mt-0.5 text-3xs text-slate-400 sm:text-xs leading-relaxed">
+                    <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">
                       {pillar.desc}
                     </p>
                   </div>
@@ -173,7 +173,7 @@ export function AchievementBanner() {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "rounded-full border px-2.5 py-0.5 text-3xs font-bold uppercase tracking-wider",
+                            "rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider",
                             isAmber &&
                               "border-amber-400/30 bg-amber-400/10 text-amber-300",
                             isRuby &&
@@ -208,8 +208,8 @@ export function AchievementBanner() {
                         >
                           {item.value}
                         </dd>
-                        <span className="flex items-center gap-1 text-3xs font-semibold text-slate-400">
-                          <TrendingUp className="size-3 text-emerald-400" />
+                        <span className="flex items-center gap-1 text-xs font-medium text-slate-400">
+                          <TrendingUp className="size-3.5 text-emerald-400" />
                           {item.trend}
                         </span>
                       </div>
@@ -217,7 +217,7 @@ export function AchievementBanner() {
                       <dt className="mt-2 text-sm font-bold tracking-tight text-white">
                         {item.label}
                       </dt>
-                      <p className="mt-1 text-3xs text-slate-400 sm:text-xs leading-relaxed">
+                      <p className="mt-1 text-xs text-slate-400 leading-relaxed">
                         {item.detail}
                       </p>
                     </div>

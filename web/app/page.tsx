@@ -132,7 +132,7 @@ export default function Home() {
           </div>
 
           {/* Subtle Scroll Cue on Laptop/Desktop */}
-          <div className="pointer-events-none absolute bottom-2.5 left-1/2 hidden -translate-x-1/2 items-center gap-1 text-3xs font-medium text-slate-400/90 lg:flex">
+          <div className="pointer-events-none absolute bottom-2.5 left-1/2 hidden -translate-x-1/2 items-center gap-1 text-xs font-medium text-slate-400/90 lg:flex">
             <span>Scroll to explore</span>
             <ChevronDown className="size-3 animate-bounce text-slate-400" />
           </div>

@@ -3,6 +3,7 @@
 
 import {
   AlertCircle,
+  ArrowRight,
   BookOpenCheck,
   Check,
   CheckCircle2,
@@ -12,12 +13,15 @@ import {
   FileSpreadsheet,
   ImagePlus,
   LoaderCircle,
+  MousePointerClick,
   Pencil,
   Plus,
   Search,
+  Shuffle,
   Target,
   Trash2,
   Upload,
+  WandSparkles,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -267,6 +271,47 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   };
   if (!response.ok) throw new Error(payload.message || "Request failed");
   return payload as T;
+}
+
+function shuffleQuestions(items: Question[]) {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
+}
+
+function buildBalancedAutoSelection(questions: Question[], requested: number) {
+  const target = Math.min(Math.max(requested, 1), 200, questions.length);
+  const subjectPlan = [
+    { code: "PHYSICS", count: Math.floor(target * 0.25) },
+    { code: "CHEMISTRY", count: Math.floor(target * 0.25) },
+    { code: "BIOLOGY", count: target - Math.floor(target * 0.25) * 2 },
+  ];
+  const picked: Question[] = [];
+  const pickedIds = new Set<string>();
+
+  subjectPlan.forEach(({ code, count }) => {
+    shuffleQuestions(
+      questions.filter((question) => question.courseSubject.subject.code === code),
+    )
+      .slice(0, count)
+      .forEach((question) => {
+        picked.push(question);
+        pickedIds.add(question.id);
+      });
+  });
+
+  if (picked.length < target) {
+    shuffleQuestions(
+      questions.filter((question) => !pickedIds.has(question.id)),
+    )
+      .slice(0, target - picked.length)
+      .forEach((question) => picked.push(question));
+  }
+
+  return picked.map((question) => question.id);
 }
 
 export function QuestionBankManager() {
@@ -589,82 +634,99 @@ export function QuestionBankManager() {
     : visible;
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_16px_45px_-36px_rgba(15,23,42,0.45)]">
-      <div className="border-b border-slate-200 bg-[#fbfbfa] p-5 sm:p-7">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+      <div className="border-b border-slate-200 bg-[#fbfbfa] px-5 py-6 sm:px-7 sm:py-7">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-indigo-700">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-700">
               <BookOpenCheck className="size-3.5" /> Content operations
             </div>
-            <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-slate-950 sm:text-2xl">
-              Assessment content workspace
+            <h2 className="mt-2.5 text-2xl font-black tracking-[-0.035em] text-slate-950 sm:text-3xl">
+              Assessment content
             </h2>
-            <p className="mt-1.5 text-sm leading-6 text-slate-500">
-              Author, validate and organise bilingual NEET questions and mock
-              assessments across the core syllabus.
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
+              Build and maintain bilingual NEET questions, syllabus coverage,
+              and mock assessments from one workspace.
             </p>
           </div>
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
-              {[
-                {
-                  label: "Questions",
-                  value: questions.length,
-                  icon: FileQuestion,
-                },
-                {
-                  label: "Mock tests",
-                  value: tests.length,
-                  icon: ClipboardCheck,
-                },
-                { label: "Selected", value: selected.length, icon: Target },
-              ].map((metric, index) => {
-                const Icon = metric.icon;
-                return (
-                  <div
-                    key={metric.label}
-                    className={`min-w-24 px-3 py-3 ${index ? "border-l border-slate-100" : ""}`}
-                  >
-                    <div className="flex items-center gap-1.5 text-indigo-700">
-                      <Icon className="size-3.5" />
-                      <span className="text-lg font-black text-slate-950">
-                        {metric.value}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                      {metric.label}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={createQuestion}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-red px-4 text-xs font-bold text-white shadow-primary transition hover:bg-brand-red-hover active:scale-95"
-              >
-                <Plus className="size-4" /> Add question
-              </button>
-              <Link
-                href="/api/admin/questions/template"
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                <FileDown className="size-4" /> Template
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  setImportOpen(true);
-                  setImportFile(null);
-                  setImportReport(null);
-                  setError("");
-                }}
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-              >
-                <FileSpreadsheet className="size-4" /> Import Excel
-              </button>
-            </div>
+          <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={createQuestion}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#18184a] px-4 text-xs font-bold text-white transition hover:bg-[#25255f]"
+            >
+              <Plus className="size-4" /> Add question
+            </button>
+            <Link
+              href="/api/admin/questions/template"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+            >
+              <FileDown className="size-4" /> Template
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setImportOpen(true);
+                setImportFile(null);
+                setImportReport(null);
+                setError("");
+              }}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+            >
+              <FileSpreadsheet className="size-4" /> Import Excel
+            </button>
           </div>
+        </div>
+        <div className="mt-6 grid overflow-hidden rounded-xl border border-slate-200 bg-white sm:grid-cols-3">
+          {[
+            {
+              label: "Questions",
+              detail: "Library records",
+              value: questions.length,
+              icon: FileQuestion,
+              tone: "bg-indigo-50 text-indigo-700",
+            },
+            {
+              label: "Mock tests",
+              detail: "Assessment drafts",
+              value: tests.length,
+              icon: ClipboardCheck,
+              tone: "bg-emerald-50 text-emerald-700",
+            },
+            {
+              label: "Selected",
+              detail: "Ready for test",
+              value: selected.length,
+              icon: Target,
+              tone: "bg-amber-50 text-amber-700",
+            },
+          ].map((metric, index) => {
+            const Icon = metric.icon;
+            return (
+              <div
+                key={metric.label}
+                className={`flex items-center gap-3 px-4 py-3.5 sm:px-5 ${index ? "border-t border-slate-100 sm:border-l sm:border-t-0" : ""}`}
+              >
+                <div
+                  className={`grid size-9 shrink-0 place-items-center rounded-lg ${metric.tone}`}
+                >
+                  <Icon className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-black tracking-tight text-slate-950">
+                      {metric.value}
+                    </span>
+                    <span className="text-xs font-bold text-slate-700">
+                      {metric.label}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-400">
+                    {metric.detail}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
       <div
@@ -684,7 +746,7 @@ export function QuestionBankManager() {
         <div className="mx-auto my-2 max-w-4xl overflow-hidden rounded-2xl border border-white/20 bg-white shadow-2xl sm:my-8">
           <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-[#fbfbfa] px-5 py-4 sm:px-6">
             <div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-indigo-700">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-700">
                 <FileSpreadsheet className="size-3.5" /> Controlled bulk import
               </div>
               <h3 className="mt-1.5 text-lg font-black text-slate-950">
@@ -719,7 +781,7 @@ export function QuestionBankManager() {
                       key={label}
                       className="rounded-xl border border-slate-200 bg-slate-50/70 p-3"
                     >
-                      <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                         {label}
                       </p>
                       <p className="mt-1 text-xs font-bold text-slate-800">
@@ -757,6 +819,8 @@ export function QuestionBankManager() {
                     Duplicate matching is case-insensitive using{" "}
                     <strong>external_id</strong>. The first new row is imported;
                     later repetitions and existing database records are skipped.
+                    New chapter titles are created under the matching course and
+                    subject automatically.
                   </span>
                 </div>
               </>
@@ -776,7 +840,7 @@ export function QuestionBankManager() {
                       className="rounded-xl border border-slate-200 bg-white p-3"
                     >
                       <p className={"text-2xl font-black " + tone}>{value}</p>
-                      <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                         {label}
                       </p>
                     </div>
@@ -784,7 +848,7 @@ export function QuestionBankManager() {
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                   <div className="min-w-[620px]">
-                    <div className="grid grid-cols-[64px_minmax(110px,0.7fr)_100px_minmax(180px,1.3fr)] bg-slate-50 px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-500">
+                    <div className="grid grid-cols-[64px_minmax(110px,0.7fr)_100px_minmax(180px,1.3fr)] bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
                       <span>Row</span>
                       <span>External ID</span>
                       <span>Status</span>
@@ -808,7 +872,7 @@ export function QuestionBankManager() {
                           </span>
                           <span
                             className={
-                              "inline-flex w-fit items-center gap-1 rounded-md px-2 py-1 text-[9px] font-black uppercase " +
+                              "inline-flex w-fit items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold uppercase " +
                               (result.status === "imported"
                                 ? "bg-emerald-50 text-emerald-700"
                                 : result.status === "skipped"
@@ -857,8 +921,18 @@ export function QuestionBankManager() {
               )}
               <button
                 type="button"
-                disabled={!importFile || importBusy || Boolean(importReport)}
-                onClick={() => void importExcel()}
+                disabled={importBusy || (!importFile && !importReport)}
+                onClick={() => {
+                  if (importReport?.failed && importFile) {
+                    void importExcel();
+                    return;
+                  }
+                  if (importReport) {
+                    setImportOpen(false);
+                    return;
+                  }
+                  void importExcel();
+                }}
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#18184a] px-5 text-xs font-bold text-white hover:bg-[#25255f] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {importBusy ? (
@@ -866,7 +940,13 @@ export function QuestionBankManager() {
                 ) : (
                   <Upload className="size-4" />
                 )}
-                {importBusy ? "Validating and importing…" : "Start import"}
+                {importBusy
+                  ? "Validating and importing…"
+                  : importReport?.failed
+                    ? "Retry failed rows"
+                    : importReport
+                      ? "Done"
+                      : "Start import"}
               </button>
             </div>
           </div>
@@ -904,7 +984,7 @@ export function QuestionBankManager() {
             >
               {item.label}
               <span
-                className={`ml-2 rounded-full px-2 py-0.5 text-[9px] font-bold ${tab === item.id ? "bg-blue-50 text-brand-blue" : "bg-slate-100 text-slate-500"}`}
+                className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${tab === item.id ? "bg-blue-50 text-brand-blue" : "bg-slate-100 text-slate-500"}`}
               >
                 {item.count}
               </span>
@@ -929,7 +1009,7 @@ export function QuestionBankManager() {
                     {subject[0] + subject.slice(1).toLowerCase()}
                   </span>
                   <span
-                    className={`mt-0.5 block text-[9px] font-bold uppercase tracking-wider ${subjectFilter === subject ? "text-brand-blue" : "text-slate-400"}`}
+                    className={`mt-0.5 block text-xs font-semibold uppercase tracking-wider ${subjectFilter === subject ? "text-brand-blue" : "text-slate-400"}`}
                   >
                     Subject workspace
                   </span>
@@ -961,7 +1041,7 @@ export function QuestionBankManager() {
               <div className="mx-auto my-2 max-w-5xl overflow-hidden rounded-3xl border border-white/20 bg-white shadow-2xl sm:my-6">
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur-xl sm:px-7">
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.16em] text-indigo-600">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">
                       Assessment editor
                     </p>
                     <h3 className="mt-1 text-lg font-black text-slate-950">
@@ -1220,7 +1300,7 @@ export function QuestionBankManager() {
             <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     Content library
                   </p>
                   <h3 className="mt-1 text-sm font-black text-slate-950">
@@ -1230,11 +1310,11 @@ export function QuestionBankManager() {
                 </div>
                 <div className="flex items-center gap-2">
                   {showingExamples && (
-                    <span className="rounded-lg bg-amber-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-amber-700">
+                    <span className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-amber-700">
                       Demo preview
                     </span>
                   )}
-                  <span className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
+                  <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
                     {visible.length} records
                   </span>
                 </div>
@@ -1242,7 +1322,7 @@ export function QuestionBankManager() {
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-3 size-4 text-slate-400" />
                 <input
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none"
                   placeholder={`Search ${subjectFilter.toLowerCase()} questions`}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -1296,7 +1376,10 @@ export function QuestionBankManager() {
         ) : (
           <MockTests
             tests={tests}
+            questions={questions}
             selected={selected}
+            onSelectionChange={setSelected}
+            onChooseManually={() => setTab("bank")}
             onCreated={load}
             onError={setError}
             onNotice={setNotice}
@@ -1368,16 +1451,6 @@ function QuestionCard({
   onEdit: () => void;
   onDelete?: () => void;
 }) {
-  const correctAnswer =
-    question.type === "NUMERICAL"
-      ? question.numericalAnswer || "Not specified"
-      : question.options
-          .filter((option) => option.isCorrect)
-          .map(
-            (option) =>
-              `${option.label}. ${option.textEn || option.textTa || "Image option"}`,
-          )
-          .join(", ");
   return (
     <article
       className={`flex h-full flex-col rounded-2xl border bg-white p-4 transition sm:p-5 ${selected ? "border-indigo-500 ring-2 ring-indigo-100" : "border-slate-200 hover:border-indigo-200 hover:shadow-md"}`}
@@ -1388,7 +1461,7 @@ function QuestionCard({
             {question.externalId} · {question.courseSubject.subject.name}
           </div>
           {demo && (
-            <span className="mt-2 inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-700">
+            <span className="mt-2 inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-amber-700">
               Example content
             </span>
           )}
@@ -1403,7 +1476,7 @@ function QuestionCard({
           <button
             type="button"
             onClick={onSelect}
-            className={`shrink-0 rounded-lg border px-2.5 py-1 text-[10px] font-bold transition ${selected ? "border-brand-blue bg-brand-blue text-white shadow-xs" : "border-slate-200 text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-brand-blue"}`}
+            className={`shrink-0 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${selected ? "border-brand-blue bg-brand-blue text-white shadow-xs" : "border-slate-200 text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-brand-blue"}`}
           >
             {selected ? "Selected" : "Select"}
           </button>
@@ -1434,16 +1507,8 @@ function QuestionCard({
         ))}
       </div>
       <div className="mt-4 grid gap-2">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3">
-          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-700">
-            Correct answer
-          </p>
-          <p className="mt-1 text-xs font-bold leading-5 text-emerald-950">
-            {correctAnswer}
-          </p>
-        </div>
         <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
-          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-brand-blue">
+          <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
             Worked solution
           </p>
           <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-700">
@@ -1454,7 +1519,7 @@ function QuestionCard({
         </div>
       </div>
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-        <div className="flex flex-wrap gap-2 text-2xs font-bold uppercase text-slate-500">
+        <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase text-slate-500">
           <span>{question.type}</span>
           <span>{question.difficulty}</span>
           <span>
@@ -1465,7 +1530,7 @@ function QuestionCard({
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 px-2.5 py-2 text-[10px] font-bold text-brand-blue transition hover:bg-blue-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 px-2.5 py-2 text-xs font-semibold text-brand-blue transition hover:bg-blue-50"
             title={demo ? "Use as a new question template" : "Edit question"}
           >
             <Pencil className="size-4" />
@@ -1488,20 +1553,61 @@ function QuestionCard({
 }
 function MockTests({
   tests,
+  questions,
   selected,
+  onSelectionChange,
+  onChooseManually,
   onCreated,
   onError,
   onNotice,
 }: {
   tests: MockTest[];
+  questions: Question[];
   selected: string[];
+  onSelectionChange: (value: string[]) => void;
+  onChooseManually: () => void;
   onCreated: () => Promise<void>;
   onError: (value: string) => void;
   onNotice: (value: string) => void;
 }) {
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
+  const [selectionMode, setSelectionMode] = useState<"auto" | "manual">(
+    "auto",
+  );
+  const [autoCount, setAutoCount] = useState(180);
+  const [creating, setCreating] = useState(false);
+  const selectedQuestions = questions.filter((question) =>
+    selected.includes(question.id),
+  );
+  const subjectSelection = {
+    Physics: selectedQuestions.filter(
+      (question) => question.courseSubject.subject.code === "PHYSICS",
+    ).length,
+    Chemistry: selectedQuestions.filter(
+      (question) => question.courseSubject.subject.code === "CHEMISTRY",
+    ).length,
+    Biology: selectedQuestions.filter(
+      (question) => question.courseSubject.subject.code === "BIOLOGY",
+    ).length,
+  };
+  const autoSelect = () => {
+    if (!questions.length) {
+      onError("Add questions to the Question Bank before auto selection.");
+      return;
+    }
+    const nextSelection = buildBalancedAutoSelection(questions, autoCount);
+    onSelectionChange(nextSelection);
+    onNotice(
+      `${nextSelection.length} questions auto-selected using the NEET subject ratio.`,
+    );
+  };
   const create = async () => {
+    if (!selected.length) {
+      onError("Select at least one question for the mock test.");
+      return;
+    }
+    setCreating(true);
     try {
       const test = await request<MockTest>("mock-tests", {
         method: "POST",
@@ -1527,17 +1633,138 @@ function MockTests({
       onError(
         cause instanceof Error ? cause.message : "Mock test creation failed",
       );
+    } finally {
+      setCreating(false);
     }
   };
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1">
+    <div className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+      <div className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h3 className="font-extrabold text-slate-950">Build NEET mock test</h3>
         <p className="mt-1 text-xs text-slate-500">
-          Select questions in Question Bank, then create a 180-minute / 720-mark
-          draft.
+          Choose automatic or manual question selection, then create a
+          180-minute / 720-mark draft.
         </p>
-        <div className="mt-4 space-y-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {[
+            {
+              id: "auto" as const,
+              title: "Auto select",
+              detail: "Random NEET-balanced selection",
+              icon: WandSparkles,
+            },
+            {
+              id: "manual" as const,
+              title: "Manual select",
+              detail: "Choose each question yourself",
+              icon: MousePointerClick,
+            },
+          ].map((option) => {
+            const Icon = option.icon;
+            const active = selectionMode === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setSelectionMode(option.id)}
+                className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition ${active ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100" : "border-slate-200 hover:border-indigo-200 hover:bg-slate-50"}`}
+              >
+                <span
+                  className={`grid size-9 shrink-0 place-items-center rounded-lg ${active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}
+                >
+                  <Icon className="size-4" />
+                </span>
+                <span>
+                  <span className="block text-xs font-black text-slate-900">
+                    {option.title}
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-4 text-slate-500">
+                    {option.detail}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {selectionMode === "auto" ? (
+          <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <Field label="Number of questions">
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={autoCount}
+                  onChange={(event) =>
+                    setAutoCount(
+                      Math.min(200, Math.max(1, Number(event.target.value) || 1)),
+                    )
+                  }
+                />
+              </Field>
+              <button
+                type="button"
+                onClick={autoSelect}
+                disabled={!questions.length}
+                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Shuffle className="size-4" />
+                {selected.length ? "Regenerate selection" : "Select questions"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs leading-4 text-slate-500">
+              Uses the NEET ratio: 25% Physics, 25% Chemistry and 50% Biology.
+              Up to {Math.min(200, questions.length)} available questions can be
+              selected.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-black text-slate-900">
+                Choose from the Question Bank
+              </p>
+              <p className="mt-1 text-xs leading-4 text-slate-500">
+                Use the Select button on each question card. Your current
+                selection will stay saved while switching tabs.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onChooseManually}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+            >
+              Open Question Bank <ArrowRight className="size-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-black text-brand-blue">
+                {selected.length} questions selected
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {Object.entries(subjectSelection)
+                  .map(([subject, count]) => `${subject} ${count}`)
+                  .join(" · ")}
+              </p>
+            </div>
+            {selected.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onSelectionChange([])}
+                className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-brand-blue hover:bg-blue-50"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
           <Field label="Test code">
             <input
               value={code}
@@ -1552,19 +1779,35 @@ function MockTests({
               placeholder="NEET Full Syllabus Mock 01"
             />
           </Field>
-          <div className="rounded-xl bg-blue-50 p-3 text-sm font-bold text-brand-blue">
-            {selected.length} questions selected
-          </div>
           <button
+            type="button"
             onClick={() => void create()}
-            disabled={!code || !title}
+            disabled={!code || !title || !selected.length || creating}
             className="w-full rounded-xl bg-brand-red px-4 py-3 font-bold text-white shadow-primary transition hover:bg-brand-red-hover active:scale-95 disabled:opacity-40"
           >
-            Create draft mock test
+            {creating ? "Creating mock test…" : "Create draft mock test"}
           </button>
         </div>
       </div>
-      <div className="space-y-3 lg:col-span-2">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Assessment drafts
+            </p>
+            <h3 className="mt-1 text-sm font-black text-slate-950">
+              Created mock tests
+            </h3>
+          </div>
+          <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+            {tests.length} drafts
+          </span>
+        </div>
+        {!tests.length && (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-xs leading-5 text-slate-500">
+            No mock tests yet. Select questions and create your first draft.
+          </div>
+        )}
         {tests.map((test) => (
           <div
             key={test.id}

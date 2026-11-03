@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { BrandLogo } from '@/components/brand-logo';
+import { RoleDashboardContentSkeleton } from '@/components/skeletons/role-dashboard-skeleton';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { AuthenticatedSession, RoleName } from '@/lib/auth-session';
 import { hasRequiredRole } from '@/lib/role-policy';
 
@@ -102,24 +102,7 @@ export function RoleDashboard({ area }: { area: Area }) {
           </div>
 
           {status === 'loading' && (
-            <div className="mt-8 space-y-4">
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-5 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="size-4 rounded-full" />
-                  <Skeleton className="h-4 w-48 rounded-md" />
-                </div>
-                <Skeleton className="h-3.5 w-64 rounded-md" />
-                <Skeleton className="h-3 w-40 rounded-md" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-3">
-                {[1, 2, 3].map((card) => (
-                  <div key={card} className="rounded-2xl border border-slate-100 p-4 space-y-2">
-                    <Skeleton className="h-3 w-20 rounded-md" />
-                    <Skeleton className="h-6 w-16 rounded-lg" />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <RoleDashboardContentSkeleton />
           )}
           {status === 'ready' && (
             <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">

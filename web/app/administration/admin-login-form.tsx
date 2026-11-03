@@ -105,10 +105,10 @@ export function AdminLoginForm() {
             </div>
             <div>
               <p className="text-xs font-bold text-slate-900">{authenticatedUser.displayName}</p>
-              <p className="text-3xs font-medium text-slate-500">{authenticatedUser.role}</p>
+              <p className="text-xs font-medium text-slate-500">{authenticatedUser.role}</p>
             </div>
           </div>
-          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-3xs font-semibold">
+          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse mr-1" />
             Active Session
           </Badge>
@@ -121,14 +121,14 @@ export function AdminLoginForm() {
 
           <div className="grid grid-cols-2 gap-2.5 pt-1">
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
-              <p className="text-3xs font-semibold text-slate-400 uppercase tracking-wider">Total Enrolments</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Enrolments</p>
               <p className="text-lg font-black text-slate-900">1,000+</p>
-              <p className="text-3xs text-emerald-600 font-medium">Batch 2026 Active</p>
+              <p className="text-xs text-emerald-600 font-medium">Batch 2026 Active</p>
             </div>
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
-              <p className="text-3xs font-semibold text-slate-400 uppercase tracking-wider">Simulated Mocks</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Simulated Mocks</p>
               <p className="text-lg font-black text-slate-900">25 Tests</p>
-              <p className="text-3xs text-brand-blue font-medium">720-Mark NTA Pattern</p>
+              <p className="text-xs text-brand-blue font-medium">720-Mark NTA Pattern</p>
             </div>
           </div>
 
@@ -138,7 +138,7 @@ export function AdminLoginForm() {
                 <Users className="size-4 text-brand-blue" />
                 <span className="font-semibold">Student Enrolment Approvals</span>
               </div>
-              <Badge className="bg-rose-100 text-brand-red text-3xs border-none font-bold">New</Badge>
+              <Badge className="bg-rose-100 text-brand-red text-xs border-none font-semibold">New</Badge>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer">
@@ -195,11 +195,11 @@ export function AdminLoginForm() {
     >
       {/* Top Header Badge */}
       <div className="flex items-center justify-between">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-slate-800 uppercase">
-          <Shield className="size-3 text-slate-700" />
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-slate-800 uppercase">
+          <Shield className="size-3.5 text-slate-700" />
           <span>Restricted Portal</span>
         </div>
-        <div className="flex items-center gap-1.5 text-3xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
           <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span>Secure Login</span>
         </div>
@@ -209,7 +209,7 @@ export function AdminLoginForm() {
         <h2 id="admin-login-heading" className="text-lg font-extrabold text-slate-900 sm:text-xl">
           Administrator Sign In
         </h2>
-        <p className="text-2xs text-slate-500">
+        <p className="text-xs text-slate-500">
           Sign in to access curriculum management, question banks &amp; telemetry.
         </p>
       </div>
@@ -218,7 +218,7 @@ export function AdminLoginForm() {
       <form onSubmit={handleSubmit} className="mt-3.5 space-y-3" noValidate>
         {/* Administrator email */}
         <div className="space-y-1">
-          <label htmlFor="admin-email" className="block text-2xs sm:text-xs font-semibold text-slate-700">
+          <label htmlFor="admin-email" className="block text-xs sm:text-sm font-semibold text-slate-700">
             Administrator Email *
           </label>
           <div className="relative">
@@ -247,8 +247,8 @@ export function AdminLoginForm() {
             <Mail className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           </div>
           {errors.email && (
-            <p className="flex items-center gap-1 text-2xs font-medium text-rose-600">
-              <AlertCircle className="size-3 shrink-0" />
+            <p className="flex items-center gap-1 text-xs font-medium text-rose-600">
+              <AlertCircle className="size-3.5 shrink-0" />
               <span>{errors.email}</span>
             </p>
           )}
@@ -256,7 +256,7 @@ export function AdminLoginForm() {
 
         {/* Security Password */}
         <div className="space-y-1">
-          <label htmlFor="admin-pass" className="block text-2xs sm:text-xs font-semibold text-slate-700">
+          <label htmlFor="admin-pass" className="block text-xs sm:text-sm font-semibold text-slate-700">
             Security Passcode *
           </label>
           <div className="relative">
@@ -286,22 +286,22 @@ export function AdminLoginForm() {
             </button>
           </div>
           {errors.password && (
-            <p className="flex items-center gap-1 text-2xs font-medium text-rose-600">
-              <AlertCircle className="size-3 shrink-0" />
+            <p className="flex items-center gap-1 text-xs font-medium text-rose-600">
+              <AlertCircle className="size-3.5 shrink-0" />
               <span>{errors.password}</span>
             </p>
           )}
         </div>
 
         {/* Session security */}
-        <div className="flex items-center justify-between pt-0.5 text-2xs text-slate-600">
+        <div className="flex items-center justify-between pt-0.5 text-xs text-slate-600">
           <span>Secure cookie session</span>
-          <span className="text-3xs text-slate-400">256-Bit Encrypted</span>
+          <span className="text-xs text-slate-400">256-Bit Encrypted</span>
         </div>
 
         {/* Error Alert */}
         {authError && (
-          <div role="alert" className="flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-2xs leading-snug text-rose-700">
+          <div role="alert" className="flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-xs leading-snug text-rose-700">
             <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-rose-600" />
             <p>{authError}</p>
           </div>
@@ -325,7 +325,7 @@ export function AdminLoginForm() {
       </form>
 
       {/* Switch to Student Portal */}
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-2xs">
+      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
         <span className="text-slate-400">Enrolled Student?</span>
         <Link href="/login" className="font-semibold text-brand-blue hover:text-brand-blue-hover hover:underline">
           Go to Student LMS →
@@ -333,7 +333,7 @@ export function AdminLoginForm() {
       </div>
 
       {/* Help Helpline */}
-      <div className="mt-2.5 flex items-center justify-center gap-1 text-3xs text-slate-400">
+      <div className="mt-2.5 flex items-center justify-center gap-1 text-xs text-slate-400">
         <Headphones className="size-2.5 text-slate-400" />
         <span>IT Desk Helpline:</span>
         <a href="tel:+919894850370" className="font-semibold text-slate-600 hover:text-slate-900 hover:underline">

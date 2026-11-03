@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     ['correct_options', 'A for single answer; A,C for multiple answers; blank for numerical'], ['image columns', 'Insert > Pictures, place one JPG/PNG completely inside the matching *_image cell. Import uploads it to Supabase automatically. Existing public HTTPS URLs also work.'],
     ['embedded image limits', 'Maximum 100 pictures per workbook, 5 MB per picture and 25 MB workbook.'],
     ['marks', 'NEET default is +4 correct and -1 wrong'], ['duplicate policy', 'external_id is matched case-insensitively. Existing IDs and later repetitions in the same workbook are skipped; existing questions are never overwritten.'],
+    ['chapter policy', 'If chapter_title does not exist, bulk import creates it under the matching course_code and subject_code, then maps the question to it.'],
     ['batch limit', 'Maximum 500 non-empty question rows per workbook.'], ['Important', 'Do not rename columns. Every new question must have a unique external_id.'],
   ].forEach((row) => instructions.addRow(row)); instructions.getRow(1).font = { bold: true }; instructions.columns = [{ width: 24 }, { width: 100 }];
   const bytes = await workbook.xlsx.writeBuffer();

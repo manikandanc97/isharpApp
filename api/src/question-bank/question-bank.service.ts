@@ -58,6 +58,10 @@ function isUniqueConstraintError(error: unknown) {
   if (!error || typeof error !== 'object') return false;
   return 'code' in error && error.code === 'P2002';
 }
+function isTransactionConflict(error: unknown) {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false;
+  return error.code === 'P2034';
+}
 
 @Injectable()
 export class QuestionBankService {
@@ -91,7 +95,10 @@ export class QuestionBankService {
   async saveQuestion(
     profileId: string | null,
     body: unknown,
-    savePolicy: { skipExisting?: boolean } = {},
+    savePolicy: {
+      skipExisting?: boolean;
+      createMissingChapter?: boolean;
+    } = {},
   ) {
     if (!profileId)
       throw new BadRequestException('Administrator profile is not linked');
@@ -139,7 +146,7 @@ export class QuestionBankService {
           (item) => item.title.toLowerCase() === chapterTitle.toLowerCase(),
         )
       : undefined;
-    if (chapterTitle && !chapter)
+    if (chapterTitle && !chapter && !savePolicy.createMissingChapter)
       throw new BadRequestException(`Chapter not found: ${chapterTitle}`);
     const options = (Array.isArray(input.options) ? input.options : []).map(
       (value, index) => {
@@ -190,7 +197,6 @@ export class QuestionBankService {
     }
     const data = {
       courseSubjectId: courseSubject.id,
-      chapterId: chapter?.id ?? null,
       type,
       language,
       difficulty,
@@ -206,31 +212,92 @@ export class QuestionBankService {
       source: str(input.source, 'source', false, 200),
       isActive: input.isActive !== false,
     };
-    return this.prisma.$transaction(async (tx) => {
-      const existing = await tx.question.findFirst({
-        where: { externalId: { equals: externalId, mode: 'insensitive' } },
-      });
-      if (existing && savePolicy.skipExisting) return null;
-      const question = existing
-        ? await tx.question.update({ where: { id: existing.id }, data })
-        : await tx.question.create({
-            data: { externalId, createdById: profileId, ...data },
+    const persist = () =>
+      this.prisma.$transaction(
+        async (tx) => {
+          const existing = await tx.question.findFirst({
+            where: { externalId: { equals: externalId, mode: 'insensitive' } },
           });
-      await tx.questionOption.deleteMany({
-        where: { questionId: question.id },
-      });
-      if (type !== 'NUMERICAL')
-        await tx.questionOption.createMany({
-          data: options.map((option) => ({
-            questionId: question.id,
-            ...option,
-          })),
-        });
-      return tx.question.findUnique({
-        where: { id: question.id },
-        include: { options: { orderBy: { position: 'asc' } } },
-      });
-    });
+          if (existing && savePolicy.skipExisting) return null;
+
+          let chapterId = chapter?.id ?? null;
+          let createdChapter: string | null = null;
+          if (chapterTitle && !chapterId) {
+            const concurrentChapter = await tx.chapter.findFirst({
+              where: {
+                courseSubjectId: courseSubject.id,
+                title: { equals: chapterTitle, mode: 'insensitive' },
+              },
+            });
+            if (concurrentChapter) {
+              chapterId = concurrentChapter.id;
+            } else {
+              const highestPosition = await tx.chapter.aggregate({
+                where: { courseSubjectId: courseSubject.id },
+                _max: { position: true },
+              });
+              const created = await tx.chapter.create({
+                data: {
+                  courseSubjectId: courseSubject.id,
+                  title: chapterTitle,
+                  position: (highestPosition._max.position ?? 0) + 1,
+                },
+              });
+              chapterId = created.id;
+              createdChapter = created.title;
+            }
+          }
+
+          const questionData = { ...data, chapterId };
+          const question = existing
+            ? await tx.question.update({
+                where: { id: existing.id },
+                data: questionData,
+              })
+            : await tx.question.create({
+                data: {
+                  externalId,
+                  createdById: profileId,
+                  ...questionData,
+                },
+              });
+          await tx.questionOption.deleteMany({
+            where: { questionId: question.id },
+          });
+          if (type !== 'NUMERICAL')
+            await tx.questionOption.createMany({
+              data: options.map((option) => ({
+                questionId: question.id,
+                ...option,
+              })),
+            });
+          const saved = await tx.question.findUnique({
+            where: { id: question.id },
+            include: { options: { orderBy: { position: 'asc' } } },
+          });
+          if (!saved) throw new Error('Question could not be read after save');
+          return {
+            ...saved,
+            importMeta: { createdChapter },
+          };
+        },
+        { isolationLevel: 'Serializable' },
+      );
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await persist();
+      } catch (error) {
+        const chapterRace =
+          Boolean(chapterTitle) &&
+          savePolicy.createMissingChapter &&
+          isUniqueConstraintError(error);
+        if (attempt < 2 && (isTransactionConflict(error) || chapterRace))
+          continue;
+        throw error;
+      }
+    }
+    throw new Error('Question save could not be completed');
   }
 
   async importQuestions(profileId: string | null, body: unknown) {
@@ -264,6 +331,7 @@ export class QuestionBankService {
       try {
         const saved = await this.saveQuestion(profileId, row, {
           skipExisting: true,
+          createMissingChapter: true,
         });
         results.push(
           saved
@@ -271,6 +339,9 @@ export class QuestionBankService {
                 row: rowNumber,
                 externalId: saved.externalId,
                 status: 'imported',
+                reason: saved.importMeta?.createdChapter
+                  ? `Imported and created chapter: ${saved.importMeta.createdChapter}`
+                  : undefined,
               }
             : {
                 row: rowNumber,

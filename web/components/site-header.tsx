@@ -26,7 +26,7 @@ export function SiteHeader() {
 
           <Badge
             variant="outline"
-            className="hidden items-center gap-2 rounded-full border-slate-200/90 bg-slate-50 px-3.5 py-1 text-2xs font-medium text-slate-700 shadow-2xs hover:border-blue-200 hover:bg-blue-50/60 lg:flex"
+            className="hidden items-center gap-2 rounded-full border-slate-200/90 bg-slate-50 px-3.5 py-1 text-xs font-medium text-slate-700 shadow-2xs hover:border-blue-200 hover:bg-blue-50/60 lg:flex"
           >
             <span className="relative flex size-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-blue opacity-40" />

@@ -80,14 +80,14 @@ function StepPreview({ step }: { step: JourneyStep }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Volume2 className="size-3.5 text-brand-red" />
-            <span className="text-2xs font-bold text-slate-800">Mechanics &amp; Optics</span>
+            <span className="text-xs font-semibold text-slate-800">Mechanics &amp; Optics</span>
           </div>
-          <span className="rounded bg-rose-50 px-1.5 py-0.5 text-3xs font-bold text-brand-red">
+          <span className="rounded bg-rose-50 px-1.5 py-0.5 text-xs font-semibold text-brand-red">
             தமிழ் + EN
           </span>
         </div>
         <div className="mt-2.5">
-          <div className="flex items-center justify-between text-3xs text-slate-500">
+          <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Core Derivations Complete</span>
             <span className="font-semibold text-slate-700">78%</span>
           </div>
@@ -102,12 +102,12 @@ function StepPreview({ step }: { step: JourneyStep }) {
   if (step.number === "02") {
     return (
       <div className="mt-4 space-y-2 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
-        <div className="flex items-center justify-between text-3xs font-bold text-slate-600 uppercase tracking-wider">
+        <div className="flex items-center justify-between text-xs font-semibold text-slate-600 uppercase tracking-wider">
           <span className="flex items-center gap-1">
-            <Clock className="size-3 text-brand-blue" /> DPP #48 · 15 Qs
+            <Clock className="size-3.5 text-brand-blue" /> DPP #48 · 15 Qs
           </span>
           <span className="text-brand-blue flex items-center gap-1">
-            <Flame className="size-3 fill-current" /> 14-Day Streak
+            <Flame className="size-3.5 fill-current" /> 14-Day Streak
           </span>
         </div>
         <div className="flex items-center gap-1 pt-0.5">
@@ -115,7 +115,7 @@ function StepPreview({ step }: { step: JourneyStep }) {
             <span
               key={item}
               className={cn(
-                "grid size-6 flex-1 place-items-center rounded text-3xs font-bold transition",
+                "grid size-6 flex-1 place-items-center rounded text-xs font-bold transition",
                 item <= 4
                   ? "bg-brand-blue text-white"
                   : "border border-slate-200 text-slate-400 bg-slate-50",
@@ -132,8 +132,8 @@ function StepPreview({ step }: { step: JourneyStep }) {
   if (step.number === "03") {
     return (
       <div className="mt-4 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
-        <div className="flex items-center justify-between text-3xs">
-          <span className="font-bold text-slate-800">Speed vs Accuracy</span>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-slate-800">Speed vs Accuracy</span>
           <span className="font-mono text-brand-blue font-bold">96.4% Accuracy</span>
         </div>
         <div className="mt-2 flex h-8 items-end justify-between gap-1.5 px-0.5">
@@ -149,7 +149,7 @@ function StepPreview({ step }: { step: JourneyStep }) {
             </div>
           ))}
         </div>
-        <p className="mt-1.5 text-center text-3xs text-emerald-700 font-medium">
+        <p className="mt-1.5 text-center text-xs text-emerald-700 font-medium">
           ✓ -4 Negative Marks Eliminated
         </p>
       </div>
@@ -163,8 +163,8 @@ function StepPreview({ step }: { step: JourneyStep }) {
       </span>
       <div className="min-w-0 flex-1">
         <span className="block text-xs font-bold text-slate-900">NTA Standard Simulated Exam</span>
-        <span className="mt-0.5 flex items-center gap-1 text-2xs font-semibold text-brand-red">
-          <CheckCircle2 className="size-3" /> Projected AIR &lt; 500
+        <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-brand-red">
+          <CheckCircle2 className="size-3.5" /> Projected AIR &lt; 500
         </span>
       </div>
     </div>
@@ -182,7 +182,7 @@ export function LearningJourney() {
         {/* Section Heading & Stage Indicator */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-0.5 text-3xs font-bold tracking-wider text-brand-red uppercase">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-0.5 text-xs font-semibold tracking-wide text-brand-red uppercase">
               <Target className="size-3 text-brand-red" aria-hidden="true" />
               <span>The 4-Stage Methodology</span>
             </div>
@@ -250,7 +250,7 @@ export function LearningJourney() {
                     <div className="mt-4">
                       <span
                         className={cn(
-                          "text-3xs font-bold tracking-wider uppercase",
+                          "text-xs font-semibold tracking-wider uppercase",
                           isBlue ? "text-brand-blue" : "text-brand-red",
                         )}
                       >
@@ -269,7 +269,7 @@ export function LearningJourney() {
 
                   {/* Card Bottom Meta */}
                   <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3.5 text-xs font-medium text-slate-500">
-                    <span className="text-3xs font-semibold uppercase tracking-wider">{step.note}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider">{step.note}</span>
                     {index < journey.length - 1 ? (
                       <ArrowRight
                         className={cn(

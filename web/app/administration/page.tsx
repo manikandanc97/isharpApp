@@ -49,7 +49,7 @@ export default function AdministrationPage() {
               aria-hidden="true"
             />
             {/* Admin capsule */}
-            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-300/80 bg-slate-100 px-2.5 py-1 text-3xs font-semibold text-slate-800 shadow-2xs">
+            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-300/80 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs">
               <Shield className="size-3 text-brand-navy" />
               <span>Institutional Portal</span>
               <span className="h-2 w-px bg-slate-300" aria-hidden="true" />
@@ -87,11 +87,11 @@ export default function AdministrationPage() {
           >
             {/* Eyebrow Pill */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/90 bg-white px-2.5 py-0.5 text-3xs font-bold tracking-wider text-slate-800 shadow-2xs uppercase">
-                <ShieldCheck className="size-3 text-brand-navy" />
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/90 bg-white px-2.5 py-0.5 text-xs font-semibold tracking-wide text-slate-800 shadow-2xs uppercase">
+                <ShieldCheck className="size-3.5 text-brand-navy" />
                 <span>Institutional Governance</span>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-3xs font-semibold text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Admin SSO Verified
               </span>
@@ -122,10 +122,10 @@ export default function AdministrationPage() {
                       <div className="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-brand-navy">
                         <Icon className="size-3.5" />
                       </div>
-                      <p className="mt-2 text-2xs sm:text-xs font-bold text-slate-900 leading-tight">
+                      <p className="mt-2 text-xs sm:text-sm font-bold text-slate-900 leading-tight">
                         {item.title}
                       </p>
-                      <p className="mt-1 text-3xs leading-relaxed text-slate-500">
+                      <p className="mt-1 text-xs leading-relaxed text-slate-500">
                         {item.desc}
                       </p>
                     </div>
@@ -135,14 +135,14 @@ export default function AdministrationPage() {
             </div>
 
             {/* Security Compliance Trust Strip */}
-            <div className="mt-4 flex flex-wrap items-center gap-y-1.5 gap-x-3 text-3xs text-slate-500">
+            <div className="mt-4 flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-500">
               <span className="flex items-center gap-1">
-                <Lock className="size-2.5 text-emerald-600" />
+                <Lock className="size-3 text-emerald-600" />
                 <span>256-Bit TLS Audit Logging</span>
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <CheckCircle2 className="size-2.5 text-blue-600" />
+                <CheckCircle2 className="size-3 text-blue-600" />
                 <span>Enterprise Supabase RBAC</span>
               </span>
               <span>•</span>

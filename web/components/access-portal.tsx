@@ -78,7 +78,7 @@ export function AccessPortal() {
         <div>
           <Badge
             variant="outline"
-            className="inline-flex items-center gap-1.5 rounded-full border-emerald-200/80 bg-emerald-50/80 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-emerald-700 uppercase"
+            className="inline-flex items-center gap-1.5 rounded-full border-emerald-200/80 bg-emerald-50/80 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-700 uppercase"
           >
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>Academic Gateway</span>
@@ -140,14 +140,14 @@ export function AccessPortal() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            "rounded-full border px-2 py-0.2 text-3xs font-semibold uppercase tracking-wider",
+                            "rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider",
                             item.badgeColor,
                           )}
                         >
                           {item.badge}
                         </Badge>
                       </div>
-                      <p className="mt-0.5 text-3xs text-slate-500 sm:text-xs leading-tight">
+                      <p className="mt-0.5 text-xs text-slate-500 leading-normal">
                         {item.description}
                       </p>
                     </div>
@@ -169,9 +169,9 @@ export function AccessPortal() {
 
       {/* Subtle security & network footnote */}
       <Separator className="mt-3.5 bg-slate-100" />
-      <div className="pt-3 flex items-center justify-between text-3xs text-slate-400">
-        <div className="flex items-center gap-1.5 font-medium text-slate-500">
-          <Lock className="size-3 text-emerald-600" aria-hidden="true" />
+      <div className="pt-3 flex items-center justify-between text-xs text-slate-500">
+        <div className="flex items-center gap-1.5 font-medium text-slate-600">
+          <Lock className="size-3.5 text-emerald-600" aria-hidden="true" />
           <span>256-Bit Encrypted Access</span>
         </div>
         <div className="flex items-center gap-1 font-semibold text-slate-600">

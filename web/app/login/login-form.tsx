@@ -174,8 +174,8 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
     >
       {/* Top Badge */}
       <div className="flex items-center justify-between">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-3xs font-bold tracking-wider text-brand-red uppercase">
-          <ShieldCheck className="size-3 text-brand-red" />
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-brand-red uppercase">
+          <ShieldCheck className="size-3.5 text-brand-red" />
           <span>Student LMS Portal</span>
         </div>
         <span className="size-2 rounded-full bg-emerald-500 animate-pulse" title="System Operational" />
@@ -187,7 +187,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
       >
         Welcome back
       </h2>
-      <p className="mt-0.5 text-2xs text-slate-500 sm:text-xs">
+      <p className="mt-0.5 text-xs text-slate-500">
         Sign in to access your DPPs, test telemetry &amp; lecture notes.
       </p>
 
@@ -197,7 +197,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
         <div className="space-y-1">
           <label
             htmlFor="identifier"
-            className="block text-2xs sm:text-xs font-semibold text-slate-700"
+            className="block text-xs sm:text-sm font-semibold text-slate-700"
           >
             Email or Mobile Number
           </label>
@@ -234,9 +234,9 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
             <p
               id="identifier-error"
               role="alert"
-              className="flex items-center gap-1 text-2xs font-medium text-rose-600"
+              className="flex items-center gap-1 text-xs font-medium text-rose-600"
             >
-              <AlertCircle aria-hidden="true" className="size-3 shrink-0" />
+              <AlertCircle aria-hidden="true" className="size-3.5 shrink-0" />
               <span>{errors.identifier}</span>
             </p>
           )}
@@ -246,7 +246,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
         <div className="space-y-1">
           <label
             htmlFor="password"
-            className="block text-2xs sm:text-xs font-semibold text-slate-700"
+            className="block text-xs sm:text-sm font-semibold text-slate-700"
           >
             Password
           </label>
@@ -299,9 +299,9 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
             <p
               id="password-error"
               role="alert"
-              className="flex items-center gap-1 text-2xs font-medium text-rose-600"
+              className="flex items-center gap-1 text-xs font-medium text-rose-600"
             >
-              <AlertCircle aria-hidden="true" className="size-3 shrink-0" />
+              <AlertCircle aria-hidden="true" className="size-3.5 shrink-0" />
               <span>{errors.password}</span>
             </p>
           )}
@@ -309,11 +309,11 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
 
         {/* Session and password recovery */}
         <div className="flex items-center justify-between pt-0.5">
-          <span className="text-2xs font-medium text-slate-500 sm:text-xs">Secure cookie session</span>
+          <span className="text-xs font-medium text-slate-500">Secure cookie session</span>
           <button
             type="button"
             disabled={isSubmitting || isResetting}
-            className="text-2xs sm:text-xs font-semibold text-brand-blue hover:text-brand-blue-hover hover:underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
+            className="text-xs sm:text-sm font-semibold text-brand-blue hover:text-brand-blue-hover hover:underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
             onClick={handleForgotPassword}
           >
             {isResetting ? "Sending link…" : "Forgot password?"}
@@ -324,7 +324,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
         {authError && (
           <div
             role="alert"
-            className="flex gap-1.5 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-2xs leading-snug text-rose-700"
+            className="flex gap-1.5 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-xs leading-snug text-rose-700"
           >
             <AlertCircle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-rose-600" />
             <p>{authError}</p>
@@ -335,7 +335,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
         {statusMessage && (
           <div
             role="status"
-            className="flex gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50/90 p-2 text-2xs leading-snug text-emerald-800"
+            className="flex gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50/90 p-2 text-xs leading-snug text-emerald-800"
           >
             <CheckCircle2 aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-emerald-600" />
             <p>{statusMessage}</p>
@@ -361,7 +361,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
 
       <div className="relative my-3 text-center">
         <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t border-slate-200" /></div>
-        <span className="relative bg-white px-2.5 text-3xs font-bold uppercase tracking-wider text-slate-400">or</span>
+        <span className="relative bg-white px-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400">or</span>
       </div>
       <GoogleSignInButton onError={setAuthError} />
 
@@ -370,7 +370,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
           <div className="w-full border-t border-slate-200" />
         </div>
-        <span className="relative bg-white px-2.5 text-3xs font-bold uppercase tracking-wider text-slate-400">
+        <span className="relative bg-white px-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
           New Student?
         </span>
       </div>
@@ -385,10 +385,10 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
             <UserPlus className="size-3.5" />
           </div>
           <div>
-            <p className="text-2xs sm:text-xs font-bold text-slate-900 group-hover:text-brand-blue transition">
+            <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-brand-blue transition">
               Apply for 2026 Batch Admission
             </p>
-            <p className="text-3xs text-slate-500">
+            <p className="text-xs text-slate-500">
               NEET Bilingual &amp; Tamil Medium Cohort
             </p>
           </div>
@@ -397,7 +397,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
       </Link>
 
       {/* Help & Support Footer */}
-      <div className="mt-2.5 flex items-center justify-center gap-1 text-3xs text-slate-400">
+      <div className="mt-2.5 flex items-center justify-center gap-1 text-xs text-slate-400">
         <Headphones className="size-2.5 text-slate-400" />
         <span>Helpline:</span>
         <a

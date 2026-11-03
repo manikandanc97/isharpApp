@@ -25,12 +25,12 @@ export function SiteFooter() {
               <p className="text-xs sm:text-sm font-semibold text-white">
                 &ldquo;Consistency beats intensity. When practice becomes reflex, rank becomes inevitable.&rdquo;
               </p>
-              <p className="text-3xs sm:text-xs text-slate-400">
+              <p className="text-xs text-slate-400">
                 — I-Sharp Academic Directorate
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3.5 py-1 text-3xs text-slate-300">
+          <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3.5 py-1 text-xs text-slate-300">
             <ShieldCheck className="size-3.5 text-emerald-400" />
             <span>NTA Calibrated Curriculum Standard</span>
           </div>
@@ -71,13 +71,13 @@ export function SiteFooter() {
 
             {/* Enterprise Security Badges */}
             <div className="mt-6 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-3xs font-medium text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-400">
                 <Lock className="size-3 text-emerald-400" /> 256-Bit TLS
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-3xs font-medium text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-400">
                 <CheckCircle2 className="size-3 text-blue-400" /> ISO 9001:2015
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-3xs font-medium text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-400">
                 <ShieldCheck className="size-3 text-amber-400" /> NTA Aligned
               </span>
             </div>
@@ -187,7 +187,7 @@ export function SiteFooter() {
         </div>
 
         {/* Enterprise Bottom Legal & Status Strip */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-6 text-3xs text-slate-500 sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-6 text-xs text-slate-500 sm:flex-row">
           <div className="flex flex-wrap items-center gap-3">
             <p>© 2026 I-Sharp Academy. All rights reserved.</p>
             <span>·</span>
