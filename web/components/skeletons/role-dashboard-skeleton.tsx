@@ -31,7 +31,7 @@ export function RoleDashboardSkeleton() {
       label="Loading dashboard"
       className="min-h-svh bg-slate-50 px-4 py-8 text-slate-900 sm:px-8"
     >
-      <div className="mx-auto max-w-4xl">
+      <div className="layout-container" data-size="readable">
         <div className="flex items-center justify-between gap-4">
           <BrandLogo priority className="h-9 w-auto" />
           <Skeleton className="h-8.5 w-24 rounded-lg" />

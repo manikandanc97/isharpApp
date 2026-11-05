@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function FeatureSkeleton() {
   return (
     <section className="border-b border-slate-200/80 bg-white py-12 sm:py-16 lg:py-20">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
+      <div className="layout-container">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <SkeletonSectionHeading />
           <Skeleton className="h-10 w-full max-w-sm" />
@@ -56,7 +56,7 @@ export function FeatureSkeleton() {
 export function AchievementSkeleton() {
   return (
     <section className="border-b border-slate-800 bg-slate-950 py-12 sm:py-16 lg:py-20">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:gap-12">
+      <div className="layout-container grid items-center gap-(--space-layout) lg:grid-cols-12 lg:gap-12">
         <div className="lg:col-span-5">
           <SkeletonSectionHeading dark />
           <div className="mt-6 space-y-4 border-t border-slate-800 pt-5">
@@ -94,7 +94,7 @@ export function AchievementSkeleton() {
 export function JourneySkeleton() {
   return (
     <section className="border-b border-slate-200/80 bg-slate-50 px-4 py-12 sm:px-8 sm:py-16 lg:py-20">
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="layout-container">
         <SkeletonSectionHeading />
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {skeletonItems(4).map((item) => (
@@ -118,7 +118,7 @@ export function JourneySkeleton() {
 export function CoursesSkeleton() {
   return (
     <section className="border-b border-slate-200/80 bg-white px-4 py-12 sm:px-8 sm:py-16 lg:py-20">
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="layout-container">
         <SkeletonSectionHeading />
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {skeletonItems(6).map((item) => (

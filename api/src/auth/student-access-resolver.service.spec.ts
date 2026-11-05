@@ -110,8 +110,11 @@ describe('StudentAccessResolver', () => {
           email: 'student@example.com',
           institutionMembership: {
             create: expect.objectContaining({
+              status: 'VERIFIED',
+              method: 'TRUSTED_ROSTER',
               studentCategory: 'INTERNAL',
               paymentStatus: 'NOT_REQUIRED',
+              verifiedAt: expect.any(Date),
             }),
           },
         }),
@@ -138,6 +141,11 @@ describe('StudentAccessResolver', () => {
         data: expect.objectContaining({
           institutionMembership: {
             create: expect.objectContaining({
+              studentId: 'EXT-00000000-0000-4000-8000-000000000002',
+              status: 'PENDING',
+              method: null,
+              trustedRecordId: null,
+              verifiedAt: null,
               studentCategory: 'EXTERNAL',
               paymentStatus: 'PENDING',
             }),
@@ -145,5 +153,76 @@ describe('StudentAccessResolver', () => {
         }),
       }),
     );
+  });
+
+  it('repairs a legacy internal membership that still has an external student ID', async () => {
+    const authUserId = '00000000-0000-4000-8000-000000000003';
+    const membership = {
+      id: 'membership-id',
+      studentId: `EXT-${authUserId.toUpperCase()}`,
+      studentCategory: 'INTERNAL',
+      paymentStatus: 'NOT_REQUIRED',
+      paidAccessUntil: null,
+      trustedRecordId: 'roster-id',
+    };
+    const profile = {
+      id: 'profile-id',
+      email: 'student@example.com',
+      isActive: true,
+      userRoles: [{ role: { name: 'STUDENT' } }],
+      institutionMembership: membership,
+    };
+    const roster = {
+      id: 'roster-id',
+      studentId: 'ISA002',
+      authUserId,
+      isActive: true,
+    };
+    const repaired = {
+      ...profile,
+      institutionMembership: { ...membership, studentId: 'ISA002' },
+    };
+    const tx = {
+      userProfile: {
+        findUnique: vi
+          .fn()
+          .mockResolvedValueOnce(profile)
+          .mockResolvedValueOnce(repaired),
+      },
+      trustedInstitutionStudent: {
+        findUnique: vi.fn().mockResolvedValue(roster),
+        update: vi.fn(),
+      },
+      institutionMembership: {
+        update: vi.fn().mockResolvedValue(repaired.institutionMembership),
+      },
+      studentAccessAudit: { create: vi.fn().mockResolvedValue({}) },
+    };
+    const prisma = {
+      userProfile: { findUnique: vi.fn().mockResolvedValue(profile) },
+      trustedInstitutionStudent: {
+        findUnique: vi.fn().mockResolvedValue(roster),
+      },
+      $transaction: vi.fn(async (callback: (client: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    };
+    const service = new StudentAccessResolver(prisma as never);
+
+    await expect(
+      service.resolve(authUserId, { email: 'student@example.com' }),
+    ).resolves.toBe(repaired);
+    expect(tx.institutionMembership.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'membership-id' },
+        data: expect.objectContaining({ studentId: 'ISA002' }),
+      }),
+    );
+    expect(tx.studentAccessAudit.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        membershipId: 'membership-id',
+        reason: 'AUTO_INTERNAL_EMAIL_ROSTER_MATCH',
+      }),
+    });
   });
 });

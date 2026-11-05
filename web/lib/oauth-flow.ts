@@ -2,8 +2,14 @@ import type { AuthenticatedSession } from '@/lib/auth-session';
 
 export type OAuthCallbackState = 'cancelled' | 'invalid_callback' | 'exchange_failed';
 
+export const OAUTH_POPUP_RESULT_KEY = 'isharp:google-oauth-result';
+
 export function buildOAuthCallbackUrl(origin: string) {
   return `${origin.replace(/\/$/, '')}/auth/callback`;
+}
+
+export function buildOAuthPopupCallbackUrl(origin: string) {
+  return `${buildOAuthCallbackUrl(origin)}?popup=1`;
 }
 
 export function getOAuthCallbackState(searchParams: URLSearchParams): OAuthCallbackState | null {
@@ -16,7 +22,10 @@ export function getOAuthCallbackState(searchParams: URLSearchParams): OAuthCallb
 export function getPostAuthDestination(session: AuthenticatedSession) {
   if (session.roles.includes('SUPERADMIN')) return '/admin';
   if (session.roles.includes('ADMIN')) return '/admin';
-  if (session.roles.includes('STUDENT')) return '/dashboard/student';
+  if (session.roles.includes('STUDENT')) {
+    if (session.studentAccess?.hasLearningAccess === false) return '/plans';
+    return '/dashboard/student';
+  }
   return '/auth/pending';
 }
 

@@ -43,8 +43,11 @@ export class AdminController {
   }
 
   @Post('internal-students')
-  createInternalStudent(@Body() body: unknown) {
-    return this.admin.createInternalStudent(body);
+  createInternalStudent(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
+    return this.admin.createInternalStudent(request.user, body);
   }
 
   @Patch('internal-students/:id')

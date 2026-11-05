@@ -2,60 +2,33 @@
 
 import {
   AlertCircle,
-  ArrowRight,
   CheckCircle2,
-  Eye,
-  EyeOff,
-  Headphones,
   LoaderCircle,
-  Lock,
   Mail,
   ShieldCheck,
-  UserPlus,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { getAuthenticatedSession } from "@/lib/auth-session";
-import { oauthStatusMessages } from "@/lib/oauth-flow";
+import { getPostAuthDestination, oauthStatusMessages } from "@/lib/oauth-flow";
 import { createClient } from "@/lib/supabase/client";
+import { isValidEmail, normalizePhone, validateIdentifier } from "@/lib/validation";
 import { cn } from "@/lib/utils";
+import { LoginFooter } from "./login-footer";
 
 type FieldErrors = {
   identifier?: string;
   password?: string;
 };
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phonePattern = /^\+?[0-9]{8,15}$/;
-
-function normalizePhone(value: string): string {
-  return value.replace(/[\s()-]/g, "");
-}
-
-function validateIdentifier(value: string): string | undefined {
-  const identifier = value.trim();
-
-  if (!identifier) {
-    return "Enter your email or mobile number.";
-  }
-
-  if (
-    !emailPattern.test(identifier) &&
-    !phonePattern.test(normalizePhone(identifier))
-  ) {
-    return "Enter a valid email or mobile number.";
-  }
-}
-
 export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string }) {
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [authError, setAuthError] = useState(initialAuthError);
   const [statusMessage, setStatusMessage] = useState("");
@@ -90,7 +63,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
     setIsSubmitting(true);
 
     const cleanedIdentifier = identifier.trim();
-    const credentials = emailPattern.test(cleanedIdentifier)
+    const credentials = isValidEmail(cleanedIdentifier)
       ? { email: cleanedIdentifier, password }
       : { phone: normalizePhone(cleanedIdentifier), password };
 
@@ -98,32 +71,22 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
       const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
-      if (!error) {
-        const accessToken = data.session?.access_token;
-        if (!accessToken) {
-          setAuthError("Your Supabase session did not include an access token.");
-          return;
-        }
-        const session = await getAuthenticatedSession(accessToken);
-        if (!session.roles.includes("STUDENT")) {
-          await supabase.auth.signOut();
-          setAuthError(
-            "This account does not have active student access. Contact I-Sharp Academy support.",
-          );
-          return;
-        }
-        router.replace("/");
-        router.refresh();
+      if (error) {
+        setAuthError(error.message);
         return;
       }
 
-      setAuthError(
-        error.message.toLowerCase().includes("invalid login credentials")
-          ? "The email/mobile or password you entered is incorrect."
-          : error.message,
-      );
+      if (!data.session) {
+        setAuthError("Sign-in succeeded, but no session was created. Please try again.");
+        return;
+      }
+
+      const activeSession = await getAuthenticatedSession(data.session.access_token);
+      const destination = getPostAuthDestination(activeSession);
+      router.replace(destination);
+      router.refresh();
     } catch {
-      setAuthError("Sign-in could not be completed. Please try again.");
+      setAuthError("Unable to reach the login service. Check your connection.");
     } finally {
       setIsSubmitting(false);
     }
@@ -134,8 +97,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
     setStatusMessage("");
 
     const identifierError = validateIdentifier(identifier);
-
-    if (identifierError || !emailPattern.test(identifier.trim())) {
+    if (identifierError || !isValidEmail(identifier)) {
       setErrors((current) => ({
         ...current,
         identifier: identifierError ?? "Enter your email to reset password.",
@@ -183,7 +145,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
 
       <h2
         id="login-heading"
-        className="mt-2 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl"
+        className="mt-2 type-page-title text-slate-900"
       >
         Welcome back
       </h2>
@@ -250,51 +212,29 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
           >
             Password
           </label>
-          <div className="relative">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="Enter your LMS password"
-              value={password}
-              disabled={isSubmitting}
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? "password-error" : undefined}
-              className={cn(inputBaseStyle, "pl-9 pr-10")}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setErrors((current) => ({ ...current, password: undefined }));
-                setAuthError("");
-              }}
-              onBlur={() => {
-                if (!password) {
-                  setErrors((current) => ({
-                    ...current,
-                    password: "Enter your password.",
-                  }));
-                }
-              }}
-            />
-            <Lock
-              className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
-              aria-hidden="true"
-            />
-            <button
-              type="button"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-pressed={showPassword}
-              disabled={isSubmitting}
-              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700 focus:outline-hidden disabled:cursor-not-allowed"
-              onClick={() => setShowPassword((visible) => !visible)}
-            >
-              {showPassword ? (
-                <EyeOff aria-hidden="true" className="size-3.5" />
-              ) : (
-                <Eye aria-hidden="true" className="size-3.5" />
-              )}
-            </button>
-          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            autoComplete="current-password"
+            placeholder="Enter your LMS password"
+            value={password}
+            disabled={isSubmitting}
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? "password-error" : undefined}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setErrors((current) => ({ ...current, password: undefined }));
+              setAuthError("");
+            }}
+            onBlur={() => {
+              if (!password) {
+                setErrors((current) => ({
+                  ...current,
+                  password: "Enter your password.",
+                }));
+              }
+            }}
+          />
           {errors.password && (
             <p
               id="password-error"
@@ -361,52 +301,11 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
 
       <div className="relative my-3 text-center">
         <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t border-slate-200" /></div>
-        <span className="relative bg-white px-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400">or</span>
+        <span className="relative bg-white px-2.5 text-xs font-semibold uppercase tracking-wide text-slate-400">or</span>
       </div>
       <GoogleSignInButton onError={setAuthError} />
 
-      {/* Divider */}
-      <div className="relative my-2.5 sm:my-3 text-center">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-slate-200" />
-        </div>
-        <span className="relative bg-white px-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          New Student?
-        </span>
-      </div>
-
-      {/* Register Promotion Box */}
-      <Link
-        href="/register"
-        className="group flex items-center justify-between rounded-xl border border-blue-200/80 bg-blue-50/50 px-3 py-2 transition hover:bg-blue-50 hover:border-blue-300"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="grid size-7.5 shrink-0 place-items-center rounded-lg bg-brand-blue text-white shadow-2xs">
-            <UserPlus className="size-3.5" />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-brand-blue transition">
-              Apply for 2026 Batch Admission
-            </p>
-            <p className="text-xs text-slate-500">
-              NEET Bilingual &amp; Tamil Medium Cohort
-            </p>
-          </div>
-        </div>
-        <ArrowRight className="size-3.5 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-brand-blue" />
-      </Link>
-
-      {/* Help & Support Footer */}
-      <div className="mt-2.5 flex items-center justify-center gap-1 text-xs text-slate-400">
-        <Headphones className="size-2.5 text-slate-400" />
-        <span>Helpline:</span>
-        <a
-          href="tel:+919894850370"
-          className="font-semibold text-slate-600 hover:text-slate-900 hover:underline"
-        >
-          +91 98948 50370
-        </a>
-      </div>
+      <LoginFooter />
     </section>
   );
 }

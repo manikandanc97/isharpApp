@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { BrandLogo } from "@/components/brand-logo";
+import { PageContainer } from "@/components/layout/layout-primitives";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,7 @@ export function SiteHeader() {
         aria-hidden="true"
       />
 
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
+      <PageContainer className="flex h-(--layout-site-header-height) items-center justify-between gap-4">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="flex items-center transition-opacity hover:opacity-95">
             <BrandLogo priority className="h-8.5 w-auto sm:h-9.5" />
@@ -32,11 +33,11 @@ export function SiteHeader() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-blue opacity-40" />
               <span className="relative inline-flex size-2 rounded-full bg-brand-blue" />
             </span>
-            <span className="font-bold tracking-tight text-slate-900">
+            <span className="font-semibold tracking-tight text-slate-900">
               தமிழ்
             </span>
             <span className="font-light text-slate-400">+</span>
-            <span className="font-bold tracking-tight text-slate-900">
+            <span className="font-semibold tracking-tight text-slate-900">
               English
             </span>
             <span className="h-2.5 w-px bg-slate-200" aria-hidden="true" />
@@ -57,7 +58,7 @@ export function SiteHeader() {
             </Link>
           }
         />
-      </div>
+      </PageContainer>
     </header>
   );
 }

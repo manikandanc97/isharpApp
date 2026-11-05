@@ -5,7 +5,7 @@ import { getNestApiClient } from '@/lib/nest-api';
 import { getRequestAccessToken } from '@/lib/server-access-token';
 
 const endpoints = {
-  student: '/api/test/student',
+  student: '/api/learning',
   admin: '/api/test/admin',
   superadmin: '/api/test/superadmin',
 } as const;

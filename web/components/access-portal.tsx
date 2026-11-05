@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Stack } from "@/components/layout/layout-primitives";
 
 type PortalLink = {
   title: string;
@@ -40,10 +41,10 @@ const portalLinks: readonly PortalLink[] = [
     accentBorder: "hover:border-brand-red/50 hover:shadow-rose-500/5",
   },
   {
-    title: "New Student",
-    badge: "Batch 2026",
+    title: "Create Student Account",
+    badge: "Open signup",
     badgeColor: "bg-blue-50 text-brand-blue border-blue-200/80",
-    description: "Enroll in Tamil Medium & Bilingual batches",
+    description: "I-Sharp students free; other students use a paid plan",
     href: "/register",
     icon: UserPlus,
     solidBg: "bg-brand-blue",
@@ -65,7 +66,7 @@ export function AccessPortal() {
   return (
     <Card
       aria-labelledby="access-portal-title"
-      className="relative rounded-3xl border border-slate-200/85 bg-white p-5 sm:p-6 shadow-card transition-all hover:shadow-card-hover"
+      className="relative rounded-3xl border border-slate-200/85 bg-white p-(--layout-card-padding) shadow-card transition-all hover:shadow-card-hover"
     >
       {/* Top subtle luxury accent line */}
       <div
@@ -73,9 +74,10 @@ export function AccessPortal() {
         aria-hidden="true"
       />
 
+      <Stack gap="sm">
       {/* Top Header */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
-        <div>
+        <Stack gap="xs">
           <Badge
             variant="outline"
             className="inline-flex items-center gap-1.5 rounded-full border-emerald-200/80 bg-emerald-50/80 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-emerald-700 uppercase"
@@ -85,14 +87,14 @@ export function AccessPortal() {
           </Badge>
           <h2
             id="access-portal-title"
-            className="mt-1 text-lg font-bold tracking-tight text-slate-900 sm:text-xl"
+            className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl"
           >
             Portal Access
           </h2>
           <p className="text-xs text-slate-500">
             Select your portal to continue to your workspace
           </p>
-        </div>
+        </Stack>
 
         <div className="grid size-10.5 shrink-0 place-items-center rounded-2xl bg-brand-red text-white shadow-primary">
           <GraduationCap
@@ -104,7 +106,7 @@ export function AccessPortal() {
       </div>
 
       {/* Portal Links */}
-      <nav aria-label="Account access" className="mt-3.5">
+      <nav aria-label="Account access">
         <ul className="space-y-2.5">
           {portalLinks.map((item) => {
             const Icon = item.icon;
@@ -132,25 +134,25 @@ export function AccessPortal() {
                       />
                     </span>
 
-                    <div className="min-w-0">
+                    <Stack gap="xs" className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900 group-hover:text-brand-red sm:text-sm transition-colors leading-snug">
+                        <span className="text-xs font-semibold text-slate-900 group-hover:text-brand-red sm:text-sm transition-colors leading-snug">
                           {item.title}
                         </span>
                         <Badge
                           variant="outline"
                           className={cn(
-                            "rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider",
+                            "rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide",
                             item.badgeColor,
                           )}
                         >
                           {item.badge}
                         </Badge>
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500 leading-normal">
+                      <p className="text-xs leading-normal text-slate-500">
                         {item.description}
                       </p>
-                    </div>
+                    </Stack>
                   </div>
 
                   <div className="grid size-7 shrink-0 place-items-center rounded-full border border-slate-200/80 bg-white text-slate-400 group-hover:border-brand-red group-hover:bg-brand-red group-hover:text-white transition-all shadow-2xs">
@@ -168,8 +170,8 @@ export function AccessPortal() {
       </nav>
 
       {/* Subtle security & network footnote */}
-      <Separator className="mt-3.5 bg-slate-100" />
-      <div className="pt-3 flex items-center justify-between text-xs text-slate-500">
+      <Separator className="bg-slate-100" />
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
         <div className="flex items-center gap-1.5 font-medium text-slate-600">
           <Lock className="size-3.5 text-emerald-600" aria-hidden="true" />
           <span>256-Bit Encrypted Access</span>
@@ -179,6 +181,7 @@ export function AccessPortal() {
           <span>Official I-Sharp ID</span>
         </div>
       </div>
+      </Stack>
     </Card>
   );
 }

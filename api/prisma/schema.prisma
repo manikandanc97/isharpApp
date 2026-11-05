@@ -54,7 +54,7 @@ enum StudentPaymentStatus {
 
 model TrustedInstitutionStudent {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  studentId  String   @unique(map: "trusted_institution_students_student_id_key") @map("student_id") @db.VarChar(64)
+  studentId  String   @unique(map: "trusted_institution_students_student_id_key") @default(dbgenerated("generate_isa_student_id()")) @map("student_id") @db.VarChar(64)
   authUserId String?  @unique(map: "trusted_institution_students_auth_user_id_key") @map("auth_user_id") @db.Uuid
   fullName   String?  @map("full_name") @db.VarChar(150)
   email      String?  @unique(map: "trusted_institution_students_email_key") @db.VarChar(320)

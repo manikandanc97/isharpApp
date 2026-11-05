@@ -88,6 +88,20 @@ https://<project-ref>.supabase.co/auth/v1/callback
 The Google client ID and secret belong only in Supabase's Google provider
 configuration. They are not application environment variables.
 
+### Authentication email delivery
+
+Password signup sends a confirmation email. Supabase's built-in mail service is
+only suitable for initial testing and is limited to two Auth emails per hour for
+the whole project. Before accepting student registrations, configure a custom
+SMTP provider in **Supabase Dashboard → Authentication → Email → SMTP
+Settings**, then set the required project email quota in **Authentication →
+Rate Limits**. Keep **Confirm email** enabled: the verified address is used to
+match a student safely against the I-Sharp roster.
+
+SMTP credentials are configured in Supabase, never in `web/.env.local` or any
+`NEXT_PUBLIC_*` variable. Google signup remains available while confirmation
+email delivery is temporarily rate-limited.
+
 After `/auth/callback` exchanges the one-time PKCE code, it calls NestJS
 `GET /api/auth/me`. Existing `STUDENT`, `ADMIN`, or `SUPERADMIN` database roles
 select the destination. A valid Google identity with no approved database role

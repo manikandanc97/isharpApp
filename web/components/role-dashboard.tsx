@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { BrandLogo } from '@/components/brand-logo';
+import { PageContainer, Stack } from '@/components/layout/layout-primitives';
 import { RoleDashboardContentSkeleton } from '@/components/skeletons/role-dashboard-skeleton';
 import { Button } from '@/components/ui/button';
+import { LogoutConfirmationDialog } from '@/components/logout-confirmation-dialog';
 import type { AuthenticatedSession, RoleName } from '@/lib/auth-session';
 import { hasRequiredRole } from '@/lib/role-policy';
 
@@ -22,8 +24,10 @@ const areaConfig: Record<Area, { title: string; requiredRole: RoleName }> = {
 export function RoleDashboard({ area }: { area: Area }) {
   const router = useRouter();
   const [session, setSession] = useState<AuthenticatedSession | null>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'unauthenticated' | 'forbidden' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'unauthenticated' | 'forbidden' | 'payment-required' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const config = areaConfig[area];
 
   useEffect(() => {
@@ -51,7 +55,10 @@ export function RoleDashboard({ area }: { area: Area }) {
           return;
         }
         if (accessResponse.status === 403) {
-          if (active) setStatus('forbidden');
+          if (active) {
+            setMessage(payload.message ?? 'An active access plan is required');
+            setStatus(area === 'student' ? 'payment-required' : 'forbidden');
+          }
           return;
         }
         if (!accessResponse.ok) throw new Error(payload.message ?? 'API connection failed');
@@ -72,32 +79,39 @@ export function RoleDashboard({ area }: { area: Area }) {
     };
   }, [area, config.requiredRole]);
 
-  async function signOut() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.replace('/login');
-    router.refresh();
+  async function handleConfirmSignOut() {
+    setIsLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setShowLogoutDialog(false);
+      router.replace('/login');
+      router.refresh();
+    } finally {
+      setIsLoggingOut(false);
+    }
   }
 
   return (
-    <main className="min-h-svh bg-slate-50 px-4 py-8 text-slate-900 sm:px-8">
-      <div className="mx-auto max-w-4xl">
+    <main className="min-h-svh bg-slate-50 py-(--space-layout) text-slate-900">
+      <PageContainer size="readable">
+        <Stack gap="lg">
         <div className="flex items-center justify-between gap-4">
           <BrandLogo priority className="h-9 w-auto" />
           {session && (
-            <Button variant="outline" size="sm" onClick={signOut}>
+            <Button variant="outline" size="sm" onClick={() => setShowLogoutDialog(true)}>
               <LogOut className="mr-1 size-3.5" /> Sign out
             </Button>
           )}
         </div>
 
-        <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <section className="rounded-3xl border border-slate-200 bg-white p-(--layout-card-padding) shadow-sm">
           <div className="flex items-center gap-3">
             <div className="grid size-11 place-items-center rounded-2xl bg-brand-red text-white shadow-xs">
               <ShieldCheck className="size-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-brand-red">RBAC integration test</p>
-              <h1 className="text-2xl font-black">{config.title}</h1>
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand-red">RBAC integration test</p>
+              <h1 className="type-page-title">{config.title}</h1>
             </div>
           </div>
 
@@ -106,7 +120,7 @@ export function RoleDashboard({ area }: { area: Area }) {
           )}
           {status === 'ready' && (
             <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
-              <p className="flex items-center gap-2 font-bold"><CheckCircle2 className="size-4" /> Authorized</p>
+              <p className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4" /> Authorized</p>
               <p className="mt-1 text-sm">{message}</p>
               <p className="mt-2 text-xs">Server roles: {session?.roles.join(', ')}</p>
             </div>
@@ -116,6 +130,13 @@ export function RoleDashboard({ area }: { area: Area }) {
           )}
           {status === 'forbidden' && (
             <StateMessage title="403 — Access forbidden" message={`This session does not have the required ${config.requiredRole} permission.`} href="/login" />
+          )}
+          {status === 'payment-required' && (
+            <StateMessage
+              title="Paid plan required"
+              message={message || 'I-Sharp students receive free access. Other students need an active paid plan.'}
+              href="/plans"
+            />
           )}
           {status === 'error' && (
             <StateMessage title="API connection error" message={message} href="/login" />
@@ -127,7 +148,15 @@ export function RoleDashboard({ area }: { area: Area }) {
             <Link className="rounded-full border px-3 py-1.5 hover:bg-slate-50" href="/dashboard/superadmin">Super Admin</Link>
           </nav>
         </section>
-      </div>
+        </Stack>
+      </PageContainer>
+
+      <LogoutConfirmationDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        onConfirm={handleConfirmSignOut}
+        isLoading={isLoggingOut}
+      />
     </main>
   );
 }
@@ -135,9 +164,9 @@ export function RoleDashboard({ area }: { area: Area }) {
 function StateMessage({ title, message, href }: { title: string; message: string; href: string }) {
   return (
     <div className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-900">
-      <p className="flex items-center gap-2 font-bold"><AlertCircle className="size-4" /> {title}</p>
+      <p className="flex items-center gap-2 font-semibold"><AlertCircle className="size-4" /> {title}</p>
       <p className="mt-1 text-sm">{message}</p>
-      <Link className="mt-3 inline-block text-xs font-bold underline" href={href}>Return to login</Link>
+      <Link className="mt-3 inline-block text-xs font-semibold underline" href={href}>Return to login</Link>
     </div>
   );
 }

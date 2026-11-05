@@ -10,8 +10,8 @@ function AdminSidebarSkeleton({ section }: { section: AdminSkeletonSection }) {
   const activeIndex = section === "overview" ? 0 : section === "students" ? 1 : 2;
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-slate-200 bg-white shadow-xs lg:flex">
-      <div className="flex h-20 items-center border-b border-slate-100 px-6">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-(--layout-sidebar-width) flex-col border-r border-slate-200 bg-white shadow-xs lg:flex">
+      <div className="flex h-(--layout-app-header-height) items-center border-b border-slate-100 px-(--layout-page-inline)">
         <BrandLogo priority className="h-8 w-auto" />
       </div>
       <div className="px-5 pt-4 pb-2">
@@ -58,7 +58,7 @@ function AdminSidebarSkeleton({ section }: { section: AdminSkeletonSection }) {
 
 function AdminTopbarSkeleton() {
   return (
-    <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-2xs sm:px-8">
+    <header className="sticky top-0 z-20 flex h-(--layout-app-header-height) items-center justify-between border-b border-slate-200 bg-white px-(--layout-page-inline) shadow-2xs">
       <div className="flex items-center gap-3">
         <Skeleton className="size-9 rounded-xl lg:hidden" />
         <div className="space-y-2">
@@ -90,10 +90,12 @@ export function AdminLayoutSkeleton({
       className="relative min-h-svh overflow-x-clip bg-slate-50 font-sans text-slate-900"
     >
       <AdminSidebarSkeleton section={section} />
-      <div className="lg:pl-72">
+      <div className="min-w-0 lg:pl-(--layout-sidebar-width)">
         <AdminTopbarSkeleton />
-        <main className="mx-auto max-w-7xl p-4 sm:p-8">
-          <AdminWorkspaceContentSkeleton section={section} />
+        <main>
+          <div className="layout-container py-(--space-layout)" data-size="workspace">
+            <AdminWorkspaceContentSkeleton section={section} />
+          </div>
         </main>
       </div>
     </SkeletonStatus>

@@ -141,10 +141,32 @@ describe('RBAC (e2e)', () => {
             (candidate) => candidate.authUserId === authUserId,
           );
           if (!profile || profile.profileId === null) return null;
+          const isStudent = profile.roles.some((role) => role === 'STUDENT');
+          const external = new Set<string>([
+            identities.externalUnpaid.profileId,
+            identities.externalPaid.profileId,
+            identities.externalExpired.profileId,
+          ]).has(profile.profileId);
           return {
             id: profile.profileId,
             isActive: true,
             userRoles: profile.roles.map((name) => ({ role: { name } })),
+            institutionMembership: isStudent
+              ? {
+                  studentCategory: external ? 'EXTERNAL' : 'INTERNAL',
+                  paymentStatus:
+                    profile.profileId === identities.externalPaid.profileId ||
+                    profile.profileId === identities.externalExpired.profileId
+                      ? 'PAID'
+                      : external
+                        ? 'PENDING'
+                        : 'NOT_REQUIRED',
+                  paidAccessUntil:
+                    profile.profileId === identities.externalExpired.profileId
+                      ? new Date('2020-01-01T00:00:00Z')
+                      : null,
+                }
+              : null,
           };
         }),
       })
@@ -166,7 +188,33 @@ describe('RBAC (e2e)', () => {
       authUserId: identities.admin.authUserId,
       profileId: identities.admin.profileId,
       roles: ['ADMIN'],
+      studentAccess: null,
     }));
+
+  it('returns the resolved free or paid learning entitlement in the session', async () => {
+    await get('/api/auth/me', 'student').expect(200, {
+      authUserId: identities.student.authUserId,
+      profileId: identities.student.profileId,
+      roles: ['STUDENT'],
+      studentAccess: {
+        category: 'INTERNAL',
+        paymentStatus: 'NOT_REQUIRED',
+        paidAccessUntil: null,
+        hasLearningAccess: true,
+      },
+    });
+    await get('/api/auth/me', 'externalUnpaid').expect(200, {
+      authUserId: identities.externalUnpaid.authUserId,
+      profileId: identities.externalUnpaid.profileId,
+      roles: ['STUDENT'],
+      studentAccess: {
+        category: 'EXTERNAL',
+        paymentStatus: 'PENDING',
+        paidAccessUntil: null,
+        hasLearningAccess: false,
+      },
+    });
+  });
 
   it('allows a student on learning routes but denies admin routes', async () => {
     await get('/api/learning', 'student').expect(200);
@@ -200,6 +248,7 @@ describe('RBAC (e2e)', () => {
       authUserId: identities.pendingGoogleUser.authUserId,
       profileId: null,
       roles: [],
+      studentAccess: null,
     });
     await get('/api/learning', 'pendingGoogleUser').expect(403);
     await get('/api/admin/content', 'pendingGoogleUser').expect(403);

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -21,6 +22,18 @@ import { ProfilesService } from './profiles.service.js';
 @UseGuards(AuthGuard, RolesGuard)
 export class ProfilesController {
   constructor(private readonly profiles: ProfilesService) {}
+
+  @Get('me')
+  @Roles('STUDENT', 'ADMIN', 'SUPERADMIN')
+  findMe(@Req() request: AuthenticatedRequest) {
+    return this.profiles.findPrivate(this.requireProfileId(request));
+  }
+
+  @Patch('me')
+  @Roles('STUDENT', 'ADMIN', 'SUPERADMIN')
+  updateMe(@Req() request: AuthenticatedRequest, @Body() body: unknown) {
+    return this.profiles.updateProfile(this.requireProfileId(request), body);
+  }
 
   @Get(':id/private')
   @Roles('STUDENT', 'ADMIN', 'SUPERADMIN')
@@ -57,5 +70,12 @@ export class ProfilesController {
     @Param('role') role: string,
   ) {
     return this.profiles.revokeRole(request.user, id, role);
+  }
+
+  private requireProfileId(request: AuthenticatedRequest): string {
+    if (!request.user.profileId) {
+      throw new BadRequestException('An active user profile is required');
+    }
+    return request.user.profileId;
   }
 }

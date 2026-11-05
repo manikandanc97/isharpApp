@@ -33,7 +33,9 @@ async function proxy(
       headers: { 'Cache-Control': 'no-store, private' },
     });
   } catch (error) {
-    const status = error instanceof ApiClientError ? error.status : 503;
+    const upstreamStatus = error instanceof ApiClientError ? error.status : 503;
+    const status =
+      upstreamStatus >= 400 && upstreamStatus <= 599 ? upstreamStatus : 503;
     return Response.json(
       {
         message:

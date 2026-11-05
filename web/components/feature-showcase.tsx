@@ -10,174 +10,18 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpenCheck,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  FileCheck2,
-  Flame,
-  Languages,
-  LineChart,
-  ShieldCheck,
-  Sparkles,
-  Timer,
-  Zap,
-  type LucideIcon,
 } from "lucide-react";
 
+import { features, ROTATION_INTERVAL_MS } from "@/data/features";
 import { cn } from "@/lib/utils";
-
-type FeatureItem = {
-  id: string;
-  number: string;
-  category: string;
-  tabTitle: string;
-  tabSubtitle: string;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  image: string;
-  imageAlt: string;
-  accent: "blue" | "red";
-  metricBadge: {
-    icon: LucideIcon;
-    label: string;
-    value: string;
-  };
-  highlightBadge: {
-    icon: LucideIcon;
-    label: string;
-  };
-  highlights: readonly string[];
-  ctaText: string;
-  ctaHref: string;
-};
-
-// Symmetrically matched content: identical line counts, character lengths, and heights
-const features: readonly FeatureItem[] = [
-  {
-    id: "practice",
-    number: "01",
-    category: "Daily Habit & Momentum",
-    tabTitle: "Daily Practice",
-    tabSubtitle: "DPPs & consistency",
-    title: "Daily practice that transforms effort into reflex.",
-    description:
-      "Targeted Daily Practice Problems (DPP) engineered to build unbroken study momentum with instant solution analysis.",
-    icon: BookOpenCheck,
-    image: "/experience/daily-practice.jpg",
-    imageAlt: "Luxury 3D illustration of daily study calendar and milestone progress nodes",
-    accent: "red",
-    metricBadge: {
-      icon: Flame,
-      label: "Habit consistency",
-      value: "94% on-track",
-    },
-    highlightBadge: {
-      icon: Zap,
-      label: "Adaptive difficulty scaling",
-    },
-    highlights: [
-      "15-question focused daily practice sets",
-      "Instant video breakdowns in Tamil & English",
-      "Automated streak tracking & consistency rewards",
-    ],
-    ctaText: "Explore daily curriculum",
-    ctaHref: "#academy",
-  },
-  {
-    id: "mock",
-    number: "02",
-    category: "Exam-Ready Simulation",
-    tabTitle: "Mock Simulation",
-    tabSubtitle: "Timed test mastery",
-    title: "Timed mock exams engineered for real NEET mastery.",
-    description:
-      "Condition your mindset for high-pressure testing with simulated papers calibrated to exact NTA exam difficulty.",
-    icon: FileCheck2,
-    image: "/experience/exam-testing.jpg",
-    imageAlt: "Luxury 3D illustration of precision chronograph timer and exam sheets",
-    accent: "red",
-    metricBadge: {
-      icon: Timer,
-      label: "Exam benchmark",
-      value: "0.2s precision timing",
-    },
-    highlightBadge: {
-      icon: ShieldCheck,
-      label: "NTA standard question bank",
-    },
-    highlights: [
-      "Full-length NEET pattern test simulations",
-      "Question-by-question speed & accuracy analytics",
-      "Comparative national percentile rank benchmark",
-    ],
-    ctaText: "Explore mock test series",
-    ctaHref: "#academy",
-  },
-  {
-    id: "bilingual",
-    number: "03",
-    category: "Bilingual Concept Depth",
-    tabTitle: "Bilingual Learning",
-    tabSubtitle: "தமிழ் + English clarity",
-    title: "Deep concept clarity delivered in Tamil + English.",
-    description:
-      "Master complex scientific derivations through intuitive Tamil-led explanations paired with standard English terms.",
-    icon: Languages,
-    image: "/experience/bilingual-learning.jpg",
-    imageAlt: "Luxury 3D illustration of glowing bilingual typography ribbons and audio waves",
-    accent: "red",
-    metricBadge: {
-      icon: Sparkles,
-      label: "Concept grasp speed",
-      value: "2.4x faster retention",
-    },
-    highlightBadge: {
-      icon: CheckCircle2,
-      label: "Dual-language synchronized audio",
-    },
-    highlights: [
-      "Tamil audio synced with standard English terms",
-      "Bilingual annotated lecture notes & mind maps",
-      "Direct 1-on-1 doubt clearing in your language",
-    ],
-    ctaText: "Sample a bilingual lecture",
-    ctaHref: "#academy",
-  },
-  {
-    id: "analytics",
-    number: "04",
-    category: "Precision Diagnostic Radar",
-    tabTitle: "Smart Analytics",
-    tabSubtitle: "Predictive rank radar",
-    title: "Precision analytics that pinpoint your next rank.",
-    description:
-      "Eliminate guesswork with an automated diagnostic engine that pinpoints knowledge gaps and creates revision paths.",
-    icon: LineChart,
-    image: "/experience/precision-analytics.jpg",
-    imageAlt: "Luxury 3D illustration of holographic diagnostic charts and target reticle",
-    accent: "blue",
-    metricBadge: {
-      icon: Zap,
-      label: "Target precision",
-      value: "Sub-topic accuracy radar",
-    },
-    highlightBadge: {
-      icon: ShieldCheck,
-      label: "Predictive NEET score trajectory",
-    },
-    highlights: [
-      "Diagnostic heatmap pinpointing knowledge gaps",
-      "Automated priority revision queue for marks",
-      "Predictive NEET score & rank trajectory radar",
-    ],
-    ctaText: "View diagnostic system",
-    ctaHref: "#academy",
-  },
-] as const;
-
-const ROTATION_INTERVAL_MS = 6000;
+import {
+  ContentSection,
+  PageContainer,
+  Stack,
+} from "@/components/layout/layout-primitives";
 
 export function FeatureShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -272,15 +116,16 @@ export function FeatureShowcase() {
   }
 
   return (
-    <section
+    <ContentSection
       id="experience"
       aria-labelledby="feature-showcase-title"
-      className="relative overflow-hidden bg-white border-b border-slate-200/80 py-12 sm:py-16 lg:py-20"
+      className="relative overflow-hidden border-b border-slate-200/80 bg-white"
     >
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+      <PageContainer>
+        <Stack gap="lg">
         {/* Compact, High-Impact Section Header */}
-        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:mb-8 sm:flex-row sm:items-end">
-          <div>
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+          <Stack gap="sm">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 shadow-2xs">
               <span
                 className={cn(
@@ -298,14 +143,14 @@ export function FeatureShowcase() {
 
             <h2
               id="feature-showcase-title"
-              className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl leading-tight"
+              className="type-page-title text-slate-900"
             >
               Crafted for clarity.{" "}
               <span className="text-slate-500 font-semibold">
                 Engineered for rank.
               </span>
             </h2>
-          </div>
+          </Stack>
 
           <p className="max-w-md text-xs leading-relaxed text-slate-600 sm:text-right sm:text-sm">
             A structured bilingual learning architecture uniting daily reflex conditioning, simulated test rigor, and precision diagnostic radar.
@@ -375,7 +220,7 @@ export function FeatureShowcase() {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
                       className={cn(
-                        "text-xs font-mono font-semibold tracking-wider shrink-0 transition-colors duration-300",
+                        "text-xs font-mono font-semibold tracking-wide shrink-0 transition-colors duration-300",
                         isSelected
                           ? feature.accent === "red"
                             ? "text-brand-red"
@@ -457,7 +302,7 @@ export function FeatureShowcase() {
 
                         {/* Title & Description - Perfectly Symmetrical Height */}
                         <div>
-                          <h3 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-2xl leading-tight min-h-14 flex items-center">
+                          <h3 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl lg:text-2xl leading-tight min-h-14 flex items-center">
                             {feature.title}
                           </h3>
                           <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm min-h-10 flex items-center">
@@ -557,7 +402,7 @@ export function FeatureShowcase() {
                               )}
                               aria-hidden="true"
                             />
-                            <span className="text-xs font-semibold tracking-wider uppercase">
+                            <span className="text-xs font-semibold tracking-wide uppercase">
                               Live Environment
                             </span>
                           </div>
@@ -582,16 +427,16 @@ export function FeatureShowcase() {
                                 <MetricIcon className="size-3.5" aria-hidden="true" />
                               </div>
                               <div>
-                                <p className="text-xs font-medium text-white/70 uppercase tracking-wider">
+                                <p className="text-xs font-medium text-white/70 uppercase tracking-wide">
                                   {feature.metricBadge.label}
                                 </p>
-                                <p className="text-xs font-bold tracking-tight text-white">
+                                <p className="text-xs font-semibold tracking-tight text-white">
                                   {feature.metricBadge.value}
                                 </p>
                               </div>
                             </div>
 
-                            <span className="inline-block rounded bg-white/15 px-1.5 py-0.5 text-xs font-semibold text-white uppercase tracking-wider">
+                            <span className="inline-block rounded bg-white/15 px-1.5 py-0.5 text-xs font-semibold text-white uppercase tracking-wide">
                               Verified
                             </span>
                           </div>
@@ -608,7 +453,7 @@ export function FeatureShowcase() {
           <div className="flex items-center justify-between gap-3 border-t border-black/6 bg-surface-subtle/70 px-4 py-2.5 sm:px-6 backdrop-blur-md">
             {/* Slide Index Counter */}
             <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <span className="font-mono font-bold text-foreground">
+              <span className="font-mono font-semibold text-foreground">
                 0{activeIndex + 1}
               </span>
               <span>/</span>
@@ -665,7 +510,8 @@ export function FeatureShowcase() {
             </div>
           </div>
         </div>
-      </div>
-    </section>
+        </Stack>
+      </PageContainer>
+    </ContentSection>
   );
 }

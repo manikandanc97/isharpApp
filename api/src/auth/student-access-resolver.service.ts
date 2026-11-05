@@ -3,31 +3,17 @@ import type { JWTPayload } from 'jose';
 import {
   MembershipVerificationMethod,
   MembershipVerificationStatus,
-  type Prisma,
   StudentCategory,
   StudentPaymentStatus,
 } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-
-const profileSelect = {
-  id: true,
-  email: true,
-  isActive: true,
-  userRoles: { select: { role: { select: { name: true } } } },
-  institutionMembership: {
-    select: {
-      id: true,
-      studentCategory: true,
-      paymentStatus: true,
-      paidAccessUntil: true,
-      trustedRecordId: true,
-    },
-  },
-} as const;
-
-type ResolvedProfile = Prisma.UserProfileGetPayload<{
-  select: typeof profileSelect;
-}> | null;
+import {
+  cleanEmail,
+  externalStudentId,
+  extractDisplayName,
+  studentProfileSelect,
+  type ResolvedProfile,
+} from './student-access-resolver.helper.js';
 
 @Injectable()
 export class StudentAccessResolver {
@@ -51,14 +37,14 @@ export class StudentAccessResolver {
     authUserId: string,
     payload: JWTPayload,
   ): Promise<ResolvedProfile> {
-    const email = this.email(payload.email);
+    const email = cleanEmail(payload.email);
 
     // Most authenticated requests only need an existing, unchanged profile.
     // Keep that hot path outside an interactive transaction so parallel page
     // requests do not compete for transaction slots in a small database pool.
     const existing = await this.prisma.userProfile.findUnique({
       where: { authUserId },
-      select: profileSelect,
+      select: studentProfileSelect,
     });
     if (existing) {
       if (email && existing.email && existing.email !== email)
@@ -94,7 +80,8 @@ export class StudentAccessResolver {
           !membership ||
           (internal &&
             (membership.studentCategory !== StudentCategory.INTERNAL ||
-              membership.trustedRecordId !== roster.id)) ||
+              membership.trustedRecordId !== roster.id ||
+              membership.studentId !== roster.studentId)) ||
           (!internal &&
             membership.studentCategory === StudentCategory.INTERNAL);
         const rosterNeedsLink = internal && !roster.authUserId;
@@ -106,7 +93,7 @@ export class StudentAccessResolver {
       async (tx) => {
         let profile = await tx.userProfile.findUnique({
           where: { authUserId },
-          select: profileSelect,
+          select: studentProfileSelect,
         });
         if (!profile && !email) return null;
         if (!profile) {
@@ -141,17 +128,21 @@ export class StudentAccessResolver {
               displayName:
                 internal && roster?.fullName
                   ? roster.fullName
-                  : this.displayName(payload, loginEmail),
+                  : extractDisplayName(payload, loginEmail),
               userRoles: { create: { roleId: role.id } },
               institutionMembership: {
                 create: {
-                  studentId: internal ? roster!.studentId : `EXT-${authUserId}`,
-                  status: MembershipVerificationStatus.VERIFIED,
+                  studentId: internal
+                    ? roster!.studentId
+                    : externalStudentId(authUserId),
+                  status: internal
+                    ? MembershipVerificationStatus.VERIFIED
+                    : MembershipVerificationStatus.PENDING,
                   method: internal
                     ? MembershipVerificationMethod.TRUSTED_ROSTER
                     : null,
                   trustedRecordId: internal ? roster!.id : null,
-                  verifiedAt: new Date(),
+                  verifiedAt: internal ? new Date() : null,
                   studentCategory: internal
                     ? StudentCategory.INTERNAL
                     : StudentCategory.EXTERNAL,
@@ -161,7 +152,7 @@ export class StudentAccessResolver {
                 },
               },
             },
-            select: profileSelect,
+            select: studentProfileSelect,
           });
           if (internal && !roster!.authUserId)
             await tx.trustedInstitutionStudent.update({
@@ -178,7 +169,7 @@ export class StudentAccessResolver {
           profile = await tx.userProfile.update({
             where: { id: profile.id },
             data: { email },
-            select: profileSelect,
+            select: studentProfileSelect,
           });
         const isStudent = profile.userRoles.some(
           ({ role }) => role.name === 'STUDENT',
@@ -209,13 +200,17 @@ export class StudentAccessResolver {
           await tx.institutionMembership.create({
             data: {
               userId: profile.id,
-              studentId: internal ? roster!.studentId : `EXT-${authUserId}`,
-              status: MembershipVerificationStatus.VERIFIED,
+              studentId: internal
+                ? roster!.studentId
+                : externalStudentId(authUserId),
+              status: internal
+                ? MembershipVerificationStatus.VERIFIED
+                : MembershipVerificationStatus.PENDING,
               method: internal
                 ? MembershipVerificationMethod.TRUSTED_ROSTER
                 : null,
               trustedRecordId: internal ? roster!.id : null,
-              verifiedAt: new Date(),
+              verifiedAt: internal ? new Date() : null,
               studentCategory: internal
                 ? StudentCategory.INTERNAL
                 : StudentCategory.EXTERNAL,
@@ -226,7 +221,7 @@ export class StudentAccessResolver {
           });
           return tx.userProfile.findUnique({
             where: { id: profile.id },
-            select: profileSelect,
+            select: studentProfileSelect,
           });
         }
         const membership = profile.institutionMembership;
@@ -237,24 +232,33 @@ export class StudentAccessResolver {
         if (
           mustPromote ||
           mustDowngrade ||
-          (internal && membership.trustedRecordId !== roster!.id)
+          (internal &&
+            (membership.trustedRecordId !== roster!.id ||
+              membership.studentId !== roster!.studentId))
         ) {
           const updated = await tx.institutionMembership.update({
             where: { id: membership.id },
             data: internal
               ? {
+                  studentId: roster!.studentId,
+                  status: MembershipVerificationStatus.VERIFIED,
                   studentCategory: StudentCategory.INTERNAL,
                   paymentStatus: StudentPaymentStatus.NOT_REQUIRED,
                   paidAccessUntil: null,
                   trustedRecordId: roster!.id,
                   method: MembershipVerificationMethod.TRUSTED_ROSTER,
+                  verifiedAt: new Date(),
+                  verifiedById: null,
                 }
               : {
+                  status: MembershipVerificationStatus.PENDING,
                   studentCategory: StudentCategory.EXTERNAL,
                   paymentStatus: StudentPaymentStatus.PENDING,
                   paidAccessUntil: null,
                   trustedRecordId: null,
                   method: null,
+                  verifiedAt: null,
+                  verifiedById: null,
                 },
           });
           await tx.studentAccessAudit.create({
@@ -274,7 +278,7 @@ export class StudentAccessResolver {
           });
           return tx.userProfile.findUnique({
             where: { id: profile.id },
-            select: profileSelect,
+            select: studentProfileSelect,
           });
         }
         return profile;
@@ -284,27 +288,5 @@ export class StudentAccessResolver {
         timeout: 15_000,
       },
     );
-  }
-
-  private email(value: unknown) {
-    if (typeof value !== 'string') return null;
-    const email = value.trim().toLowerCase();
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 320
-      ? email
-      : null;
-  }
-  private displayName(payload: JWTPayload, email: string) {
-    const metadata = payload.user_metadata;
-    if (metadata && typeof metadata === 'object') {
-      const record = metadata as Record<string, unknown>;
-      const name =
-        typeof record.full_name === 'string'
-          ? record.full_name
-          : typeof record.name === 'string'
-            ? record.name
-            : '';
-      if (name.trim()) return name.trim().slice(0, 150);
-    }
-    return email.split('@')[0].slice(0, 150);
   }
 }

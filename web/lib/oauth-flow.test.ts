@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { selectAccessToken } from './auth-token';
 import {
   buildOAuthCallbackUrl,
+  buildOAuthPopupCallbackUrl,
   getOAuthCallbackState,
   getPostAuthDestination,
 } from './oauth-flow';
@@ -14,6 +15,9 @@ describe('Google OAuth flow', () => {
     );
     expect(buildOAuthCallbackUrl('https://academy.example/')).toBe(
       'https://academy.example/auth/callback',
+    );
+    expect(buildOAuthPopupCallbackUrl('https://academy.example/')).toBe(
+      'https://academy.example/auth/callback?popup=1',
     );
   });
 
@@ -36,6 +40,32 @@ describe('Google OAuth flow', () => {
     ).toBe('/auth/pending');
     expect(
       getPostAuthDestination({ authUserId: 'u', profileId: 'p', roles: ['STUDENT'] }),
+    ).toBe('/dashboard/student');
+    expect(
+      getPostAuthDestination({
+        authUserId: 'u',
+        profileId: 'p',
+        roles: ['STUDENT'],
+        studentAccess: {
+          category: 'EXTERNAL',
+          paymentStatus: 'PENDING',
+          paidAccessUntil: null,
+          hasLearningAccess: false,
+        },
+      }),
+    ).toBe('/plans');
+    expect(
+      getPostAuthDestination({
+        authUserId: 'u',
+        profileId: 'p',
+        roles: ['STUDENT'],
+        studentAccess: {
+          category: 'INTERNAL',
+          paymentStatus: 'NOT_REQUIRED',
+          paidAccessUntil: null,
+          hasLearningAccess: true,
+        },
+      }),
     ).toBe('/dashboard/student');
     expect(
       getPostAuthDestination({ authUserId: 'u', profileId: 'p', roles: ['ADMIN'] }),

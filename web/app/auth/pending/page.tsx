@@ -11,7 +11,7 @@ export default function PendingAccessPage() {
         <div className="mx-auto mt-7 grid size-14 place-items-center rounded-2xl bg-amber-50 text-amber-700 ring-1 ring-amber-200">
           <Clock3 className="size-6" />
         </div>
-        <h1 className="mt-5 text-2xl font-black tracking-tight">Account setup incomplete</h1>
+        <h1 className="mt-5 type-page-title">Account setup incomplete</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           Your login did not include a usable email address, so student access could not be classified automatically.
         </p>

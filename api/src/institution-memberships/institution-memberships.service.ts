@@ -1,40 +1,34 @@
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { AuthUser } from '../auth/auth-user.js';
 import {
   MembershipVerificationMethod,
   MembershipVerificationStatus,
-  Prisma,
+  type Prisma,
   StudentCategory,
   StudentPaymentStatus,
 } from '../generated/prisma/client.js';
-import type { AuthUser } from '../auth/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-
-const membershipSelect = {
-  id: true,
-  studentId: true,
-  status: true,
-  method: true,
-  verifiedAt: true,
-  createdAt: true,
-  updatedAt: true,
-  studentCategory: true,
-  paymentStatus: true,
-  paidAccessUntil: true,
-} satisfies Prisma.InstitutionMembershipSelect;
+import {
+  membershipSelect,
+  parseManualDecision,
+  parseStudentId,
+  requireProfile,
+  rethrowUniqueConflict,
+  toMembershipResponse,
+} from './institution-memberships.helper.js';
 
 @Injectable()
 export class InstitutionMembershipsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async submit(actor: AuthUser, body: unknown) {
-    const profileId = this.requireProfile(actor);
-    const studentId = this.parseStudentId(body);
+    const profileId = requireProfile(actor);
+    const studentId = parseStudentId(body);
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -48,7 +42,7 @@ export class InstitutionMembershipsService {
               'A membership submission already exists for this user',
             );
           }
-          return this.toResponse(ownMembership);
+          return toMembershipResponse(ownMembership);
         }
 
         const claimed = await tx.institutionMembership.findUnique({
@@ -75,24 +69,24 @@ export class InstitutionMembershipsService {
         return this.matchTrustedRecord(tx, actor, membership);
       });
     } catch (error: unknown) {
-      this.rethrowUniqueConflict(error);
+      rethrowUniqueConflict(error);
       throw error;
     }
   }
 
   async getStatus(actor: AuthUser) {
-    const userId = this.requireProfile(actor);
+    const userId = requireProfile(actor);
     const membership = await this.prisma.institutionMembership.findUnique({
       where: { userId },
       select: membershipSelect,
     });
     return membership
-      ? this.toResponse(membership)
+      ? toMembershipResponse(membership)
       : { membership: null, eligibleForFreeAccess: false };
   }
 
   async verifyAgainstTrustedSource(actor: AuthUser) {
-    const userId = this.requireProfile(actor);
+    const userId = requireProfile(actor);
     return this.prisma.$transaction(async (tx) => {
       const membership = await tx.institutionMembership.findUnique({
         where: { userId },
@@ -102,7 +96,7 @@ export class InstitutionMembershipsService {
         throw new NotFoundException('Membership submission not found');
       }
       if (membership.status === MembershipVerificationStatus.VERIFIED) {
-        return this.toResponse(membership);
+        return toMembershipResponse(membership);
       }
       if (
         membership.status === MembershipVerificationStatus.REJECTED ||
@@ -121,8 +115,8 @@ export class InstitutionMembershipsService {
     membershipId: string,
     body: unknown,
   ) {
-    const actorProfileId = this.requireProfile(actor);
-    const { status, reason } = this.parseManualDecision(body);
+    const actorProfileId = requireProfile(actor);
+    const { status, reason } = parseManualDecision(body);
 
     return this.prisma.$transaction(async (tx) => {
       const membership = await tx.institutionMembership.findUnique({
@@ -180,7 +174,7 @@ export class InstitutionMembershipsService {
           reason,
         },
       });
-      return this.toResponse(updated);
+      return toMembershipResponse(updated);
     });
   }
 
@@ -210,7 +204,7 @@ export class InstitutionMembershipsService {
           reason: 'TRUSTED_ROSTER_IDENTITY_NOT_MATCHED',
         },
       });
-      return this.toResponse(membership);
+      return toMembershipResponse(membership);
     }
 
     const updated = await tx.institutionMembership.update({
@@ -237,97 +231,6 @@ export class InstitutionMembershipsService {
         reason: 'TRUSTED_ROSTER_EXACT_AUTH_IDENTITY_MATCH',
       },
     });
-    return this.toResponse(updated);
-  }
-
-  private parseStudentId(body: unknown): string {
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      throw new BadRequestException('A studentId is required');
-    }
-    const value = (body as Record<string, unknown>).studentId;
-    if (typeof value !== 'string') {
-      throw new BadRequestException('studentId must be a string');
-    }
-    const normalized = value.trim().toUpperCase();
-    const containsControlCharacter = Array.from(normalized).some(
-      (character) => {
-        const codePoint = character.codePointAt(0);
-        return (
-          codePoint !== undefined && (codePoint <= 31 || codePoint === 127)
-        );
-      },
-    );
-    if (
-      normalized.length < 1 ||
-      normalized.length > 64 ||
-      containsControlCharacter
-    ) {
-      throw new BadRequestException(
-        'studentId must contain 1 to 64 printable characters',
-      );
-    }
-    return normalized;
-  }
-
-  private parseManualDecision(body: unknown): {
-    status:
-      | typeof MembershipVerificationStatus.VERIFIED
-      | typeof MembershipVerificationStatus.REJECTED
-      | typeof MembershipVerificationStatus.REVOKED;
-    reason: string;
-  } {
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      throw new BadRequestException('A verification decision is required');
-    }
-    const input = body as Record<string, unknown>;
-    const allowed = [
-      MembershipVerificationStatus.VERIFIED,
-      MembershipVerificationStatus.REJECTED,
-      MembershipVerificationStatus.REVOKED,
-    ] as const;
-    if (!allowed.some((status) => status === input.status)) {
-      throw new BadRequestException(
-        'status must be VERIFIED, REJECTED, or REVOKED',
-      );
-    }
-    if (
-      typeof input.reason !== 'string' ||
-      input.reason.trim().length < 3 ||
-      input.reason.trim().length > 500
-    ) {
-      throw new BadRequestException('reason must contain 3 to 500 characters');
-    }
-    return {
-      status: input.status as (typeof allowed)[number],
-      reason: input.reason.trim(),
-    };
-  }
-
-  private requireProfile(actor: AuthUser): string {
-    if (!actor.profileId) {
-      throw new ForbiddenException('An active user profile is required');
-    }
-    return actor.profileId;
-  }
-
-  private toResponse<T extends { status: MembershipVerificationStatus }>(
-    membership: T,
-  ) {
-    return {
-      membership,
-      eligibleForFreeAccess:
-        membership.status === MembershipVerificationStatus.VERIFIED &&
-        'studentCategory' in membership &&
-        membership.studentCategory === StudentCategory.INTERNAL,
-    };
-  }
-
-  private rethrowUniqueConflict(error: unknown): void {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      throw new ConflictException('Student ID or user is already claimed');
-    }
+    return toMembershipResponse(updated);
   }
 }

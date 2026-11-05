@@ -10,13 +10,14 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { PageContainer, Stack } from "@/components/layout/layout-primitives";
 
 export function SiteFooter() {
   return (
     <footer className="relative overflow-hidden border-t border-slate-800 bg-slate-950 text-white">
       {/* Editorial Luxury Quote Bar */}
       <div className="border-b border-slate-800 bg-slate-900/50">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-5 text-center sm:px-8 md:flex-row md:text-left">
+        <PageContainer className="flex flex-col items-center justify-between gap-4 py-5 text-center md:flex-row md:text-left">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center rounded-lg bg-amber-400/10 text-amber-300 border border-amber-400/20 shadow-2xs">
               <Sparkles className="size-4.5" />
@@ -34,23 +35,26 @@ export function SiteFooter() {
             <ShieldCheck className="size-3.5 text-emerald-400" />
             <span>NTA Calibrated Curriculum Standard</span>
           </div>
-        </div>
+        </PageContainer>
       </div>
 
       {/* Main Footer Content */}
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-8 sm:py-14">
+      <PageContainer className="py-(--space-layout)">
+        <Stack gap="section">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand Info */}
-          <div className="lg:col-span-2">
-            <div className="inline-block rounded-xl bg-white p-2.5 shadow-sm">
-              <BrandLogo />
-            </div>
-            <p className="mt-4 max-w-sm text-xs leading-relaxed text-slate-400 sm:text-sm">
-              Premier NEET, IIT-JEE &amp; MBA Entrance coaching centre in Coimbatore.
-              Empowering students with disciplined pedagogy, separate Tamil Medium foundation batches,
-              calibrated test series, and personalized one-on-one doubt clearance.
-            </p>
-            <div className="mt-6 flex flex-col gap-2.5 text-xs text-slate-300">
+          <Stack gap="lg" className="lg:col-span-2">
+            <Stack gap="sm">
+              <div className="w-fit rounded-xl bg-white p-2.5 shadow-sm">
+                <BrandLogo />
+              </div>
+              <p className="max-w-sm text-xs leading-relaxed text-slate-400 sm:text-sm">
+                Premier NEET, IIT-JEE &amp; MBA Entrance coaching centre in Coimbatore.
+                Empowering students with disciplined pedagogy, separate Tamil Medium foundation batches,
+                calibrated test series, and personalized one-on-one doubt clearance.
+              </p>
+            </Stack>
+            <Stack gap="sm" className="text-xs text-slate-300">
               <div className="flex items-start gap-2.5">
                 <Phone className="size-4 text-brand-red shrink-0 mt-0.5" />
                 <div className="flex flex-col">
@@ -67,10 +71,10 @@ export function SiteFooter() {
                   2nd Floor, AK Complex, No.207, 6th Street, Cross Cut Rd, Gandhipuram, Coimbatore – 641012, Tamil Nadu
                 </span>
               </div>
-            </div>
+            </Stack>
 
             {/* Enterprise Security Badges */}
-            <div className="mt-6 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
+            <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-400">
                 <Lock className="size-3 text-emerald-400" /> 256-Bit TLS
               </span>
@@ -81,14 +85,14 @@ export function SiteFooter() {
                 <ShieldCheck className="size-3 text-amber-400" /> NTA Aligned
               </span>
             </div>
-          </div>
+          </Stack>
 
           {/* Column 1: Academic Programs */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+          <Stack gap="sm">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-white">
               Academic Curriculums
             </h4>
-            <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
+            <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
                 <a href="#courses" className="hover:text-white transition">
                   NEET Classroom &amp; Distance Prep
@@ -115,14 +119,14 @@ export function SiteFooter() {
                 </a>
               </li>
             </ul>
-          </div>
+          </Stack>
 
           {/* Column 2: Preparation Pillars */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+          <Stack gap="sm">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-white">
               Learning System
             </h4>
-            <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
+            <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
                 <a href="#experience" className="hover:text-white transition">
                   Daily Practice (DPP)
@@ -149,14 +153,14 @@ export function SiteFooter() {
                 </a>
               </li>
             </ul>
-          </div>
+          </Stack>
 
           {/* Column 3: Portals & Compliance */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+          <Stack gap="sm">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-white">
               Portals &amp; Access
             </h4>
-            <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
+            <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
                 <Link href="/login" className="hover:text-white transition">
                   Student Portal Login
@@ -164,7 +168,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/register" className="hover:text-white transition">
-                  New Student
+                  Create Student Account
                 </Link>
               </li>
               <li>
@@ -183,11 +187,11 @@ export function SiteFooter() {
                 </a>
               </li>
             </ul>
-          </div>
+          </Stack>
         </div>
 
         {/* Enterprise Bottom Legal & Status Strip */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-6 text-xs text-slate-500 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-6 text-xs text-slate-500 sm:flex-row">
           <div className="flex flex-wrap items-center gap-3">
             <p>© 2026 I-Sharp Academy. All rights reserved.</p>
             <span>·</span>
@@ -198,7 +202,8 @@ export function SiteFooter() {
             <ApiConnectionStatus />
           </div>
         </div>
-      </div>
+        </Stack>
+      </PageContainer>
     </footer>
   );
 }

@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  ContentSection,
+  PageContainer,
+  Stack,
+} from "@/components/layout/layout-primitives";
 
 type JourneyStep = {
   number: string;
@@ -76,7 +81,7 @@ const journey = [
 function StepPreview({ step }: { step: JourneyStep }) {
   if (step.number === "01") {
     return (
-      <div className="mt-4 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
+      <div className="grid gap-2.5 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Volume2 className="size-3.5 text-brand-red" />
@@ -86,12 +91,12 @@ function StepPreview({ step }: { step: JourneyStep }) {
             தமிழ் + EN
           </span>
         </div>
-        <div className="mt-2.5">
+        <div className="grid gap-1">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Core Derivations Complete</span>
             <span className="font-semibold text-slate-700">78%</span>
           </div>
-          <div className="mt-1 flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
             <div className="h-full w-4/5 rounded-full bg-brand-red" />
           </div>
         </div>
@@ -101,8 +106,8 @@ function StepPreview({ step }: { step: JourneyStep }) {
 
   if (step.number === "02") {
     return (
-      <div className="mt-4 space-y-2 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-600 uppercase tracking-wider">
+      <div className="space-y-2 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
+        <div className="flex items-center justify-between text-xs font-semibold text-slate-600 uppercase tracking-wide">
           <span className="flex items-center gap-1">
             <Clock className="size-3.5 text-brand-blue" /> DPP #48 · 15 Qs
           </span>
@@ -115,7 +120,7 @@ function StepPreview({ step }: { step: JourneyStep }) {
             <span
               key={item}
               className={cn(
-                "grid size-6 flex-1 place-items-center rounded text-xs font-bold transition",
+                "grid size-6 flex-1 place-items-center rounded text-xs font-semibold transition",
                 item <= 4
                   ? "bg-brand-blue text-white"
                   : "border border-slate-200 text-slate-400 bg-slate-50",
@@ -131,12 +136,12 @@ function StepPreview({ step }: { step: JourneyStep }) {
 
   if (step.number === "03") {
     return (
-      <div className="mt-4 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
+      <div className="grid gap-2 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
         <div className="flex items-center justify-between text-xs">
           <span className="font-semibold text-slate-800">Speed vs Accuracy</span>
-          <span className="font-mono text-brand-blue font-bold">96.4% Accuracy</span>
+          <span className="font-mono text-brand-blue font-semibold">96.4% Accuracy</span>
         </div>
-        <div className="mt-2 flex h-8 items-end justify-between gap-1.5 px-0.5">
+        <div className="flex h-8 items-end justify-between gap-1.5 px-0.5">
           {[42, 65, 52, 88, 74, 95].map((height, index) => (
             <div key={index} className="flex-1 flex flex-col items-center">
               <span
@@ -149,7 +154,7 @@ function StepPreview({ step }: { step: JourneyStep }) {
             </div>
           ))}
         </div>
-        <p className="mt-1.5 text-center text-xs text-emerald-700 font-medium">
+        <p className="text-center text-xs font-medium text-emerald-700">
           ✓ -4 Negative Marks Eliminated
         </p>
       </div>
@@ -157,13 +162,13 @@ function StepPreview({ step }: { step: JourneyStep }) {
   }
 
   return (
-    <div className="mt-4 flex items-center gap-3 rounded-xl border border-rose-200/80 bg-rose-50/80 p-3 shadow-2xs">
+    <div className="flex items-center gap-3 rounded-xl border border-rose-200/80 bg-rose-50/80 p-3 shadow-2xs">
       <span className="grid size-9 place-items-center rounded-lg bg-brand-red text-white shadow-2xs">
         <Trophy className="size-4.5" aria-hidden="true" />
       </span>
-      <div className="min-w-0 flex-1">
-        <span className="block text-xs font-bold text-slate-900">NTA Standard Simulated Exam</span>
-        <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-brand-red">
+      <div className="grid min-w-0 flex-1 gap-0.5">
+        <span className="block text-xs font-semibold text-slate-900">NTA Standard Simulated Exam</span>
+        <span className="flex items-center gap-1 text-xs font-semibold text-brand-red">
           <CheckCircle2 className="size-3.5" /> Projected AIR &lt; 500
         </span>
       </div>
@@ -173,32 +178,33 @@ function StepPreview({ step }: { step: JourneyStep }) {
 
 export function LearningJourney() {
   return (
-    <section
+    <ContentSection
       id="journey"
       aria-labelledby="learning-journey-title"
-      className="relative overflow-hidden border-b border-slate-200/80 bg-slate-50 px-4 py-12 sm:px-8 sm:py-16 lg:py-20"
+      className="relative overflow-hidden border-b border-slate-200/80 bg-slate-50"
     >
-      <div className="relative mx-auto w-full max-w-6xl">
+      <PageContainer className="relative">
+        <Stack gap="lg">
         {/* Section Heading & Stage Indicator */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl">
+          <Stack gap="sm" className="max-w-2xl">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-0.5 text-xs font-semibold tracking-wide text-brand-red uppercase">
               <Target className="size-3 text-brand-red" aria-hidden="true" />
               <span>The 4-Stage Methodology</span>
             </div>
             <h2
               id="learning-journey-title"
-              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl"
+              className="type-page-title text-slate-900"
             >
               From First Concept to{" "}
               <span className="text-brand-red">
                 Exam-Day Mastery.
               </span>
             </h2>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600 sm:text-sm">
+            <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
               An interconnected enterprise preparation pipeline engineered to cultivate daily discipline and deliver verifiable rank results.
             </p>
-          </div>
+          </Stack>
 
           <div className="flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs">
             <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -207,7 +213,7 @@ export function LearningJourney() {
         </div>
 
         {/* Steps Grid */}
-        <div className="relative mt-10">
+        <div className="relative">
           {/* Desktop Connecting Beam */}
           <div
             className="pointer-events-none absolute top-10 right-10 left-10 hidden h-0.5 bg-slate-200 lg:block"
@@ -222,14 +228,14 @@ export function LearningJourney() {
               return (
                 <article
                   key={step.number}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs transition duration-200 hover:border-slate-300 hover:shadow-sm"
+                  className="group relative flex flex-col justify-between gap-5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs transition duration-200 hover:border-slate-300 hover:shadow-sm"
                 >
                   {/* Top Bar: Stage Number & Icon */}
-                  <div>
+                  <Stack>
                     <div className="flex items-center justify-between">
                       <span
                         className={cn(
-                          "grid size-10 place-items-center rounded-xl font-mono text-xs font-bold text-white shadow-2xs",
+                          "grid size-10 place-items-center rounded-xl text-xs font-bold text-white shadow-2xs",
                           isBlue ? "bg-brand-blue" : "bg-brand-red",
                         )}
                       >
@@ -247,29 +253,29 @@ export function LearningJourney() {
                       </span>
                     </div>
 
-                    <div className="mt-4">
+                    <Stack gap="xs">
                       <span
                         className={cn(
-                          "text-xs font-semibold tracking-wider uppercase",
+                          "text-xs font-semibold tracking-wide uppercase",
                           isBlue ? "text-brand-blue" : "text-brand-red",
                         )}
                       >
                         Stage {step.number} · {step.verb}
                       </span>
-                      <h3 className="mt-1 text-sm font-bold tracking-tight text-slate-900 sm:text-base">
+                      <h3 className="text-sm font-semibold tracking-tight text-slate-900 sm:text-base">
                         {step.title}
                       </h3>
-                      <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
+                      <p className="text-xs leading-relaxed text-slate-600">
                         {step.description}
                       </p>
-                    </div>
+                    </Stack>
 
                     <StepPreview step={step} />
-                  </div>
+                  </Stack>
 
                   {/* Card Bottom Meta */}
-                  <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3.5 text-xs font-medium text-slate-500">
-                    <span className="text-xs font-semibold uppercase tracking-wider">{step.note}</span>
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-3.5 text-xs font-medium text-slate-500">
+                    <span className="text-xs font-semibold uppercase tracking-wide">{step.note}</span>
                     {index < journey.length - 1 ? (
                       <ArrowRight
                         className={cn(
@@ -287,7 +293,8 @@ export function LearningJourney() {
             })}
           </div>
         </div>
-      </div>
-    </section>
+        </Stack>
+      </PageContainer>
+    </ContentSection>
   );
 }

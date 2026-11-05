@@ -44,9 +44,26 @@ export class AuthGuard implements CanActivate {
     (request as AuthenticatedRequest).user = {
       authUserId: payload.sub!,
       profileId: profile?.id ?? null,
+      displayName: profile?.displayName ?? null,
+      email: profile?.email ?? null,
       roles:
         profile?.userRoles.map(({ role }) => role.name).filter(isRoleName) ??
         [],
+      studentAccess: profile?.institutionMembership
+        ? {
+            studentId: profile.institutionMembership.studentId,
+            category: profile.institutionMembership.studentCategory,
+            paymentStatus: profile.institutionMembership.paymentStatus,
+            paidAccessUntil:
+              profile.institutionMembership.paidAccessUntil?.toISOString() ??
+              null,
+            hasLearningAccess:
+              profile.institutionMembership.studentCategory === 'INTERNAL' ||
+              (profile.institutionMembership.paymentStatus === 'PAID' &&
+                (!profile.institutionMembership.paidAccessUntil ||
+                  profile.institutionMembership.paidAccessUntil > new Date())),
+          }
+        : null,
     };
     return true;
   }

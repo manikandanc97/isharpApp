@@ -11,6 +11,10 @@ import {
   Star,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
+import {
+  PageContainer,
+  Stack,
+} from "@/components/layout/layout-primitives";
 import { LoginForm, OAuthAwareLoginForm } from "./login-form";
 
 export const metadata: Metadata = {
@@ -41,7 +45,7 @@ export default function LoginPage() {
     <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-brand-red selection:text-white antialiased lg:h-svh lg:overflow-hidden">
       {/* 01. NAVIGATION HEADER (h-16, max-w-6xl aligned with main content & homepage) */}
       <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-xs">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
+        <PageContainer className="flex h-(--layout-site-header-height) items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 sm:gap-4">
             <BrandLogo priority className="h-8.5 sm:h-9.5 w-auto" />
             <span
@@ -51,9 +55,9 @@ export default function LoginPage() {
             {/* Dual instruction capsule */}
             <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs">
               <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
-              <span className="font-bold text-slate-900">தமிழ்</span>
+              <span className="font-semibold text-slate-900">தமிழ்</span>
               <span className="text-slate-400">+</span>
-              <span className="font-bold text-slate-900">English</span>
+              <span className="font-semibold text-slate-900">English</span>
               <span className="h-2 w-px bg-slate-200" aria-hidden="true" />
               <span className="text-slate-500">Student LMS</span>
             </div>
@@ -62,30 +66,32 @@ export default function LoginPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/"
+              aria-label="Back to Academy"
               className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
             >
               <ArrowLeft className="size-3.5" />
-              <span>Back to Academy</span>
+              <span className="hidden sm:inline">Back to Academy</span>
             </Link>
-            <span className="h-3.5 w-px bg-slate-200" aria-hidden="true" />
+            <span className="hidden h-3.5 w-px bg-slate-200 sm:block" aria-hidden="true" />
             <Link
               href="/register"
               className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-brand-red transition hover:bg-rose-100 hover:border-rose-300"
             >
-              <span>New Student</span>
+              <span className="hidden xs:inline">Activate Account</span>
+              <span className="xs:hidden">Register</span>
               <ArrowRight className="size-3" />
             </Link>
           </div>
-        </div>
+        </PageContainer>
       </header>
 
       {/* 02. MAIN CONTENT AREA - Perfectly fitted for laptop viewports */}
-      <main className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-4 sm:px-8 lg:overflow-hidden lg:py-0 min-h-0">
-        <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-6 lg:grid-cols-12 lg:gap-10 xl:gap-14">
+      <main className="relative flex min-h-0 flex-1 items-center overflow-y-auto py-(--space-content) lg:overflow-hidden lg:py-0">
+        <PageContainer className="relative grid grid-cols-[minmax(0,1fr)] items-center gap-(--space-layout) lg:grid-cols-12 lg:gap-10 xl:gap-14">
           {/* Left Column: Academic Brand Presentation (Compact for laptop screen) */}
           <section
             aria-labelledby="brand-heading"
-            className="flex flex-col justify-center lg:col-span-6 xl:col-span-7"
+            className="layout-stack justify-center lg:col-span-6 xl:col-span-7"
           >
             {/* Eyebrow Pill */}
             <div className="flex flex-wrap items-center gap-2">
@@ -102,19 +108,19 @@ export default function LoginPage() {
             {/* Headline */}
             <h1
               id="brand-heading"
-              className="mt-2.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-3xl xl:text-4xl lg:leading-tight"
+              className="type-hero text-slate-900"
             >
               Your journey to{" "}
               <span className="text-brand-red">excellence</span> starts here.
             </h1>
 
-            <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-sm">
+            <p className="max-w-xl text-xs leading-relaxed text-slate-600 sm:text-sm">
               Focused preparation, calibrated practice, and steady progress for every
               NEET &amp; JEE aspirant ready to secure top medical and engineering ranks.
             </p>
 
             {/* Feature Highlight Cards (Tightly spaced) */}
-            <div className="mt-4 space-y-2 max-w-xl">
+            <Stack gap="sm" className="max-w-xl">
               {portalHighlights.map((item, idx) => {
                 const Icon = item.icon;
                 const isRed = idx % 2 === 0;
@@ -127,7 +133,7 @@ export default function LoginPage() {
                       <Icon className="size-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-900">
+                      <p className="text-xs font-semibold text-slate-900">
                         {item.title}
                       </p>
                       <p className="text-xs text-slate-500 truncate sm:text-clip">
@@ -137,18 +143,18 @@ export default function LoginPage() {
                   </div>
                 );
               })}
-            </div>
+            </Stack>
 
             {/* Trust Metrics Pill */}
-            <div className="mt-3.5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-3.5 py-2 shadow-2xs backdrop-blur-xs max-w-md">
+            <div className="flex max-w-md flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-3.5 py-2 shadow-2xs backdrop-blur-xs">
               <div className="flex -space-x-1.5">
-                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-navy text-xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-navy text-xs font-semibold text-white ring-2 ring-white">
                   99%
                 </span>
-                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-blue text-xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-blue text-xs font-semibold text-white ring-2 ring-white">
                   AIR
                 </span>
-                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-red text-xs font-bold text-white ring-2 ring-white">
+                <span className="inline-grid size-7 place-items-center rounded-full bg-brand-red text-xs font-semibold text-white ring-2 ring-white">
                   NEET
                 </span>
               </div>
@@ -157,7 +163,7 @@ export default function LoginPage() {
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="size-3 fill-amber-400 text-amber-400" />
                   ))}
-                  <span className="ml-1 text-xs font-bold text-slate-800">4.9 / 5.0</span>
+                  <span className="ml-1 text-xs font-semibold text-slate-800">4.9 / 5.0</span>
                 </div>
                 <p className="text-xs text-slate-500">
                   Trusted by 1,200+ NEET &amp; JEE aspirants across Tamil Nadu
@@ -172,7 +178,7 @@ export default function LoginPage() {
               <OAuthAwareLoginForm />
             </Suspense>
           </div>
-        </div>
+        </PageContainer>
       </main>
     </div>
   );

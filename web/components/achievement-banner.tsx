@@ -10,6 +10,11 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  ContentSection,
+  PageContainer,
+  Stack,
+} from "@/components/layout/layout-primitives";
 
 type AchievementItem = {
   value: string;
@@ -78,16 +83,16 @@ const trustPillars = [
 
 export function AchievementBanner() {
   return (
-    <section
+    <ContentSection
       id="achievements"
       aria-labelledby="achievement-banner-title"
-      className="relative overflow-hidden border-b border-slate-800 bg-slate-950 py-12 text-white sm:py-16 lg:py-20"
+      className="relative overflow-hidden border-b border-slate-800 bg-slate-950 text-white"
     >
-      <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
+      <PageContainer className="relative">
         <div className="grid gap-10 lg:grid-cols-12 lg:gap-12 items-center">
           {/* Left Column: Prestigious Statement & Verification */}
-          <div className="flex flex-col lg:col-span-5">
-            <div>
+          <Stack gap="lg" className="lg:col-span-5">
+            <Stack gap="sm">
               {/* Enterprise Obsidian Eyebrow */}
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-wide uppercase text-amber-300">
                 <Trophy className="size-3 text-amber-400" aria-hidden="true" />
@@ -97,40 +102,40 @@ export function AchievementBanner() {
               {/* Headline */}
               <h2
                 id="achievement-banner-title"
-                className="mt-4 text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-3xl lg:leading-snug"
+                className="type-page-title text-white"
               >
                 Learn with purpose.{" "}
-                <span className="block mt-1 text-slate-300 font-semibold">
+                <span className="block font-semibold text-slate-300">
                   Achieve with absolute confidence.
                 </span>
               </h2>
 
-              <p className="mt-3.5 text-xs leading-relaxed text-slate-400 sm:text-sm">
+              <p className="text-xs leading-relaxed text-slate-400 sm:text-sm">
                 Top percentiles aren’t born from luck. They are engineered
                 through disciplined daily repetition, bilingual conceptual
                 clarity, and relentless exam-condition simulation.
               </p>
-            </div>
+            </Stack>
 
             {/* Trust Pillars */}
-            <div className="mt-6 space-y-3.5 border-t border-slate-800 pt-5">
+            <div className="space-y-3.5 border-t border-slate-800 pt-5">
               {trustPillars.map((pillar) => (
                 <div key={pillar.title} className="flex items-start gap-3">
                   <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
                     <CheckCircle2 className="size-3.5" aria-hidden="true" />
                   </span>
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-white">
+                  <div className="grid gap-0.5">
+                    <h3 className="text-xs sm:text-sm font-semibold text-white">
                       {pillar.title}
                     </h3>
-                    <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs leading-relaxed text-slate-400">
                       {pillar.desc}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Stack>
 
           {/* Right Column: 2x2 Enterprise Metric Cards */}
           <div className="lg:col-span-7">
@@ -144,7 +149,7 @@ export function AchievementBanner() {
                 return (
                   <div
                     key={item.label}
-                    className="relative flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-xs transition duration-200 hover:border-slate-700 hover:bg-slate-900"
+                    className="relative flex flex-col justify-between gap-5 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-xs transition duration-200 hover:border-slate-700 hover:bg-slate-900"
                   >
                     {/* Top Row: Icon & Tag */}
                     <div className="flex items-center justify-between">
@@ -173,7 +178,7 @@ export function AchievementBanner() {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider",
+                            "rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide",
                             isAmber &&
                               "border-amber-400/30 bg-amber-400/10 text-amber-300",
                             isRuby &&
@@ -192,11 +197,11 @@ export function AchievementBanner() {
                     </div>
 
                     {/* Number & Info */}
-                    <div className="mt-5">
+                    <Stack gap="sm">
                       <div className="flex items-baseline justify-between">
                         <dd
                           className={cn(
-                            "text-3xl font-extrabold tracking-tight font-mono sm:text-4xl",
+                            "type-metric font-bold tracking-tight",
                             isAmber && "text-amber-300",
                             isRuby && "text-rose-300",
                             isSapphire && "text-blue-300",
@@ -214,20 +219,22 @@ export function AchievementBanner() {
                         </span>
                       </div>
 
-                      <dt className="mt-2 text-sm font-bold tracking-tight text-white">
-                        {item.label}
-                      </dt>
-                      <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-                        {item.detail}
-                      </p>
-                    </div>
+                      <div className="grid gap-1">
+                        <dt className="text-sm font-semibold tracking-tight text-white">
+                          {item.label}
+                        </dt>
+                        <p className="text-xs leading-relaxed text-slate-400">
+                          {item.detail}
+                        </p>
+                      </div>
+                    </Stack>
                   </div>
                 );
               })}
             </dl>
           </div>
         </div>
-      </div>
-    </section>
+      </PageContainer>
+    </ContentSection>
   );
 }

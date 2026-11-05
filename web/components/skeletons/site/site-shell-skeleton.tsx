@@ -6,7 +6,7 @@ export function SiteHeaderSkeleton() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-xs">
       <div className="absolute inset-x-0 top-0 h-0.5 bg-brand-red" />
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
+      <div className="layout-container flex h-(--layout-site-header-height) items-center justify-between gap-4">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <BrandLogo priority className="h-8.5 w-auto sm:h-9.5" />
           <span className="hidden h-5 w-px bg-slate-300 sm:block" />
@@ -57,8 +57,8 @@ function AccessCardSkeleton() {
 
 export function HeroSkeleton() {
   return (
-    <section className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-slate-200 bg-slate-50 py-8 lg:py-0">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 sm:px-8 lg:grid-cols-12 lg:gap-14">
+    <section className="relative flex min-h-[calc(100svh-var(--layout-site-header-height))] flex-col justify-center overflow-hidden border-b border-slate-200 bg-slate-50 py-(--space-layout) lg:py-0">
+      <div className="layout-container grid grid-cols-[minmax(0,1fr)] items-center gap-(--space-layout) lg:grid-cols-12 lg:gap-14">
         <div className="lg:col-span-7">
           <Skeleton className="h-7 w-72 max-w-full rounded-full" />
           <SkeletonLines
@@ -104,12 +104,12 @@ export function FooterSkeleton() {
   return (
     <footer className="border-t border-slate-800 bg-slate-950">
       <div className="border-b border-slate-800 bg-slate-900/50">
-        <div className="mx-auto flex max-w-6xl justify-between gap-4 px-4 py-5 sm:px-8">
+        <div className="layout-container flex justify-between gap-4 py-5">
           <Skeleton className="h-9 w-64 max-w-[60%] bg-slate-800" />
           <Skeleton className="h-7 w-44 rounded-full bg-slate-800" />
         </div>
       </div>
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:grid-cols-2 sm:px-8 lg:grid-cols-5">
+      <div className="layout-container grid gap-10 py-(--space-layout) sm:grid-cols-2 lg:grid-cols-5">
         <div className="space-y-3 lg:col-span-2">
           <Skeleton className="h-12 w-32 bg-white/15" />
           <SkeletonLines

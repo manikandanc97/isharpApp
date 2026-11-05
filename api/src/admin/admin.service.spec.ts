@@ -27,6 +27,11 @@ describe('AdminService student account isolation', () => {
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userRoles: studentRoleFilter },
+        select: expect.objectContaining({
+          institutionMembership: expect.objectContaining({
+            select: expect.objectContaining({ trustedRecordId: true }),
+          }),
+        }),
       }),
     );
     expect(result).toEqual([
@@ -76,6 +81,119 @@ describe('AdminService internal roster management', () => {
     profileId: 'admin-profile',
     roles: ['ADMIN'],
   } as const;
+
+  it('lets the database generate sequential ISA student IDs', async () => {
+    const created = {
+      id: 'roster-id',
+      studentId: 'ISA001',
+      fullName: 'Student One',
+      email: 'student@example.com',
+      authUserId: null,
+      isActive: true,
+    };
+    const create = vi.fn().mockResolvedValue(created);
+    const tx = {
+      trustedInstitutionStudent: { create },
+      userProfile: { findUnique: vi.fn().mockResolvedValue(null) },
+    };
+    const service = new AdminService({
+      $transaction: vi.fn(async (callback: (client: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    } as never);
+
+    await expect(
+      service.createInternalStudent(actor as never, {
+        fullName: ' Student One ',
+        email: ' STUDENT@EXAMPLE.COM ',
+        studentId: 'CLIENT-SUPPLIED-ID',
+      }),
+    ).resolves.toMatchObject({ studentId: 'ISA001' });
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          fullName: 'Student One',
+          email: 'student@example.com',
+          isActive: true,
+        },
+      }),
+    );
+  });
+
+  it('immediately promotes a matching external account to internal access', async () => {
+    const created = {
+      id: 'roster-id',
+      studentId: 'ISA002',
+      fullName: 'Mani',
+      email: 'manibct1817@gmail.com',
+      authUserId: null,
+      isActive: true,
+    };
+    const membership = {
+      id: 'membership-id',
+      studentCategory: 'EXTERNAL',
+      paymentStatus: 'PENDING',
+      paidAccessUntil: null,
+    };
+    const tx = {
+      trustedInstitutionStudent: {
+        create: vi.fn().mockResolvedValue(created),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      userProfile: {
+        findUnique: vi.fn().mockResolvedValue({
+          authUserId: '00000000-0000-4000-8000-000000000001',
+          userRoles: [{ role: { name: 'STUDENT' } }],
+          institutionMembership: membership,
+        }),
+      },
+      institutionMembership: {
+        update: vi.fn().mockResolvedValue({
+          studentCategory: 'INTERNAL',
+          paymentStatus: 'NOT_REQUIRED',
+          paidAccessUntil: null,
+        }),
+      },
+      studentAccessAudit: { create: vi.fn().mockResolvedValue({}) },
+    };
+    const service = new AdminService({
+      $transaction: vi.fn(async (callback: (client: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    } as never);
+
+    await expect(
+      service.createInternalStudent(actor as never, {
+        fullName: 'Mani',
+        email: 'manibct1817@gmail.com',
+      }),
+    ).resolves.toMatchObject({
+      studentId: 'ISA002',
+      authUserId: '00000000-0000-4000-8000-000000000001',
+    });
+    expect(tx.institutionMembership.update).toHaveBeenCalledWith({
+      where: { id: 'membership-id' },
+      data: expect.objectContaining({
+        studentId: 'ISA002',
+        status: 'VERIFIED',
+        studentCategory: 'INTERNAL',
+        paymentStatus: 'NOT_REQUIRED',
+        trustedRecordId: 'roster-id',
+        method: 'TRUSTED_ROSTER',
+        verifiedById: 'admin-profile',
+      }),
+    });
+    expect(tx.trustedInstitutionStudent.update).toHaveBeenCalledWith({
+      where: { id: 'roster-id' },
+      data: { authUserId: '00000000-0000-4000-8000-000000000001' },
+    });
+    expect(tx.studentAccessAudit.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        membershipId: 'membership-id',
+        reason: 'ADMIN_INTERNAL_ROSTER_ADDED',
+      }),
+    });
+  });
 
   it('normalizes editable roster fields', async () => {
     const tx = {

@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
+import { PageContainer } from "@/components/layout/layout-primitives";
 import { AdminLoginForm } from "./admin-login-form";
 
 export const metadata: Metadata = {
@@ -41,7 +42,7 @@ export default function AdministrationPage() {
     <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-brand-navy selection:text-white antialiased lg:h-svh lg:overflow-hidden">
       {/* 01. NAVIGATION HEADER (h-16, max-w-6xl aligned across the application) */}
       <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-xs">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
+        <PageContainer className="flex h-(--layout-site-header-height) items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 sm:gap-4">
             <BrandLogo priority className="h-8.5 sm:h-9.5 w-auto" />
             <span
@@ -60,12 +61,13 @@ export default function AdministrationPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/"
+              aria-label="Back to Academy"
               className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
             >
               <ArrowLeft className="size-3.5" />
-              <span>Back to Academy</span>
+              <span className="hidden sm:inline">Back to Academy</span>
             </Link>
-            <span className="h-3.5 w-px bg-slate-200" aria-hidden="true" />
+            <span className="hidden h-3.5 w-px bg-slate-200 sm:block" aria-hidden="true" />
             <Link
               href="/login"
               className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-brand-blue transition hover:bg-blue-100 hover:border-blue-300"
@@ -74,16 +76,16 @@ export default function AdministrationPage() {
               <ArrowRight className="size-3" />
             </Link>
           </div>
-        </div>
+        </PageContainer>
       </header>
 
       {/* 02. MAIN CONTENT AREA - Perfectly fitted for laptop viewports */}
-      <main className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-4 sm:px-8 lg:overflow-hidden lg:py-0 min-h-0">
-        <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-6 lg:grid-cols-12 lg:gap-10 xl:gap-14">
+      <main className="relative flex min-h-0 flex-1 items-center overflow-y-auto py-(--space-content) lg:overflow-hidden lg:py-0">
+        <PageContainer className="relative grid grid-cols-[minmax(0,1fr)] items-center gap-(--space-layout) lg:grid-cols-12 lg:gap-10 xl:gap-14">
           {/* Left Column: Academic Brand Presentation (Compact for laptop screen) */}
           <section
             aria-labelledby="admin-heading"
-            className="flex flex-col justify-center lg:col-span-6 xl:col-span-7"
+            className="layout-stack justify-center lg:col-span-6 xl:col-span-7"
           >
             {/* Eyebrow Pill */}
             <div className="flex flex-wrap items-center gap-2">
@@ -100,17 +102,17 @@ export default function AdministrationPage() {
             {/* Main Headline */}
             <h1
               id="admin-heading"
-              className="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
+              className="type-hero text-slate-900"
             >
               Administrative Operations Portal.
             </h1>
 
-            <p className="mt-2 text-xs leading-relaxed text-slate-600 sm:text-sm">
+            <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
               Secure administrative gateway for academy leaders to manage bilingual NEET &amp; JEE learning operations.
             </p>
 
             {/* Feature Highlights Grid */}
-            <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
               {adminPillars.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -122,7 +124,7 @@ export default function AdministrationPage() {
                       <div className="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-brand-navy">
                         <Icon className="size-3.5" />
                       </div>
-                      <p className="mt-2 text-xs sm:text-sm font-bold text-slate-900 leading-tight">
+                      <p className="mt-2 text-xs sm:text-sm font-semibold text-slate-900 leading-tight">
                         {item.title}
                       </p>
                       <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -135,7 +137,7 @@ export default function AdministrationPage() {
             </div>
 
             {/* Security Compliance Trust Strip */}
-            <div className="mt-4 flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-500">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
               <span className="flex items-center gap-1">
                 <Lock className="size-3 text-emerald-600" />
                 <span>256-Bit TLS Audit Logging</span>
@@ -157,7 +159,7 @@ export default function AdministrationPage() {
           >
             <AdminLoginForm />
           </section>
-        </div>
+        </PageContainer>
       </main>
     </div>
   );

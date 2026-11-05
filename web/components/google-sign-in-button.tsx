@@ -1,9 +1,14 @@
 'use client';
 
 import { LoaderCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
-import { buildOAuthCallbackUrl } from '@/lib/oauth-flow';
+import {
+  buildOAuthPopupCallbackUrl,
+  OAUTH_POPUP_RESULT_KEY,
+  oauthStatusMessages,
+} from '@/lib/oauth-flow';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -16,21 +21,103 @@ export function GoogleSignInButton({
   label?: string;
   onError?: (message: string) => void;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const popupRef = useRef<Window | null>(null);
+  const closeWatcherRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function stopWatchingPopup() {
+    if (closeWatcherRef.current) {
+      clearInterval(closeWatcherRef.current);
+      closeWatcherRef.current = null;
+    }
+  }
+
+  useEffect(() => {
+    function finish(result: OAuthPopupResult) {
+      stopWatchingPopup();
+      popupRef.current = null;
+      setLoading(false);
+
+      if (result.type === 'isharp:oauth-complete') {
+        router.replace(result.destination);
+        router.refresh();
+        return;
+      }
+
+      onError?.(
+        oauthStatusMessages[result.state] ??
+          'Google sign-in could not be completed. Please try again.',
+      );
+    }
+
+    function onMessage(event: MessageEvent<OAuthPopupResult>) {
+      if (event.origin !== window.location.origin) return;
+      if (event.source !== popupRef.current) return;
+      if (!isOAuthPopupResult(event.data)) return;
+      finish(event.data);
+    }
+
+    function onStorage(event: StorageEvent) {
+      if (event.key !== OAUTH_POPUP_RESULT_KEY || !event.newValue) return;
+      try {
+        const result: unknown = JSON.parse(event.newValue);
+        if (isOAuthPopupResult(result)) finish(result);
+      } catch {
+        // Ignore malformed cross-tab messages.
+      }
+    }
+
+    window.addEventListener('message', onMessage);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      window.removeEventListener('storage', onStorage);
+      stopWatchingPopup();
+    };
+  }, [onError, router]);
 
   async function signIn() {
+    const width = 520;
+    const height = 680;
+    const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
+    const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
+    const popup = window.open(
+      'about:blank',
+      'isharp-google-sign-in',
+      `popup=yes,width=${width},height=${height},left=${left},top=${top}`,
+    );
+
+    if (!popup) {
+      onError?.('Please allow popups for this site, then try Google sign-in again.');
+      return;
+    }
+
+    popupRef.current = popup;
     setLoading(true);
     onError?.('');
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: buildOAuthCallbackUrl(window.location.origin),
+          redirectTo: buildOAuthPopupCallbackUrl(window.location.origin),
+          skipBrowserRedirect: true,
         },
       });
       if (error) throw error;
+      if (!data.url) throw new Error('Google sign-in URL was not returned.');
+
+      popup.location.replace(data.url);
+      closeWatcherRef.current = setInterval(() => {
+        if (!popup.closed) return;
+        stopWatchingPopup();
+        popupRef.current = null;
+        setLoading(false);
+      }, 500);
     } catch (error) {
+      popup.close();
+      popupRef.current = null;
       onError?.(
         error instanceof Error
           ? error.message
@@ -57,6 +144,21 @@ export function GoogleSignInButton({
       )}
       <span>{loading ? 'Opening Google…' : label}</span>
     </button>
+  );
+}
+
+type OAuthPopupResult =
+  | { type: 'isharp:oauth-complete'; destination: string }
+  | { type: 'isharp:oauth-error'; state: string };
+
+function isOAuthPopupResult(value: unknown): value is OAuthPopupResult {
+  if (!value || typeof value !== 'object') return false;
+  const result = value as Record<string, unknown>;
+  return (
+    (result.type === 'isharp:oauth-complete' &&
+      typeof result.destination === 'string' &&
+      result.destination.startsWith('/')) ||
+    (result.type === 'isharp:oauth-error' && typeof result.state === 'string')
   );
 }
 

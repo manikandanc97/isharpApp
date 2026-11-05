@@ -1,5 +1,5 @@
-import { RoleDashboard } from '@/components/role-dashboard';
+import { StudentDashboard } from "@/components/student-dashboard";
 
 export default function StudentDashboardPage() {
-  return <RoleDashboard area="student" />;
+  return <StudentDashboard />;
 }

@@ -8,11 +8,8 @@ import {
   ArrowRight,
   BookOpen,
   Calendar,
-  Eye,
-  EyeOff,
   Headphones,
   LoaderCircle,
-  Lock,
   LogOut,
   Mail,
   Shield,
@@ -22,16 +19,19 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LogoutConfirmationDialog } from "@/components/logout-confirmation-dialog";
+import { PasswordInput } from "@/components/ui/password-input";
+import { isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 
 export function AdminLoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Authenticated State (Admin Dashboard Preview)
   const [authenticatedUser, setAuthenticatedUser] = useState<{
@@ -45,7 +45,7 @@ export function AdminLoginForm() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       errs.email = "Enter your official academy email.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    } else if (!isValidEmail(trimmedEmail)) {
       errs.email = "Enter a valid email address.";
     }
 
@@ -104,7 +104,7 @@ export function AdminLoginForm() {
               <ShieldCheck className="size-5 text-emerald-300" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">{authenticatedUser.displayName}</p>
+              <p className="text-xs font-semibold text-slate-900">{authenticatedUser.displayName}</p>
               <p className="text-xs font-medium text-slate-500">{authenticatedUser.role}</p>
             </div>
           </div>
@@ -121,13 +121,13 @@ export function AdminLoginForm() {
 
           <div className="grid grid-cols-2 gap-2.5 pt-1">
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Enrolments</p>
-              <p className="text-lg font-black text-slate-900">1,000+</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Enrolments</p>
+              <p className="text-lg font-semibold text-slate-900">1,000+</p>
               <p className="text-xs text-emerald-600 font-medium">Batch 2026 Active</p>
             </div>
             <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Simulated Mocks</p>
-              <p className="text-lg font-black text-slate-900">25 Tests</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Simulated Mocks</p>
+              <p className="text-lg font-semibold text-slate-900">25 Tests</p>
               <p className="text-xs text-brand-blue font-medium">720-Mark NTA Pattern</p>
             </div>
           </div>
@@ -138,48 +138,66 @@ export function AdminLoginForm() {
                 <Users className="size-4 text-brand-blue" />
                 <span className="font-semibold">Student Enrolment Approvals</span>
               </div>
-              <Badge className="bg-rose-100 text-brand-red text-xs border-none font-semibold">New</Badge>
+              <Badge variant="secondary" className="text-xs">4 Pending</Badge>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer">
               <div className="flex items-center gap-2">
-                <BookOpen className="size-4 text-emerald-600" />
-                <span className="font-semibold">Question Bank &amp; DPP Management</span>
+                <BookOpen className="size-4 text-brand-red" />
+                <span className="font-semibold">Question Bank Management</span>
               </div>
-              <ArrowRight className="size-3.5 text-slate-400" />
+              <Badge variant="secondary" className="text-xs">Active</Badge>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer">
               <div className="flex items-center gap-2">
-                <Calendar className="size-4 text-amber-600" />
-                <span className="font-semibold">Test Series Schedule &amp; Key Verification</span>
+                <Calendar className="size-4 text-emerald-600" />
+                <span className="font-semibold">Test Schedule Manager</span>
               </div>
-              <ArrowRight className="size-3.5 text-slate-400" />
+              <span className="text-xs text-slate-400">NEET 2026</span>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-            <Link
-              href="/"
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
-            >
-              ← Back to Academy
-            </Link>
+          <div className="pt-2 flex items-center justify-between border-t border-slate-100">
             <Button
-              type="button"
               variant="outline"
               size="sm"
-              onClick={async () => {
-                await fetch("/api/auth/logout", { method: "POST" });
-                setAuthenticatedUser(null);
-                setPassword("");
-              }}
-              className="text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50"
+              onClick={() => router.push("/admin")}
+              className="w-full justify-center text-xs font-semibold"
             >
-              <LogOut className="size-3.5 mr-1" />
-              Sign Out
+              Go to Full Admin Dashboard
+              <ArrowRight className="size-3.5 ml-1.5" />
             </Button>
           </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full text-slate-500 hover:text-rose-600 text-xs"
+          >
+            <LogOut className="size-3.5 mr-1" />
+            Sign Out
+          </Button>
+
+          <LogoutConfirmationDialog
+            open={showLogoutModal}
+            onOpenChange={setShowLogoutModal}
+            onConfirm={async () => {
+              setIsSubmitting(true);
+              try {
+                await fetch("/api/auth/logout", { method: "POST" });
+                setAuthenticatedUser(null);
+                setShowLogoutModal(false);
+                router.refresh();
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            isLoading={isSubmitting}
+            title="Log out of Administration?"
+            description="Are you sure you want to sign out of the administrator session?"
+          />
         </div>
       </div>
     );
@@ -193,10 +211,10 @@ export function AdminLoginForm() {
       aria-labelledby="admin-login-heading"
       className="w-full min-w-0 max-w-sm sm:max-w-md rounded-2xl border border-slate-200/90 bg-white p-4.5 sm:p-5.5 lg:p-6 shadow-card"
     >
-      {/* Top Header Badge */}
+      {/* Top Banner */}
       <div className="flex items-center justify-between">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-slate-800 uppercase">
-          <Shield className="size-3.5 text-slate-700" />
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-slate-700 uppercase">
+          <Shield className="size-3.5 text-slate-600" />
           <span>Restricted Portal</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
@@ -206,7 +224,7 @@ export function AdminLoginForm() {
       </div>
 
       <div className="mt-2.5">
-        <h2 id="admin-login-heading" className="text-lg font-extrabold text-slate-900 sm:text-xl">
+        <h2 id="admin-login-heading" className="type-section-title text-slate-900">
           Administrator Sign In
         </h2>
         <p className="text-xs text-slate-500">
@@ -239,7 +257,7 @@ export function AdminLoginForm() {
               onBlur={() => {
                 if (!email.trim()) {
                   setErrors((prev) => ({ ...prev, email: "Email is required." }));
-                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+                } else if (!isValidEmail(email)) {
                   setErrors((prev) => ({ ...prev, email: "Enter a valid email address." }));
                 }
               }}
@@ -259,32 +277,20 @@ export function AdminLoginForm() {
           <label htmlFor="admin-pass" className="block text-xs sm:text-sm font-semibold text-slate-700">
             Security Passcode *
           </label>
-          <div className="relative">
-            <input
-              id="admin-pass"
-              name="admin-pass"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="Enter your security passcode"
-              value={password}
-              disabled={isSubmitting}
-              className={cn(inputBaseStyle, "pl-9 pr-10")}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setErrors((prev) => ({ ...prev, password: undefined }));
-                setAuthError("");
-              }}
-            />
-            <Lock className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-            <button
-              type="button"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer"
-            >
-              {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-            </button>
-          </div>
+          <PasswordInput
+            id="admin-pass"
+            name="admin-pass"
+            autoComplete="current-password"
+            placeholder="Enter your security passcode"
+            value={password}
+            disabled={isSubmitting}
+            aria-invalid={Boolean(errors.password)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setErrors((prev) => ({ ...prev, password: undefined }));
+              setAuthError("");
+            }}
+          />
           {errors.password && (
             <p className="flex items-center gap-1 text-xs font-medium text-rose-600">
               <AlertCircle className="size-3.5 shrink-0" />
@@ -343,4 +349,3 @@ export function AdminLoginForm() {
     </section>
   );
 }
-
