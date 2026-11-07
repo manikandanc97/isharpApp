@@ -57,7 +57,7 @@ export function QuestionEditorDialog({
           <button
             type="button"
             onClick={onClose}
-            className="grid size-10 place-items-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            className="grid size-9 place-items-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
             aria-label="Close question editor"
           >
             <X className="size-4" />
@@ -227,7 +227,7 @@ export function QuestionEditorDialog({
             type="button"
             disabled={busy}
             onClick={() => void onSave()}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red px-4 py-3 font-semibold text-white shadow-primary transition hover:bg-brand-red-hover active:scale-95 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-red px-4 py-3 font-semibold text-white shadow-primary transition hover:bg-brand-red-hover active:scale-95 disabled:opacity-60"
           >
             {busy ? (
               <LoaderCircle className="size-4 animate-spin" />

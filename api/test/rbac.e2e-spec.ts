@@ -187,6 +187,8 @@ describe('RBAC (e2e)', () => {
     get('/api/auth/me', 'admin').expect(200, {
       authUserId: identities.admin.authUserId,
       profileId: identities.admin.profileId,
+      displayName: null,
+      email: null,
       roles: ['ADMIN'],
       studentAccess: null,
     }));
@@ -195,6 +197,8 @@ describe('RBAC (e2e)', () => {
     await get('/api/auth/me', 'student').expect(200, {
       authUserId: identities.student.authUserId,
       profileId: identities.student.profileId,
+      displayName: null,
+      email: null,
       roles: ['STUDENT'],
       studentAccess: {
         category: 'INTERNAL',
@@ -206,6 +210,8 @@ describe('RBAC (e2e)', () => {
     await get('/api/auth/me', 'externalUnpaid').expect(200, {
       authUserId: identities.externalUnpaid.authUserId,
       profileId: identities.externalUnpaid.profileId,
+      displayName: null,
+      email: null,
       roles: ['STUDENT'],
       studentAccess: {
         category: 'EXTERNAL',
@@ -247,6 +253,8 @@ describe('RBAC (e2e)', () => {
     await get('/api/auth/me', 'pendingGoogleUser').expect(200, {
       authUserId: identities.pendingGoogleUser.authUserId,
       profileId: null,
+      displayName: null,
+      email: null,
       roles: [],
       studentAccess: null,
     });

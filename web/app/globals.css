@@ -4,6 +4,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* -------------------------------------------------------------------------- */
+/* Tailwind Theme Inline Configuration                                        */
+/* -------------------------------------------------------------------------- */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -21,15 +24,15 @@
   --text-secondary--line-height: 1.35rem;
   --text-body: 0.875rem;
   --text-body--line-height: 1.55rem;
-  --text-card-title: clamp(1.0625rem, 1rem + 0.25vw, 1.25rem);
+  --text-card-title: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem);
   --text-card-title--line-height: 1.4;
-  --text-section-title: clamp(1.25rem, 1.125rem + 0.45vw, 1.5625rem);
+  --text-section-title: clamp(1.125rem, 1.05rem + 0.2vw, 1.25rem);
   --text-section-title--line-height: 1.3;
-  --text-page-title: clamp(1.75rem, 1.5rem + 1vw, 2.25rem);
+  --text-page-title: clamp(1.35rem, 1.25rem + 0.4vw, 1.625rem);
   --text-page-title--line-height: 1.2;
   --text-hero: clamp(2.25rem, 1.85rem + 1.8vw, 3.25rem);
   --text-hero--line-height: 1.14;
-  --text-metric: clamp(2rem, 1.75rem + 1vw, 2.75rem);
+  --text-metric: clamp(1.5rem, 1.35rem + 0.4vw, 1.875rem);
   --text-metric--line-height: 1.1;
   --tracking-label: 0.04em;
   --tracking-eyebrow: 0.06em;
@@ -90,6 +93,9 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Design Tokens & Theme Variables (:root & .dark)                            */
+/* -------------------------------------------------------------------------- */
 :root {
   --brand-red: #e51d35;
   --brand-red-hover: #c41328;
@@ -126,8 +132,8 @@
   --chart-4: #f28b98;
   --chart-5: #a7a9ed;
   --radius: 0.75rem;
-  /* Fluid layout foundations. Component-level spacing should derive from
-     these tokens instead of accumulating one-off margin adjustments. */
+
+  /* Fluid layout foundations */
   --space-cluster: clamp(0.5rem, 0.45rem + 0.25vw, 0.75rem);
   --space-content: clamp(1rem, 0.85rem + 0.75vw, 1.5rem);
   --space-layout: clamp(1.5rem, 1.15rem + 1.75vw, 2.5rem);
@@ -184,6 +190,9 @@
   --sidebar-ring: #ed4054;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Base Styles                                                                */
+/* -------------------------------------------------------------------------- */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -218,9 +227,12 @@
     background-color: var(--brand-red);
   }
 
+  html {
+    @apply scroll-smooth font-sans;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-poppins), "Segoe UI", "Noto Sans Tamil", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
     font-size: 0.875rem;
     font-weight: 400;
     line-height: 1.6;
@@ -229,10 +241,6 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
-  html {
-    @apply scroll-smooth font-sans;
-    font-family: var(--font-poppins), "Segoe UI", "Noto Sans Tamil", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-  }
 
   h1,
   h2,
@@ -240,23 +248,16 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-poppins), "Segoe UI", "Noto Sans Tamil", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
     letter-spacing: -0.025em;
     text-wrap: balance;
   }
 
-  h1 {
-    font-weight: 700;
-  }
-
+  h1,
   h2 {
     font-weight: 700;
   }
 
-  h3 {
-    font-weight: 600;
-  }
-
+  h3,
   h4,
   h5,
   h6 {
@@ -307,26 +308,14 @@
     font-size: 0.875rem;
     line-height: 1.45rem;
   }
-
-  @media (prefers-reduced-motion: reduce) {
-    *::-webkit-scrollbar-thumb {
-      transition: none;
-    }
-
-    html {
-      scroll-behavior: auto;
-    }
-  }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Component Layout & Typography Helpers                                      */
+/* -------------------------------------------------------------------------- */
 @keyframes skeleton-shimmer {
-  0% {
-    transform: translateX(-115%);
-  }
-
-  100% {
-    transform: translateX(115%);
-  }
+  0% { transform: translateX(-115%); }
+  100% { transform: translateX(115%); }
 }
 
 @layer components {
@@ -479,7 +468,18 @@
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Accessibility: Reduced Motion                                              */
+/* -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
+  *::-webkit-scrollbar-thumb {
+    transition: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
   [data-slot="skeleton"][data-shimmer="true"]::after {
     animation: none;
     opacity: 0;

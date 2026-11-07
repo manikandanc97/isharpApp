@@ -119,7 +119,7 @@ export function MockTestsBuilder({
                 type="button"
                 onClick={autoSelect}
                 disabled={!questions.length}
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Shuffle className="size-4" />
                 {selected.length ? "Regenerate selection" : "Select questions"}
@@ -148,7 +148,7 @@ export function MockTestsBuilder({
               <button
                 type="button"
                 onClick={() => onSelectionChange([])}
-                className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-brand-blue hover:bg-blue-50"
+                className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-blue hover:bg-blue-50"
               >
                 Clear
               </button>
@@ -175,7 +175,7 @@ export function MockTestsBuilder({
             type="button"
             onClick={() => void create()}
             disabled={!code || !title || !selected.length || creating}
-            className="w-full rounded-xl bg-brand-red px-4 py-3 font-semibold text-white shadow-primary transition hover:bg-brand-red-hover active:scale-95 disabled:opacity-40"
+            className="w-full rounded-full bg-brand-red px-4 py-3 font-semibold text-white shadow-primary transition hover:bg-brand-red-hover active:scale-95 disabled:opacity-40"
           >
             {creating ? "Creating mock test…" : "Create draft mock test"}
           </button>

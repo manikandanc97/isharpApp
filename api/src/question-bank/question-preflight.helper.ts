@@ -20,9 +20,7 @@ export async function runImportPreflight(
   if (!unique.length) return { existingExternalIds: [] };
   const existing = await prisma.question.findMany({
     where: {
-      OR: unique.map((externalId) => ({
-        externalId: { equals: externalId, mode: 'insensitive' as const },
-      })),
+      externalId: { in: unique },
     },
     select: { externalId: true },
   });

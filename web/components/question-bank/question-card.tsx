@@ -87,20 +87,20 @@ export function QuestionCard({
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 px-2.5 py-2 text-xs font-semibold text-brand-blue transition hover:bg-blue-50"
+            className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 px-3 py-1.5 text-xs font-semibold text-brand-blue transition hover:bg-blue-50"
             title={demo ? "Use as a new question template" : "Edit question"}
           >
-            <Pencil className="size-4" />
+            <Pencil className="size-3.5" />
             {demo ? "Use template" : "Edit"}
           </button>
           {!demo && onDelete && (
             <button
               type="button"
               onClick={onDelete}
-              className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50"
+              className="grid size-8 place-items-center rounded-full border border-red-200 text-red-600 hover:bg-red-50"
               title="Delete question"
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-3.5" />
             </button>
           )}
         </div>

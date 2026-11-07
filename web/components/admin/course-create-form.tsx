@@ -76,7 +76,7 @@ export function CourseCreateForm({ onCreate, onSuccess }: CourseCreateFormProps)
           <button
             disabled={saving || !form.code.trim() || !form.title.trim()}
             type="submit"
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brand-red font-semibold text-white shadow-primary transition hover:bg-brand-red-hover disabled:opacity-50 active:scale-95"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-brand-red font-semibold text-white shadow-primary transition hover:bg-brand-red-hover disabled:opacity-50 active:scale-95"
           >
             {saving ? (
               <LoaderCircle className="size-4 animate-spin" />

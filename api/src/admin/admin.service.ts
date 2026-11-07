@@ -43,40 +43,65 @@ const userSelect = {
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private overviewCache: { data: unknown; expiresAt: number } | null = null;
+  private readonly OVERVIEW_CACHE_TTL_MS = 15_000;
+
+  invalidateOverviewCache() {
+    this.overviewCache = null;
+  }
+
   async overview() {
-    // Bound database concurrency here because the dashboard already loads its
-    // four resources in parallel. These small reads are faster and more stable
-    // in sequence than competing for every slot in the shared session pool.
-    const users = await this.prisma.userProfile.count({
-      where: { userRoles: studentAccountRoleFilter },
-    });
-    const activeUsers = await this.prisma.userProfile.count({
-      where: { isActive: true, userRoles: studentAccountRoleFilter },
-    });
-    const pendingVerifications = await this.prisma.institutionMembership.count({
-      where: {
-        status: 'PENDING',
-        user: { userRoles: studentAccountRoleFilter },
-      },
-    });
-    const courses = await this.prisma.course.count({
-      where: { isActive: true },
-    });
-    const subjects = await this.prisma.subject.count({
-      where: { isActive: true },
-    });
-    const recent = await this.prisma.institutionMembership.findMany({
-      where: { user: { userRoles: studentAccountRoleFilter } },
-      orderBy: { updatedAt: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        studentId: true,
-        status: true,
-        updatedAt: true,
-        user: { select: { id: true, displayName: true } },
-      },
-    });
+    const now = Date.now();
+    if (this.overviewCache && this.overviewCache.expiresAt > now) {
+      return this.overviewCache.data as Awaited<
+        ReturnType<AdminService['fetchOverviewFromDb']>
+      >;
+    }
+    const data = await this.fetchOverviewFromDb();
+    this.overviewCache = { data, expiresAt: now + this.OVERVIEW_CACHE_TTL_MS };
+    return data;
+  }
+
+  private async fetchOverviewFromDb() {
+    const [
+      users,
+      activeUsers,
+      pendingVerifications,
+      courses,
+      subjects,
+      recent,
+    ] = await Promise.all([
+      this.prisma.userProfile.count({
+        where: { userRoles: studentAccountRoleFilter },
+      }),
+      this.prisma.userProfile.count({
+        where: { isActive: true, userRoles: studentAccountRoleFilter },
+      }),
+      this.prisma.institutionMembership.count({
+        where: {
+          status: 'PENDING',
+          user: { userRoles: studentAccountRoleFilter },
+        },
+      }),
+      this.prisma.course.count({
+        where: { isActive: true },
+      }),
+      this.prisma.subject.count({
+        where: { isActive: true },
+      }),
+      this.prisma.institutionMembership.findMany({
+        where: { user: { userRoles: studentAccountRoleFilter } },
+        orderBy: { updatedAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          studentId: true,
+          status: true,
+          updatedAt: true,
+          user: { select: { id: true, displayName: true } },
+        },
+      }),
+    ]);
 
     return {
       metrics: {
@@ -138,16 +163,22 @@ export class AdminService {
     });
   }
 
-  createInternalStudent(actor: AuthUser, body: unknown) {
-    return createInternalStudentRecord(this.prisma, actor, body);
+  async createInternalStudent(actor: AuthUser, body: unknown) {
+    const res = await createInternalStudentRecord(this.prisma, actor, body);
+    this.invalidateOverviewCache();
+    return res;
   }
 
-  updateInternalStudent(actor: AuthUser, id: string, body: unknown) {
-    return updateInternalStudentRecord(this.prisma, actor, id, body);
+  async updateInternalStudent(actor: AuthUser, id: string, body: unknown) {
+    const res = await updateInternalStudentRecord(this.prisma, actor, id, body);
+    this.invalidateOverviewCache();
+    return res;
   }
 
-  deleteInternalStudent(actor: AuthUser, id: string) {
-    return deleteInternalStudentRecord(this.prisma, actor, id);
+  async deleteInternalStudent(actor: AuthUser, id: string) {
+    const res = await deleteInternalStudentRecord(this.prisma, actor, id);
+    this.invalidateOverviewCache();
+    return res;
   }
 
   async setUserStatus(actor: AuthUser, profileId: string, body: unknown) {
@@ -183,6 +214,7 @@ export class AdminService {
       data: { isActive },
       select: userSelect,
     });
+    this.invalidateOverviewCache();
     return {
       ...updated,
       roles: updated.userRoles.map(({ role }) => role.name),
@@ -190,15 +222,34 @@ export class AdminService {
     };
   }
 
-  setStudentAccess(actor: AuthUser, membershipId: string, body: unknown) {
-    return setStudentAccessRecord(this.prisma, actor, membershipId, body);
+  async setStudentAccess(actor: AuthUser, membershipId: string, body: unknown) {
+    const res = await setStudentAccessRecord(this.prisma, actor, membershipId, body);
+    this.invalidateOverviewCache();
+    return res;
   }
 
   listMemberships(status?: string) {
     return listMembershipsRecords(this.prisma, status);
   }
 
+  private catalogCache: { data: unknown; expiresAt: number } | null = null;
+  private readonly CATALOG_CACHE_TTL_MS = 60_000;
+
+  invalidateCatalogCache() {
+    this.catalogCache = null;
+  }
+
   async catalog() {
+    const now = Date.now();
+    if (this.catalogCache && this.catalogCache.expiresAt > now) {
+      return this.catalogCache.data as Awaited<ReturnType<AdminService['fetchCatalogFromDb']>>;
+    }
+    const data = await this.fetchCatalogFromDb();
+    this.catalogCache = { data, expiresAt: now + this.CATALOG_CACHE_TTL_MS };
+    return data;
+  }
+
+  private fetchCatalogFromDb() {
     return this.prisma.course.findMany({
       orderBy: [{ isActive: 'desc' }, { title: 'asc' }],
       select: {
@@ -227,13 +278,19 @@ export class AdminService {
 
   async createCourse(body: unknown) {
     const input = parseCoursePayload(body, true);
-    return this.prisma.course.create({ data: input });
+    const created = await this.prisma.course.create({ data: input });
+    this.invalidateCatalogCache();
+    this.invalidateOverviewCache();
+    return created;
   }
 
   async updateCourse(id: string, body: unknown) {
     const input = parseCoursePayload(body, false);
     const existing = await this.prisma.course.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Course not found');
-    return this.prisma.course.update({ where: { id }, data: input });
+    const updated = await this.prisma.course.update({ where: { id }, data: input });
+    this.invalidateCatalogCache();
+    this.invalidateOverviewCache();
+    return updated;
   }
 }

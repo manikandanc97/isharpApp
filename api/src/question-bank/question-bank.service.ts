@@ -19,6 +19,15 @@ import {
   str,
 } from './question-validation.helper.js';
 
+export interface QuestionListOptions {
+  query?: string;
+  page?: number;
+  limit?: number;
+  subjectCode?: string;
+  chapterId?: string;
+  difficulty?: string;
+}
+
 @Injectable()
 export class QuestionBankService {
   constructor(
@@ -26,25 +35,67 @@ export class QuestionBankService {
     private readonly config: ConfigService,
   ) {}
 
-  listQuestions(query?: string) {
-    const q = query?.trim().slice(0, 100);
+  listQuestions(filterOrQuery?: string | QuestionListOptions) {
+    const filter: QuestionListOptions =
+      typeof filterOrQuery === 'string'
+        ? { query: filterOrQuery }
+        : filterOrQuery || {};
+
+    const q = filter.query?.trim().slice(0, 100);
+    const page = Math.max(1, Number(filter.page) || 1);
+    const limit = Math.min(
+      250,
+      Math.max(1, Number(filter.limit) || (filter.page ? 50 : 250)),
+    );
+    const skip = (page - 1) * limit;
+
+    const whereConditions: Record<string, unknown>[] = [];
+
+    if (q) {
+      whereConditions.push({
+        OR: [
+          { externalId: { contains: q, mode: 'insensitive' } },
+          { textEn: { contains: q, mode: 'insensitive' } },
+          { textTa: { contains: q, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (filter.subjectCode) {
+      whereConditions.push({
+        courseSubject: {
+          subject: {
+            code: filter.subjectCode.toUpperCase(),
+          },
+        },
+      });
+    }
+
+    if (filter.chapterId) {
+      whereConditions.push({ chapterId: filter.chapterId });
+    }
+
+    if (filter.difficulty) {
+      whereConditions.push({ difficulty: filter.difficulty.toUpperCase() });
+    }
+
+    const where =
+      whereConditions.length === 0
+        ? undefined
+        : whereConditions.length === 1
+          ? whereConditions[0]
+          : { AND: whereConditions };
+
     return this.prisma.question.findMany({
-      where: q
-        ? {
-            OR: [
-              { externalId: { contains: q, mode: 'insensitive' } },
-              { textEn: { contains: q, mode: 'insensitive' } },
-              { textTa: { contains: q, mode: 'insensitive' } },
-            ],
-          }
-        : undefined,
+      where: where as Parameters<PrismaService['question']['findMany']>[0] extends { where?: infer W } ? W : never,
       include: {
         options: { orderBy: { position: 'asc' } },
         chapter: true,
         courseSubject: { include: { course: true, subject: true } },
       },
       orderBy: { updatedAt: 'desc' },
-      take: 250,
+      skip,
+      take: limit,
     });
   }
 
@@ -158,19 +209,42 @@ export class QuestionBankService {
     return { id, externalId: question.externalId, deleted: true };
   }
 
-  listMockTests() {
+  private mockTestsCache: { data: unknown; expiresAt: number } | null = null;
+  private readonly MOCK_TESTS_CACHE_TTL_MS = 30_000;
+
+  invalidateMockTestsCache() {
+    this.mockTestsCache = null;
+  }
+
+  async listMockTests() {
+    const now = Date.now();
+    if (this.mockTestsCache && this.mockTestsCache.expiresAt > now) {
+      return this.mockTestsCache.data as Awaited<
+        ReturnType<QuestionBankService['fetchMockTestsFromDb']>
+      >;
+    }
+    const data = await this.fetchMockTestsFromDb();
+    this.mockTestsCache = { data, expiresAt: now + this.MOCK_TESTS_CACHE_TTL_MS };
+    return data;
+  }
+
+  private fetchMockTestsFromDb() {
     return this.prisma.mockTest.findMany({
       include: { _count: { select: { questions: true } } },
       orderBy: { updatedAt: 'desc' },
     });
   }
 
-  createMockTest(profileId: string | null, body: unknown) {
-    return createMockTestRecord(this.prisma, profileId, body);
+  async createMockTest(profileId: string | null, body: unknown) {
+    const res = await createMockTestRecord(this.prisma, profileId, body);
+    this.invalidateMockTestsCache();
+    return res;
   }
 
-  setMockTestQuestions(id: string, body: unknown) {
-    return setMockTestQuestionsRecord(this.prisma, id, body);
+  async setMockTestQuestions(id: string, body: unknown) {
+    const res = await setMockTestQuestionsRecord(this.prisma, id, body);
+    this.invalidateMockTestsCache();
+    return res;
   }
 
   uploadImage(file?: {

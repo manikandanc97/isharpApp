@@ -179,7 +179,7 @@ export function InternalStudentManager({
                   type="button"
                   disabled={saving}
                   onClick={closeEditor}
-                  className="grid size-9 place-items-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"
+                  className="grid size-9 place-items-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
                   aria-label="Close student form"
                 >
                   <X className="size-4" />

@@ -63,7 +63,7 @@ export function QuestionImportDialog({
             type="button"
             disabled={importBusy}
             onClick={onClose}
-            className="grid size-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+            className="grid size-9 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50"
             aria-label="Close bulk import"
           >
             <X className="size-4" />
@@ -204,7 +204,7 @@ export function QuestionImportDialog({
         <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Link
             href="/api/admin/questions/template"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-95 shadow-2xs"
           >
             <FileDown className="size-4" /> Download template
           </Link>
@@ -216,7 +216,7 @@ export function QuestionImportDialog({
                   setImportFile(null);
                   setImportReport(null);
                 }}
-                className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="h-10 rounded-full border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-95"
               >
                 Import another
               </button>
@@ -235,7 +235,7 @@ export function QuestionImportDialog({
                 }
                 void onImport();
               }}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#18184a] px-5 text-xs font-semibold text-white hover:bg-[#25255f] disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-brand-navy px-5 text-xs font-semibold text-white hover:bg-brand-navy/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 shadow-xs"
             >
               {importBusy ? (
                 <LoaderCircle className="size-4 animate-spin" />

@@ -63,7 +63,7 @@ export function TablePagination({
       className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
       aria-label="Table pagination"
     >
-      <p className="text-xs font-semibold text-slate-500">
+      <p className="text-xs font-medium text-slate-500">
         Showing <span className="font-semibold text-slate-800">{firstItem}</span>–
         <span className="font-semibold text-slate-800">{lastItem}</span> of{" "}
         <span className="font-semibold text-slate-800">{totalItems}</span>
@@ -73,7 +73,7 @@ export function TablePagination({
           type="button"
           disabled={page === 1}
           onClick={() => onPageChange(page - 1)}
-          className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="Previous page"
         >
           <ChevronLeft className="size-3.5" />
@@ -84,7 +84,7 @@ export function TablePagination({
             key={pageNumber}
             type="button"
             onClick={() => onPageChange(pageNumber)}
-            className={`grid size-9 place-items-center rounded-lg border text-xs font-semibold transition ${
+            className={`grid size-8 place-items-center rounded-full border text-xs font-medium transition ${
               pageNumber === page
                 ? "border-brand-blue bg-brand-blue text-white"
                 : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-brand-blue"
@@ -99,7 +99,7 @@ export function TablePagination({
           type="button"
           disabled={page === totalPages}
           onClick={() => onPageChange(page + 1)}
-          className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="Next page"
         >
           <span className="hidden sm:inline">Next</span>
@@ -129,28 +129,30 @@ export function LightLuxuryPanel({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-slate-200/80 bg-white p-(--layout-card-padding) shadow-xs ${className}`}
+      className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 ${className}`}
     >
-      <Stack>
-      <div className="flex items-start justify-between gap-4">
-        <Stack gap="xs">
-          <h3 className="type-card-title text-slate-900">{title}</h3>
-          {description && (
-            <p className="text-xs text-slate-500">{description}</p>
-          )}
-        </Stack>
-        {headerAction ??
-          (action && (
-            <button
-              onClick={onAction}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue hover:text-brand-blue-hover hover:underline"
-            >
-              <span>{action}</span>
-              <ChevronRight className="size-3.5" />
-            </button>
-          ))}
-      </div>
-      {children}
+      <Stack gap="md">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-semibold tracking-tight text-slate-900 sm:text-base">
+              {title}
+            </h3>
+            {description && (
+              <p className="text-xs font-normal text-slate-400">{description}</p>
+            )}
+          </div>
+          {headerAction ??
+            (action && (
+              <button
+                onClick={onAction}
+                className="inline-flex items-center gap-1 text-xs font-medium text-brand-blue hover:text-brand-blue-hover hover:underline cursor-pointer transition-colors"
+              >
+                <span>{action}</span>
+                <ChevronRight className="size-3.5" />
+              </button>
+            ))}
+        </div>
+        {children}
       </Stack>
     </section>
   );
@@ -170,20 +172,20 @@ export function QuickControlButton({
   return (
     <button
       onClick={onClick}
-      className="group flex w-full items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 text-left transition hover:border-blue-200 hover:bg-blue-50/50 active:scale-95"
+      className="group flex w-full items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 text-left transition hover:border-blue-200 hover:bg-blue-50/40 active:scale-98 cursor-pointer"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <div className="grid size-9 place-items-center rounded-lg bg-blue-50 text-brand-blue transition group-hover:bg-brand-blue group-hover:text-white">
-          <Icon className="size-4.5" />
+        <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-brand-blue transition group-hover:bg-brand-blue group-hover:text-white">
+          <Icon className="size-4" />
         </div>
         <div className="min-w-0">
           <p className="truncate text-xs font-semibold text-slate-800 group-hover:text-brand-blue transition-colors">
             {title}
           </p>
-          <p className="truncate text-xs text-slate-400">{subtitle}</p>
+          <p className="truncate text-[11px] text-slate-400">{subtitle}</p>
         </div>
       </div>
-      <ArrowRight className="size-3.5 text-slate-400 transition group-hover:translate-x-1 group-hover:text-brand-blue" />
+      <ArrowRight className="size-3.5 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-brand-blue" />
     </button>
   );
 }
@@ -204,7 +206,7 @@ export function LightSearchBox({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-3.5 text-sm text-slate-900 outline-none transition placeholder-slate-400 focus:border-brand-blue focus:bg-white focus:ring-3 focus:ring-blue-100"
+        className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-9 pr-3.5 text-xs text-slate-900 outline-none transition placeholder-slate-400 focus:border-brand-blue focus:bg-white focus:ring-2 focus:ring-blue-100 sm:text-sm"
       />
     </label>
   );
@@ -224,15 +226,15 @@ export function LightField({
   className?: string;
 }) {
   return (
-    <label className={`grid gap-1.5 ${className}`}>
-      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <label className={`grid gap-1 ${className}`}>
+      <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
         {label}
       </span>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
+        className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none transition focus:border-brand-blue focus:ring-2 focus:ring-blue-100 sm:text-sm"
       />
     </label>
   );
@@ -240,15 +242,15 @@ export function LightField({
 
 export function LightStatusBadge({ status }: { status: Membership["status"] }) {
   const styles = {
-    PENDING: "bg-amber-50 text-amber-700 ring-amber-200",
-    VERIFIED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-    REJECTED: "bg-red-50 text-red-700 ring-red-200",
-    REVOKED: "bg-slate-100 text-slate-600 ring-slate-200",
+    PENDING: "bg-amber-50 text-amber-700 ring-amber-200/80",
+    VERIFIED: "bg-emerald-50 text-emerald-700 ring-emerald-200/80",
+    REJECTED: "bg-red-50 text-red-700 ring-red-200/80",
+    REVOKED: "bg-slate-100 text-slate-600 ring-slate-200/80",
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ring-1 ${styles[status]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${styles[status]}`}
     >
       <span
         className={`size-1.5 rounded-full ${
@@ -268,7 +270,7 @@ export function LightStatusBadge({ status }: { status: Membership["status"] }) {
 
 export function LightEmpty({ text }: { text: string }) {
   return (
-    <div className="py-10 text-center text-xs font-semibold text-slate-400">
+    <div className="py-10 text-center text-xs font-medium text-slate-400">
       {text}
     </div>
   );

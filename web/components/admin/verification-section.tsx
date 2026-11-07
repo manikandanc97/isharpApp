@@ -47,7 +47,7 @@ export function Verification({
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                   isSelected
                     ? "border border-brand-blue bg-brand-blue text-white shadow-xs"
                     : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"

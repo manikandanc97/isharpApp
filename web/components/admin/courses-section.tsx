@@ -66,11 +66,11 @@ export function CoursesSection({
               <BookOpenCheck className="size-3.5" />
               Academic operations
             </div>
-            <div className="grid gap-2">
-              <h2 className="type-page-title text-slate-950">
+            <div className="grid gap-1.5">
+              <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
                 Curriculum workspace
               </h2>
-              <p className="max-w-xl text-sm leading-6 text-slate-500">
+              <p className="max-w-xl text-xs leading-relaxed text-slate-500 sm:text-[13px]">
                 Govern course availability, syllabus coverage and academic content
                 from one operational view.
               </p>
@@ -79,7 +79,7 @@ export function CoursesSection({
           <button
             type="button"
             onClick={() => setShowForm((value) => !value)}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold transition active:scale-95 ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold transition active:scale-95 ${
               showForm
                 ? "border border-slate-200 bg-white text-slate-700 shadow-xs hover:bg-slate-50"
                 : "bg-brand-red text-white shadow-primary hover:bg-brand-red-hover"
@@ -137,10 +137,10 @@ export function CoursesSection({
                 <Icon className="size-4.5" />
               </div>
               <div>
-                <p className="type-metric text-slate-950">
+                <p className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[26px]">
                   {metric.value}
                 </p>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                   {metric.label}
                 </p>
               </div>

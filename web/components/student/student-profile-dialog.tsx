@@ -94,7 +94,7 @@ export function StudentProfileDialog({
           <Button
             onClick={() => void onSave()}
             disabled={savingProfile || !profileName.trim()}
-            className="w-full rounded-xl bg-brand-red font-semibold text-white hover:bg-brand-red-hover"
+            className="w-full rounded-full bg-brand-red font-semibold text-white hover:bg-brand-red-hover"
           >
             {savingProfile ? (
               <LoaderCircle className="mr-2 size-4 animate-spin" />

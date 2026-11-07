@@ -24,8 +24,23 @@ import { QuestionBankService } from './question-bank.service.js';
 @Roles('ADMIN', 'SUPERADMIN')
 export class QuestionBankController {
   constructor(private readonly bank: QuestionBankService) {}
-  @Get('questions') questions(@Query('query') query?: string) {
-    return this.bank.listQuestions(query);
+  @Get('questions')
+  questions(
+    @Query('query') query?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('subject') subject?: string,
+    @Query('difficulty') difficulty?: string,
+    @Query('chapterId') chapterId?: string,
+  ) {
+    return this.bank.listQuestions({
+      query,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      subjectCode: subject,
+      difficulty,
+      chapterId,
+    });
   }
   @Post('questions') createQuestion(
     @Req() req: AuthenticatedRequest,

@@ -5,24 +5,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
-  ArrowRight,
-  BookOpen,
-  Calendar,
   Headphones,
   LoaderCircle,
-  LogOut,
   Mail,
   Shield,
-  ShieldCheck,
-  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { LogoutConfirmationDialog } from "@/components/logout-confirmation-dialog";
 import { PasswordInput } from "@/components/ui/password-input";
 import { isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
+import {
+  AdminControlCenterPreview,
+  type AuthenticatedAdminUser,
+} from "./admin-control-center-preview";
+
+const inputBaseStyle =
+  "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-blue focus:ring-3 focus:ring-brand-blue/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function AdminLoginForm() {
   const router = useRouter();
@@ -31,14 +30,9 @@ export function AdminLoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Authenticated State (Admin Dashboard Preview)
-  const [authenticatedUser, setAuthenticatedUser] = useState<{
-    email: string;
-    role: string;
-    displayName: string;
-  } | null>(null);
+  const [authenticatedUser, setAuthenticatedUser] =
+    useState<AuthenticatedAdminUser | null>(null);
 
   function validate() {
     const errs: { email?: string; password?: string } = {};
@@ -88,130 +82,28 @@ export function AdminLoginForm() {
       router.replace(result.destination);
       router.refresh();
     } catch {
-      setAuthError("Unable to reach the application login service. Please try again.");
+      setAuthError(
+        "Unable to reach the application login service. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  // If user is authenticated, render the Admin Control Center
   if (authenticatedUser) {
     return (
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-card">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
-          <div className="flex items-center gap-2">
-            <div className="grid size-9 place-items-center rounded-xl bg-brand-red text-white shadow-xs">
-              <ShieldCheck className="size-5 text-emerald-300" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-900">{authenticatedUser.displayName}</p>
-              <p className="text-xs font-medium text-slate-500">{authenticatedUser.role}</p>
-            </div>
-          </div>
-          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
-            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse mr-1" />
-            Active Session
-          </Badge>
-        </div>
-
-        <div className="mt-4 space-y-3">
-          <p className="text-xs text-slate-600">
-            Welcome to the <strong className="text-slate-900">I-Sharp Academy Control Center</strong>. All management tools are synchronized.
-          </p>
-
-          <div className="grid grid-cols-2 gap-2.5 pt-1">
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Enrolments</p>
-              <p className="text-lg font-semibold text-slate-900">1,000+</p>
-              <p className="text-xs text-emerald-600 font-medium">Batch 2026 Active</p>
-            </div>
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Simulated Mocks</p>
-              <p className="text-lg font-semibold text-slate-900">25 Tests</p>
-              <p className="text-xs text-brand-blue font-medium">720-Mark NTA Pattern</p>
-            </div>
-          </div>
-
-          <div className="space-y-2 pt-2">
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Users className="size-4 text-brand-blue" />
-                <span className="font-semibold">Student Enrolment Approvals</span>
-              </div>
-              <Badge variant="secondary" className="text-xs">4 Pending</Badge>
-            </div>
-
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer">
-              <div className="flex items-center gap-2">
-                <BookOpen className="size-4 text-brand-red" />
-                <span className="font-semibold">Question Bank Management</span>
-              </div>
-              <Badge variant="secondary" className="text-xs">Active</Badge>
-            </div>
-
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Calendar className="size-4 text-emerald-600" />
-                <span className="font-semibold">Test Schedule Manager</span>
-              </div>
-              <span className="text-xs text-slate-400">NEET 2026</span>
-            </div>
-          </div>
-
-          <div className="pt-2 flex items-center justify-between border-t border-slate-100">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/admin")}
-              className="w-full justify-center text-xs font-semibold"
-            >
-              Go to Full Admin Dashboard
-              <ArrowRight className="size-3.5 ml-1.5" />
-            </Button>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowLogoutModal(true)}
-            className="w-full text-slate-500 hover:text-rose-600 text-xs"
-          >
-            <LogOut className="size-3.5 mr-1" />
-            Sign Out
-          </Button>
-
-          <LogoutConfirmationDialog
-            open={showLogoutModal}
-            onOpenChange={setShowLogoutModal}
-            onConfirm={async () => {
-              setIsSubmitting(true);
-              try {
-                await fetch("/api/auth/logout", { method: "POST" });
-                setAuthenticatedUser(null);
-                setShowLogoutModal(false);
-                router.refresh();
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}
-            isLoading={isSubmitting}
-            title="Log out of Administration?"
-            description="Are you sure you want to sign out of the administrator session?"
-          />
-        </div>
-      </div>
+      <AdminControlCenterPreview
+        user={authenticatedUser}
+        onSignOutSuccess={() => setAuthenticatedUser(null)}
+      />
     );
   }
-
-  const inputBaseStyle =
-    "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-blue focus:ring-3 focus:ring-brand-blue/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <section
       aria-labelledby="admin-login-heading"
       className="w-full min-w-0 max-w-sm sm:max-w-md rounded-2xl border border-slate-200/90 bg-white p-4.5 sm:p-5.5 lg:p-6 shadow-card"
     >
-      {/* Top Banner */}
       <div className="flex items-center justify-between">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-slate-700 uppercase">
           <Shield className="size-3.5 text-slate-600" />
@@ -224,7 +116,10 @@ export function AdminLoginForm() {
       </div>
 
       <div className="mt-2.5">
-        <h2 id="admin-login-heading" className="type-section-title text-slate-900">
+        <h2
+          id="admin-login-heading"
+          className="type-section-title text-slate-900"
+        >
           Administrator Sign In
         </h2>
         <p className="text-xs text-slate-500">
@@ -232,11 +127,12 @@ export function AdminLoginForm() {
         </p>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="mt-3.5 space-y-3" noValidate>
-        {/* Administrator email */}
         <div className="space-y-1">
-          <label htmlFor="admin-email" className="block text-xs sm:text-sm font-semibold text-slate-700">
+          <label
+            htmlFor="admin-email"
+            className="block text-xs sm:text-sm font-semibold text-slate-700"
+          >
             Administrator Email *
           </label>
           <div className="relative">
@@ -256,13 +152,22 @@ export function AdminLoginForm() {
               }}
               onBlur={() => {
                 if (!email.trim()) {
-                  setErrors((prev) => ({ ...prev, email: "Email is required." }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    email: "Email is required.",
+                  }));
                 } else if (!isValidEmail(email)) {
-                  setErrors((prev) => ({ ...prev, email: "Enter a valid email address." }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    email: "Enter a valid email address.",
+                  }));
                 }
               }}
             />
-            <Mail className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <Mail
+              className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
           </div>
           {errors.email && (
             <p className="flex items-center gap-1 text-xs font-medium text-rose-600">
@@ -272,9 +177,11 @@ export function AdminLoginForm() {
           )}
         </div>
 
-        {/* Security Password */}
         <div className="space-y-1">
-          <label htmlFor="admin-pass" className="block text-xs sm:text-sm font-semibold text-slate-700">
+          <label
+            htmlFor="admin-pass"
+            className="block text-xs sm:text-sm font-semibold text-slate-700"
+          >
             Security Passcode *
           </label>
           <PasswordInput
@@ -299,21 +206,21 @@ export function AdminLoginForm() {
           )}
         </div>
 
-        {/* Session security */}
         <div className="flex items-center justify-between pt-0.5 text-xs text-slate-600">
           <span>Secure cookie session</span>
           <span className="text-xs text-slate-400">256-Bit Encrypted</span>
         </div>
 
-        {/* Error Alert */}
         {authError && (
-          <div role="alert" className="flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-xs leading-snug text-rose-700">
+          <div
+            role="alert"
+            className="flex items-start gap-1.5 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-xs leading-snug text-rose-700"
+          >
             <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-rose-600" />
             <p>{authError}</p>
           </div>
         )}
 
-        {/* Submit Button */}
         <Button
           type="submit"
           disabled={isSubmitting}
@@ -330,19 +237,23 @@ export function AdminLoginForm() {
         </Button>
       </form>
 
-      {/* Switch to Student Portal */}
       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
         <span className="text-slate-400">Enrolled Student?</span>
-        <Link href="/login" className="font-semibold text-brand-blue hover:text-brand-blue-hover hover:underline">
+        <Link
+          href="/login"
+          className="font-semibold text-brand-blue hover:text-brand-blue-hover hover:underline"
+        >
           Go to Student LMS →
         </Link>
       </div>
 
-      {/* Help Helpline */}
       <div className="mt-2.5 flex items-center justify-center gap-1 text-xs text-slate-400">
         <Headphones className="size-2.5 text-slate-400" />
         <span>IT Desk Helpline:</span>
-        <a href="tel:+919894850370" className="font-semibold text-slate-600 hover:text-slate-900 hover:underline">
+        <a
+          href="tel:+919894850370"
+          className="font-semibold text-slate-600 hover:text-slate-900 hover:underline"
+        >
           +91 98948 50370
         </a>
       </div>

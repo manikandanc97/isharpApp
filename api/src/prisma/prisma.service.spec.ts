@@ -44,14 +44,26 @@ describe('databasePoolConfig', () => {
 
     expect(config).toMatchObject({
       max: 1,
-      min: 1,
+      min: 0,
       connectionTimeoutMillis: 60_000,
-      idleTimeoutMillis: 600_000,
+      idleTimeoutMillis: 30_000,
+      maxLifetimeSeconds: 300,
       keepAlive: true,
       keepAliveInitialDelayMillis: 10_000,
     });
     expect(
       new URL(config.connectionString!).searchParams.get('uselibpqcompat'),
     ).toBe('true');
+  });
+
+  it('respects DATABASE_POOL_MAX and DATABASE_POOL_MIN environment variables', () => {
+    vi.stubEnv('DATABASE_POOL_MAX', '8');
+    vi.stubEnv('DATABASE_POOL_MIN', '2');
+    const config = databasePoolConfig(
+      'postgresql://user:pass@database.example.com:5432/app',
+    );
+    expect(config.max).toBe(8);
+    expect(config.min).toBe(2);
+    vi.unstubAllEnvs();
   });
 });

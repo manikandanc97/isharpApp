@@ -46,30 +46,30 @@ export function OverviewSection({
     : 0;
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       {/* Executive Welcome Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-7">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
         <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <Stack gap="sm">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/80 bg-rose-50/50 px-3 py-1 text-xs font-semibold text-rose-700">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/70 bg-rose-50/50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700">
               <Sparkles className="size-3 text-brand-red" />
               <span>Admin Console</span>
-              <span className="h-3 w-px bg-slate-200" />
+              <span className="h-2.5 w-px bg-rose-200" />
               <span className="font-semibold text-brand-red">Live Operations</span>
             </div>
-            <h2 className="type-page-title text-slate-900">
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
               Good to see you, Admin
             </h2>
-            <p className="max-w-xl text-sm text-slate-500">
+            <p className="max-w-xl text-xs leading-relaxed text-slate-500 sm:text-[13px]">
               Here is what is happening across i-SHARP today. Review pending
               student identity claims and supervise institutional courses.
             </p>
-          </Stack>
+          </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => onNavigate("students")}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-red hover:bg-brand-red-hover px-4 py-2.5 text-xs font-semibold text-white shadow-primary transition active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-hover px-4 py-2 text-xs font-semibold text-white shadow-primary transition active:scale-95 cursor-pointer"
             >
               <span>Review Verification Queue</span>
               <ArrowRight className="size-3.5" />
@@ -78,40 +78,40 @@ export function OverviewSection({
         </div>
       </div>
 
-      {/* 4 Metric Cards - Modern Luxury Light Cards */}
+      {/* 4 Metric Cards - Refined Luxury Dashboard Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {/* Card 1: Total Students - Primary Brand Spotlight */}
-        <div className="group relative flex flex-col gap-3.5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition duration-200 hover:border-rose-300 hover:shadow-md">
+        {/* Card 1: Total Students */}
+        <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-rose-200 hover:shadow-sm sm:p-5">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 Total students
               </p>
-              <p className="type-metric text-slate-900">
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[26px]">
                 {overview.metrics.users}
               </p>
             </div>
-            <div className="grid size-11 place-items-center rounded-xl bg-rose-50 text-brand-red">
-              <Users className="size-5" />
+            <div className="grid size-9 place-items-center rounded-xl bg-rose-50 text-brand-red">
+              <Users className="size-4.5" />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
               <span className="size-1.5 rounded-full bg-emerald-500" />
               {overview.metrics.activeUsers} active
             </span>
-            <span className="text-xs text-slate-400">registered learners</span>
+            <span className="text-[11px] text-slate-400">registered learners</span>
           </div>
         </div>
 
         {/* Card 2: Pending Reviews */}
-        <div className="group relative flex flex-col gap-3.5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition duration-200 hover:border-amber-200 hover:shadow-md">
+        <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-amber-200 hover:shadow-sm sm:p-5">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 Internal students
               </p>
-              <p className="type-metric text-slate-900">
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[26px]">
                 {
                   users.filter(
                     (user) =>
@@ -121,8 +121,8 @@ export function OverviewSection({
                 }
               </p>
             </div>
-            <div className="grid size-11 place-items-center rounded-xl bg-amber-50 text-amber-700">
-              <Clock3 className="size-5" />
+            <div className="grid size-9 place-items-center rounded-xl bg-amber-50 text-amber-700">
+              <Clock3 className="size-4.5" />
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -130,66 +130,66 @@ export function OverviewSection({
               (user) =>
                 user.institutionMembership?.studentCategory === "INTERNAL",
             ) ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
                 Requires attention
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                 <Check className="size-3" /> All verified
               </span>
             )}
-            <span className="text-xs text-slate-400">
+            <span className="text-[11px] text-slate-400">
               automatic free access
             </span>
           </div>
         </div>
 
         {/* Card 3: Active Courses */}
-        <div className="group relative flex flex-col gap-3.5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition duration-200 hover:border-emerald-200 hover:shadow-md">
+        <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-emerald-200 hover:shadow-sm sm:p-5">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 Active courses
               </p>
-              <p className="type-metric text-slate-900">
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[26px]">
                 {overview.metrics.courses}
               </p>
             </div>
-            <div className="grid size-11 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
-              <BookOpen className="size-5" />
+            <div className="grid size-9 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
+              <BookOpen className="size-4.5" />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
               {overview.metrics.subjects} subjects
             </span>
-            <span className="text-xs text-slate-400">syllabus offerings</span>
+            <span className="text-[11px] text-slate-400">syllabus offerings</span>
           </div>
         </div>
 
         {/* Card 4: Platform Access */}
-        <div className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition duration-200 hover:border-rose-200 hover:shadow-md">
+        <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-rose-200 hover:shadow-sm sm:p-5">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 Platform access
               </p>
-              <p className="type-metric text-slate-900">
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[26px]">
                 {accessRate}%
               </p>
             </div>
-            <div className="grid size-11 place-items-center rounded-xl bg-rose-50 text-rose-700">
-              <BarChart3 className="size-5" />
+            <div className="grid size-9 place-items-center rounded-xl bg-rose-50 text-rose-700">
+              <BarChart3 className="size-4.5" />
             </div>
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-1.5">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
               <div
                 className="h-full rounded-full bg-brand-red transition-all duration-500"
                 style={{ width: `${accessRate}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-slate-400">
+            <div className="flex justify-between text-[11px] text-slate-400">
               <span>Active accounts</span>
               <span className="font-semibold text-slate-600">
                 {overview.metrics.activeUsers}/{overview.metrics.users || 1}
@@ -214,17 +214,17 @@ export function OverviewSection({
               overview.recentVerifications.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0"
+                  className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="grid size-10 shrink-0 place-items-center rounded-full bg-rose-50 text-xs font-semibold text-brand-red">
+                    <div className="grid size-8.5 shrink-0 place-items-center rounded-full bg-rose-50 text-xs font-semibold text-brand-red">
                       {initials(item.user.displayName)}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-900">
+                      <p className="truncate text-xs font-semibold text-slate-900 sm:text-sm">
                         {item.user.displayName}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-[11px] text-slate-400">
                         {item.studentId} · {formatDate(item.updatedAt)}
                       </p>
                     </div>
@@ -233,15 +233,15 @@ export function OverviewSection({
                 </div>
               ))
             ) : (
-              <div className="grid justify-items-center gap-3 py-12 text-center">
-                <div className="mx-auto grid size-12 place-items-center rounded-full bg-slate-100 text-slate-400">
-                  <ShieldCheck className="size-6 text-emerald-600" />
+              <div className="grid justify-items-center gap-2.5 py-10 text-center">
+                <div className="mx-auto grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
+                  <ShieldCheck className="size-5 text-emerald-600" />
                 </div>
-                <div className="grid gap-1">
-                  <p className="text-sm font-semibold text-slate-800">
+                <div className="grid gap-0.5">
+                  <p className="text-xs font-semibold text-slate-800">
                     No student access activity yet
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-[11px] text-slate-400">
                     All student membership claims have been processed.
                   </p>
                 </div>
@@ -256,7 +256,7 @@ export function OverviewSection({
           title="Quick controls"
           description="Administrative shortcuts and frequent navigation"
         >
-          <div className="grid gap-3">
+          <div className="grid gap-2.5">
             <QuickControlButton
               icon={UserCheck}
               title="Review student IDs"
@@ -281,4 +281,3 @@ export function OverviewSection({
     </div>
   );
 }
-

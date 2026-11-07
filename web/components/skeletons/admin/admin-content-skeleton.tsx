@@ -13,7 +13,7 @@ function OverviewSkeleton() {
             <Skeleton className="h-8 w-80 max-w-full rounded-lg" />
             <SkeletonLines widths={["w-full", "w-4/5"]} />
           </div>
-          <Skeleton className="h-10 w-52 rounded-xl bg-brand-red/30" />
+          <Skeleton className="h-10 w-52 rounded-full bg-brand-red/30" />
         </div>
       </section>
 
@@ -79,7 +79,7 @@ function StudentsSkeleton() {
     <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <SkeletonLines widths={["w-40", "w-96 max-w-full"]} lineClassName="first:h-5 last:h-3" />
-        <Skeleton className="h-9 w-44 rounded-xl bg-brand-red/30" />
+        <Skeleton className="h-9 w-44 rounded-full bg-brand-red/30" />
       </div>
       <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Skeleton className="h-10 w-full max-w-md rounded-xl" />
@@ -121,7 +121,7 @@ function StudentRowSkeleton() {
       <Skeleton className="h-5 w-20 rounded-full" />
       <Skeleton className="h-5 w-16 rounded-full" />
       <Skeleton className="h-5 w-14 rounded-full" />
-      <Skeleton className="ml-auto h-7 w-16 rounded-lg" />
+      <Skeleton className="ml-auto h-7 w-16 rounded-full" />
     </div>
   );
 }
@@ -137,7 +137,7 @@ function CoursesSkeleton() {
               <Skeleton className="h-8 w-72 max-w-full" />
               <Skeleton className="h-3.5 w-full max-w-xl" />
             </div>
-            <Skeleton className="h-10 w-36 rounded-xl bg-brand-red/30" />
+            <Skeleton className="h-10 w-36 rounded-full bg-brand-red/30" />
           </div>
         </div>
 
