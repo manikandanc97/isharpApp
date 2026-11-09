@@ -56,20 +56,30 @@ describe('InstitutionMembershipsService', () => {
     },
   );
 
-  it('rejects a student ID already claimed by another user', async () => {
+  it('never persists a student-supplied ID for a new membership', async () => {
     const tx = {
       institutionMembership: {
-        findUnique: vi
-          .fn()
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce({ userId: 'another-profile' }),
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(pendingMembership),
       },
+      trustedInstitutionStudent: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      membershipVerificationAudit: { create: vi.fn().mockResolvedValue({}) },
     };
     const service = serviceWithTransaction(tx);
 
     await expect(
       service.submit(student, { studentId: ' isharp-1001 ' }),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).resolves.toMatchObject({ membership: pendingMembership });
+    expect(tx.institutionMembership.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { userId: student.profileId } }),
+    );
+    expect(tx.institutionMembership.create).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ studentId: expect.anything() }),
+      }),
+    );
   });
 
   it('verifies an exact active roster and Supabase auth identity match', async () => {

@@ -11,6 +11,7 @@ import {
   Star,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
+import { DemoTestCard } from "@/components/demo-test";
 import {
   PageContainer,
   Stack,
@@ -144,6 +145,11 @@ export default function LoginPage() {
                 );
               })}
             </Stack>
+
+            {/* Interactive Demo Test Trigger Card */}
+            <div className="max-w-xl">
+              <DemoTestCard />
+            </div>
 
             {/* Trust Metrics Pill */}
             <div className="flex max-w-md flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-3.5 py-2 shadow-2xs backdrop-blur-xs">

@@ -40,6 +40,7 @@ export type User = {
   authUserId: string | null;
   displayName: string;
   email?: string | null;
+  phone?: string | null;
   isActive: boolean;
   createdAt: string;
   roles: string[];
@@ -51,7 +52,17 @@ export type User = {
     studentCategory: Membership["studentCategory"];
     paymentStatus: Membership["paymentStatus"];
     paidAccessUntil: string | null;
+    studentIdHistory?: StudentIdHistory[];
   } | null;
+};
+
+export type StudentIdHistory = {
+  id: string;
+  studentCode: string;
+  studentType: "INTERNAL" | "EXTERNAL";
+  isCurrent: boolean;
+  changeReason: string;
+  createdAt: string;
 };
 
 export type InternalStudent = {
@@ -121,4 +132,3 @@ export const sectionMeta = {
   Section,
   { label: string; icon: typeof LayoutDashboard; description: string }
 >;
-

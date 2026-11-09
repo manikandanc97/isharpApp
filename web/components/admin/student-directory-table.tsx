@@ -3,7 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { formatDate, initials, LightEmpty } from "./admin-helpers";
 import { RosterActions } from "./internal-student-manager";
-import type { InternalStudent, StudentDirectoryEntry, User } from "./admin-types";
+import type {
+  InternalStudent,
+  StudentDirectoryEntry,
+  User,
+} from "./admin-types";
 
 export interface StudentDirectoryTableProps {
   entries: StudentDirectoryEntry[];
@@ -14,6 +18,8 @@ export interface StudentDirectoryTableProps {
   onEditRoster: (student: InternalStudent) => void;
   onDeleteRoster: (student: InternalStudent) => void;
   onManageAccess: (user: User) => void;
+  onViewDetails: (user: User) => void;
+  onConvert: (user: User) => void;
   onToggle: (user: User) => void;
 }
 
@@ -26,6 +32,8 @@ export function StudentDirectoryTable({
   onEditRoster,
   onDeleteRoster,
   onManageAccess,
+  onViewDetails,
+  onConvert,
   onToggle,
 }: StudentDirectoryTableProps) {
   return (
@@ -121,7 +129,8 @@ export function StudentDirectoryTable({
                   {user.institutionMembership ? (
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        user.institutionMembership.studentCategory === "INTERNAL"
+                        user.institutionMembership.studentCategory ===
+                        "INTERNAL"
                           ? "bg-blue-50 text-brand-blue border border-blue-200/80"
                           : "bg-violet-50 text-violet-700"
                       }`}
@@ -135,6 +144,14 @@ export function StudentDirectoryTable({
                   )}
                 </td>
                 <td className="py-3.5 px-4 text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewDetails(user)}
+                    className="mr-2"
+                  >
+                    Details
+                  </Button>
                   {rosterStudent && (
                     <RosterActions
                       student={rosterStudent}
@@ -142,6 +159,16 @@ export function StudentDirectoryTable({
                       onEdit={onEditRoster}
                       onDelete={onDeleteRoster}
                     />
+                  )}
+                  {!isInternalStudent && user.institutionMembership && (
+                    <Button
+                      size="sm"
+                      disabled={!manageable}
+                      onClick={() => onConvert(user)}
+                      className="mr-2 bg-brand-blue text-white hover:bg-blue-700"
+                    >
+                      Convert
+                    </Button>
                   )}
                   {!isInternalStudent && user.institutionMembership && (
                     <Button
@@ -179,4 +206,3 @@ export function StudentDirectoryTable({
     </div>
   );
 }
-

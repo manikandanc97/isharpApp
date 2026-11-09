@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Stack } from "@/components/layout/layout-primitives";
+import { DemoTestCard } from "@/components/demo-test";
 
 type PortalLink = {
   title: string;
@@ -168,6 +169,9 @@ export function AccessPortal() {
           })}
         </ul>
       </nav>
+
+      {/* Direct Free Demo Assessment Trigger */}
+      <DemoTestCard compact />
 
       {/* Subtle security & network footnote */}
       <Separator className="bg-slate-100" />

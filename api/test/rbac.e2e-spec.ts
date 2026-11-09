@@ -153,6 +153,7 @@ describe('RBAC (e2e)', () => {
             userRoles: profile.roles.map((name) => ({ role: { name } })),
             institutionMembership: isStudent
               ? {
+                  status: 'VERIFIED',
                   studentCategory: external ? 'EXTERNAL' : 'INTERNAL',
                   paymentStatus:
                     profile.profileId === identities.externalPaid.profileId ||

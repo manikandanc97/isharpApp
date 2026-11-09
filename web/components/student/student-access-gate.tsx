@@ -9,12 +9,14 @@ interface StudentAccessGateProps {
   status: StudentDashboardStatus;
   statusMessage: string;
   onSignOut: () => void;
+  onRetry?: () => void;
 }
 
 export function StudentAccessGate({
   status,
   statusMessage,
   onSignOut,
+  onRetry,
 }: StudentAccessGateProps) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12 text-slate-900 selection:bg-brand-red selection:text-white antialiased">
@@ -42,7 +44,14 @@ export function StudentAccessGate({
         </p>
 
         <div className="mt-8 flex flex-col gap-3">
-          {status === "payment-required" ? (
+          {status === "error" && onRetry ? (
+            <Button
+              onClick={onRetry}
+              className="w-full rounded-full bg-brand-red py-2.5 text-sm font-semibold text-white shadow-primary hover:bg-brand-red-hover"
+            >
+              Try loading again
+            </Button>
+          ) : status === "payment-required" ? (
             <Button
               render={
                 <Link

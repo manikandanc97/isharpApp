@@ -11,6 +11,7 @@ model UserProfile {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   authUserId  String?  @unique(map: "user_profiles_auth_user_id_key") @map("auth_user_id") @db.Uuid
   email       String?  @unique(map: "user_profiles_email_key") @db.VarChar(320)
+  phone       String?  @unique(map: "user_profiles_phone_key") @db.VarChar(32)
   displayName String   @map("display_name") @db.VarChar(150)
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -23,6 +24,7 @@ model UserProfile {
   authoredQuestions     Question[]                    @relation("QuestionAuthor")
   createdMockTests      MockTest[]                    @relation("MockTestCreator")
   studentAccessAudits   StudentAccessAudit[]          @relation("StudentAccessAuditActor")
+  studentIdChanges      StudentIdHistory[]            @relation("StudentIdHistoryActor")
 
   @@map("user_profiles")
 }
@@ -54,7 +56,7 @@ enum StudentPaymentStatus {
 
 model TrustedInstitutionStudent {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  studentId  String   @unique(map: "trusted_institution_students_student_id_key") @default(dbgenerated("generate_isa_student_id()")) @map("student_id") @db.VarChar(64)
+  studentId  String   @unique(map: "trusted_institution_students_student_id_key") @default(dbgenerated("generate_student_code('INTERNAL'::\"StudentCategory\")")) @map("student_id") @db.VarChar(64)
   authUserId String?  @unique(map: "trusted_institution_students_auth_user_id_key") @map("auth_user_id") @db.Uuid
   fullName   String?  @map("full_name") @db.VarChar(150)
   email      String?  @unique(map: "trusted_institution_students_email_key") @db.VarChar(320)
@@ -72,7 +74,7 @@ model TrustedInstitutionStudent {
 model InstitutionMembership {
   id              String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId          String                        @unique(map: "institution_memberships_user_id_key") @map("user_id") @db.Uuid
-  studentId       String                        @unique(map: "institution_memberships_student_id_key") @map("student_id") @db.VarChar(64)
+  studentId       String                        @unique(map: "institution_memberships_student_id_key") @default(dbgenerated("generate_student_code('EXTERNAL'::\"StudentCategory\")")) @map("student_id") @db.VarChar(64)
   status          MembershipVerificationStatus  @default(PENDING)
   method          MembershipVerificationMethod?
   trustedRecordId String?                       @unique(map: "institution_memberships_trusted_record_id_key") @map("trusted_record_id") @db.Uuid
@@ -84,15 +86,34 @@ model InstitutionMembership {
   createdAt       DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user          UserProfile                   @relation("MembershipUser", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  verifiedBy    UserProfile?                  @relation("MembershipVerifier", fields: [verifiedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  trustedRecord TrustedInstitutionStudent?    @relation(fields: [trustedRecordId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  audits        MembershipVerificationAudit[]
-  accessAudits  StudentAccessAudit[]
+  user             UserProfile                   @relation("MembershipUser", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  verifiedBy       UserProfile?                  @relation("MembershipVerifier", fields: [verifiedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  trustedRecord    TrustedInstitutionStudent?    @relation(fields: [trustedRecordId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  audits           MembershipVerificationAudit[]
+  accessAudits     StudentAccessAudit[]
+  studentIdHistory StudentIdHistory[]
 
   @@index([status], map: "institution_memberships_status_idx")
   @@index([verifiedById], map: "institution_memberships_verified_by_id_idx")
   @@map("institution_memberships")
+}
+
+model StudentIdHistory {
+  id           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId    String          @map("student_id") @db.Uuid
+  studentCode  String          @unique(map: "student_id_history_student_code_key") @map("student_code") @db.VarChar(64)
+  studentType  StudentCategory @map("student_type")
+  isCurrent    Boolean         @default(true) @map("is_current")
+  changedById  String?         @map("changed_by") @db.Uuid
+  changeReason String          @map("change_reason") @db.VarChar(500)
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  student   InstitutionMembership @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  changedBy UserProfile?          @relation("StudentIdHistoryActor", fields: [changedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([studentId, createdAt], map: "student_id_history_student_created_idx")
+  @@index([changedById], map: "student_id_history_changed_by_idx")
+  @@map("student_id_history")
 }
 
 model StudentAccessAudit {

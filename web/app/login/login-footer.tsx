@@ -1,9 +1,15 @@
 import { ArrowRight, Headphones, UserPlus } from "lucide-react";
 import Link from "next/link";
+import { DemoTestCard } from "@/components/demo-test";
 
 export function LoginFooter() {
   return (
     <>
+      {/* Demo Test Direct Quick Trigger */}
+      <div className="mt-3">
+        <DemoTestCard compact />
+      </div>
+
       {/* Divider */}
       <div className="relative my-2.5 sm:my-3 text-center">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">

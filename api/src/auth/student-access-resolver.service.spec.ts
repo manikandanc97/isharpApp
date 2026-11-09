@@ -122,7 +122,7 @@ describe('StudentAccessResolver', () => {
     );
   });
 
-  it('classifies an unmatched login as external with payment pending', async () => {
+  it('lets the database assign an unmatched external student code', async () => {
     const tx = {
       userProfile: {
         findUnique: vi.fn().mockResolvedValue(null),
@@ -141,11 +141,37 @@ describe('StudentAccessResolver', () => {
         data: expect.objectContaining({
           institutionMembership: {
             create: expect.objectContaining({
-              studentId: 'EXT-00000000-0000-4000-8000-000000000002',
               status: 'PENDING',
               method: null,
               trustedRecordId: null,
               verifiedAt: null,
+              studentCategory: 'EXTERNAL',
+              paymentStatus: 'PENDING',
+            }),
+          },
+        }),
+      }),
+    );
+  });
+
+  it('stores a normalized phone for phone-only student registration', async () => {
+    const tx = {
+      userProfile: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: 'phone-student' }),
+      },
+      role: { findUnique: vi.fn().mockResolvedValue({ id: 'student-role' }) },
+    };
+    await serviceWith(tx).resolve('00000000-0000-4000-8000-000000000020', {
+      phone: '+91 (987) 654-3210',
+    });
+    expect(tx.userProfile.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          email: null,
+          phone: '+919876543210',
+          institutionMembership: {
+            create: expect.objectContaining({
               studentCategory: 'EXTERNAL',
               paymentStatus: 'PENDING',
             }),
@@ -183,6 +209,7 @@ describe('StudentAccessResolver', () => {
       institutionMembership: { ...membership, studentId: 'ISA002' },
     };
     const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
       userProfile: {
         findUnique: vi
           .fn()

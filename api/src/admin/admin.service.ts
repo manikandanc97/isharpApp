@@ -7,6 +7,7 @@ import {
 import type { AuthUser } from '../auth/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
+  convertExternalStudentRecord,
   listMembershipsRecords,
   setStudentAccessRecord,
   studentAccountRoleFilter,
@@ -23,6 +24,7 @@ const userSelect = {
   authUserId: true,
   displayName: true,
   email: true,
+  phone: true,
   isActive: true,
   createdAt: true,
   userRoles: { select: { role: { select: { name: true } } } },
@@ -35,6 +37,17 @@ const userSelect = {
       studentCategory: true,
       paymentStatus: true,
       paidAccessUntil: true,
+      studentIdHistory: {
+        orderBy: { createdAt: 'desc' as const },
+        select: {
+          id: true,
+          studentCode: true,
+          studentType: true,
+          isCurrent: true,
+          changeReason: true,
+          createdAt: true,
+        },
+      },
     },
   },
 } as const;
@@ -125,10 +138,25 @@ export class AdminService {
               OR: [
                 { displayName: { contains: normalized, mode: 'insensitive' } },
                 { email: { contains: normalized, mode: 'insensitive' } },
+                { phone: { contains: normalized, mode: 'insensitive' } },
                 {
                   institutionMembership: {
                     is: {
                       studentId: { contains: normalized, mode: 'insensitive' },
+                    },
+                  },
+                },
+                {
+                  institutionMembership: {
+                    is: {
+                      studentIdHistory: {
+                        some: {
+                          studentCode: {
+                            contains: normalized,
+                            mode: 'insensitive',
+                          },
+                        },
+                      },
                     },
                   },
                 },
@@ -223,9 +251,29 @@ export class AdminService {
   }
 
   async setStudentAccess(actor: AuthUser, membershipId: string, body: unknown) {
-    const res = await setStudentAccessRecord(this.prisma, actor, membershipId, body);
+    const res = await setStudentAccessRecord(
+      this.prisma,
+      actor,
+      membershipId,
+      body,
+    );
     this.invalidateOverviewCache();
     return res;
+  }
+
+  async convertExternalStudent(
+    actor: AuthUser,
+    membershipId: string,
+    body: unknown,
+  ) {
+    const result = await convertExternalStudentRecord(
+      this.prisma,
+      actor,
+      membershipId,
+      body,
+    );
+    this.invalidateOverviewCache();
+    return result;
   }
 
   listMemberships(status?: string) {
@@ -242,7 +290,9 @@ export class AdminService {
   async catalog() {
     const now = Date.now();
     if (this.catalogCache && this.catalogCache.expiresAt > now) {
-      return this.catalogCache.data as Awaited<ReturnType<AdminService['fetchCatalogFromDb']>>;
+      return this.catalogCache.data as Awaited<
+        ReturnType<AdminService['fetchCatalogFromDb']>
+      >;
     }
     const data = await this.fetchCatalogFromDb();
     this.catalogCache = { data, expiresAt: now + this.CATALOG_CACHE_TTL_MS };
@@ -288,7 +338,10 @@ export class AdminService {
     const input = parseCoursePayload(body, false);
     const existing = await this.prisma.course.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Course not found');
-    const updated = await this.prisma.course.update({ where: { id }, data: input });
+    const updated = await this.prisma.course.update({
+      where: { id },
+      data: input,
+    });
     this.invalidateCatalogCache();
     this.invalidateOverviewCache();
     return updated;

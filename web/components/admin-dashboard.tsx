@@ -155,6 +155,7 @@ export function AdminDashboard({
                         );
                         void loadAll(true);
                       }}
+                      onConverted={() => void loadAll(true)}
                       onNotice={showNotice}
                       onError={setError}
                     />

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/auth-user.js';
 import {
+  MembershipVerificationStatus,
   StudentCategory,
   StudentPaymentStatus,
 } from '../generated/prisma/client.js';
@@ -34,6 +35,9 @@ export class VerifiedMembershipGuard implements CanActivate {
       },
     });
     if (!membership) throw new ForbiddenException('Student access record is required');
+    if (membership.status !== MembershipVerificationStatus.VERIFIED) {
+      throw new ForbiddenException('A verified student membership is required');
+    }
     if (
       membership.studentCategory !== StudentCategory.INTERNAL &&
       membership.studentCategory !== StudentCategory.EXTERNAL

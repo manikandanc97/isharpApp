@@ -74,11 +74,10 @@ describe('Google OAuth flow', () => {
 });
 
 describe('server session token selection', () => {
-  it('prefers explicit bearer authentication and supports cookie sessions', () => {
+  it('prefers explicit bearer authentication and supports Supabase sessions', () => {
     expect(
       selectAccessToken({
         authorization: 'Bearer request-token',
-        developmentToken: 'dev-token',
         supabaseToken: 'cookie-token',
       }),
     ).toBe('request-token');

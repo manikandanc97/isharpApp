@@ -16,7 +16,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { getAuthenticatedSession } from "@/lib/auth-session";
 import { getPostAuthDestination, oauthStatusMessages } from "@/lib/oauth-flow";
 import { createClient } from "@/lib/supabase/client";
-import { isValidEmail, normalizePhone, validateIdentifier } from "@/lib/validation";
+import { isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { LoginFooter } from "./login-footer";
 
@@ -37,10 +37,8 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
 
   function validateForm() {
     const nextErrors: FieldErrors = {};
-    const identifierError = validateIdentifier(identifier);
-
-    if (identifierError) {
-      nextErrors.identifier = identifierError;
+    if (!isValidEmail(identifier.trim())) {
+      nextErrors.identifier = "Enter a valid email address.";
     }
 
     if (!password) {
@@ -62,17 +60,17 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
 
     setIsSubmitting(true);
 
-    const cleanedIdentifier = identifier.trim();
-    const credentials = isValidEmail(cleanedIdentifier)
-      ? { email: cleanedIdentifier, password }
-      : { phone: normalizePhone(cleanedIdentifier), password };
+    const cleanedIdentifier = identifier.trim().toLowerCase();
 
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword(credentials);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanedIdentifier,
+        password,
+      });
 
       if (error) {
-        setAuthError(error.message);
+        setAuthError("Invalid email or password.");
         return;
       }
 
@@ -96,11 +94,10 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
     setAuthError("");
     setStatusMessage("");
 
-    const identifierError = validateIdentifier(identifier);
-    if (identifierError || !isValidEmail(identifier)) {
+    if (!isValidEmail(identifier.trim())) {
       setErrors((current) => ({
         ...current,
-        identifier: identifierError ?? "Enter your email to reset password.",
+        identifier: "Enter a valid email address to reset your password.",
       }));
       return;
     }
@@ -114,7 +111,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
       );
 
       if (error) {
-        setAuthError(error.message);
+        setAuthError("The reset link could not be sent. Please try again.");
         return;
       }
 
@@ -161,16 +158,16 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
             htmlFor="identifier"
             className="block text-xs sm:text-sm font-semibold text-slate-700"
           >
-            Email or Mobile Number
+            Email address
           </label>
           <div className="relative">
             <input
               id="identifier"
               name="identifier"
-              type="text"
+              type="email"
               inputMode="email"
               autoComplete="username"
-              placeholder="you@example.com or mobile"
+              placeholder="you@example.com"
               value={identifier}
               disabled={isSubmitting}
               aria-invalid={Boolean(errors.identifier)}
@@ -183,7 +180,9 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
                 setStatusMessage("");
               }}
               onBlur={() => {
-                const error = validateIdentifier(identifier);
+                const error = isValidEmail(identifier.trim())
+                  ? undefined
+                  : "Enter a valid email address.";
                 setErrors((current) => ({ ...current, identifier: error }));
               }}
             />

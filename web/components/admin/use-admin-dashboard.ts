@@ -160,43 +160,35 @@ export function useAdminDashboard() {
   async function manageStudentAccess(user: User) {
     const membership = user.institutionMembership;
     if (!membership) return;
-    const category = window
-      .prompt("Student type: INTERNAL or EXTERNAL", membership.studentCategory)
+    const category = "EXTERNAL" as const;
+    let paymentStatus = "PENDING";
+    let paidAccessUntil = "";
+    const payment = window
+      .prompt(
+        "Payment status: PENDING, PAID, EXPIRED or CANCELLED",
+        membership.paymentStatus === "NOT_REQUIRED"
+          ? "PENDING"
+          : membership.paymentStatus,
+      )
       ?.trim()
       .toUpperCase();
-    if (category !== "INTERNAL" && category !== "EXTERNAL") return;
-    let paymentStatus = "NOT_REQUIRED";
-    let paidAccessUntil = "";
-    if (category === "EXTERNAL") {
-      const payment = window
-        .prompt(
-          "Payment status: PENDING, PAID, EXPIRED or CANCELLED",
-          membership.paymentStatus === "NOT_REQUIRED"
-            ? "PENDING"
-            : membership.paymentStatus,
-        )
-        ?.trim()
-        .toUpperCase();
-      if (
-        !payment ||
-        !["PENDING", "PAID", "EXPIRED", "CANCELLED"].includes(payment)
-      )
-        return;
-      paymentStatus = payment;
-      if (payment === "PAID")
-        paidAccessUntil =
-          window
-            .prompt(
-              "Paid access expiry (YYYY-MM-DD). Leave blank for no expiry.",
-              membership.paidAccessUntil?.slice(0, 10) ?? "",
-            )
-            ?.trim() ?? "";
-    }
+    if (
+      !payment ||
+      !["PENDING", "PAID", "EXPIRED", "CANCELLED"].includes(payment)
+    )
+      return;
+    paymentStatus = payment;
+    if (payment === "PAID")
+      paidAccessUntil =
+        window
+          .prompt(
+            "Paid access expiry (YYYY-MM-DD). Leave blank for no expiry.",
+            membership.paidAccessUntil?.slice(0, 10) ?? "",
+          )
+          ?.trim() ?? "";
     const reason = window.prompt(
       "Reason for access change:",
-      category === "INTERNAL"
-        ? "Confirmed internal academy student"
-        : "External student payment access updated",
+      "External student payment access updated",
     );
     if (!reason) return;
     try {
@@ -212,7 +204,7 @@ export function useAdminDashboard() {
         }),
       });
       showNotice(
-        `${user.displayName}: ${category === "INTERNAL" ? "internal free access" : `external ${paymentStatus.toLowerCase()} access`}`,
+        `${user.displayName}: external ${paymentStatus.toLowerCase()} access`,
       );
       await loadAll(true);
     } catch (mutationError) {

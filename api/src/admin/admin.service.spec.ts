@@ -73,6 +73,21 @@ describe('AdminService student account isolation', () => {
       }),
     );
   });
+
+  it('searches current and previous IDs, phone, name, and email', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const service = new AdminService({ userProfile: { findMany } } as never);
+
+    await service.listUsers('ISAE0025');
+
+    const request = findMany.mock.calls[0]?.[0];
+    expect(JSON.stringify(request?.where)).toContain('displayName');
+    expect(JSON.stringify(request?.where)).toContain('email');
+    expect(JSON.stringify(request?.where)).toContain('phone');
+    expect(JSON.stringify(request?.where)).toContain('studentId');
+    expect(JSON.stringify(request?.where)).toContain('studentIdHistory');
+    expect(JSON.stringify(request?.where)).toContain('studentCode');
+  });
 });
 
 describe('AdminService internal roster management', () => {
@@ -82,10 +97,10 @@ describe('AdminService internal roster management', () => {
     roles: ['ADMIN'],
   } as const;
 
-  it('lets the database generate sequential ISA student IDs', async () => {
+  it('lets the database generate sequential internal student IDs', async () => {
     const created = {
       id: 'roster-id',
-      studentId: 'ISA001',
+      studentId: 'ISAI0001',
       fullName: 'Student One',
       email: 'student@example.com',
       authUserId: null,
@@ -93,6 +108,7 @@ describe('AdminService internal roster management', () => {
     };
     const create = vi.fn().mockResolvedValue(created);
     const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
       trustedInstitutionStudent: { create },
       userProfile: { findUnique: vi.fn().mockResolvedValue(null) },
     };
@@ -108,7 +124,7 @@ describe('AdminService internal roster management', () => {
         email: ' STUDENT@EXAMPLE.COM ',
         studentId: 'CLIENT-SUPPLIED-ID',
       }),
-    ).resolves.toMatchObject({ studentId: 'ISA001' });
+    ).resolves.toMatchObject({ studentId: 'ISAI0001' });
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: {
@@ -123,7 +139,7 @@ describe('AdminService internal roster management', () => {
   it('immediately promotes a matching external account to internal access', async () => {
     const created = {
       id: 'roster-id',
-      studentId: 'ISA002',
+      studentId: 'ISAI0002',
       fullName: 'Mani',
       email: 'manibct1817@gmail.com',
       authUserId: null,
@@ -136,6 +152,7 @@ describe('AdminService internal roster management', () => {
       paidAccessUntil: null,
     };
     const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
       trustedInstitutionStudent: {
         create: vi.fn().mockResolvedValue(created),
         update: vi.fn().mockResolvedValue({}),
@@ -168,13 +185,13 @@ describe('AdminService internal roster management', () => {
         email: 'manibct1817@gmail.com',
       }),
     ).resolves.toMatchObject({
-      studentId: 'ISA002',
+      studentId: 'ISAI0002',
       authUserId: '00000000-0000-4000-8000-000000000001',
     });
     expect(tx.institutionMembership.update).toHaveBeenCalledWith({
       where: { id: 'membership-id' },
       data: expect.objectContaining({
-        studentId: 'ISA002',
+        studentId: 'ISAI0002',
         status: 'VERIFIED',
         studentCategory: 'INTERNAL',
         paymentStatus: 'NOT_REQUIRED',
@@ -195,7 +212,7 @@ describe('AdminService internal roster management', () => {
     });
   });
 
-  it('normalizes editable roster fields', async () => {
+  it('normalizes editable roster fields without allowing ID changes', async () => {
     const tx = {
       trustedInstitutionStudent: {
         findUnique: vi.fn().mockResolvedValue({
@@ -216,7 +233,6 @@ describe('AdminService internal roster management', () => {
     await service.updateInternalStudent(actor as never, 'roster-id', {
       fullName: '  Student One  ',
       email: '  STUDENT@EXAMPLE.COM ',
-      studentId: ' int-001 ',
     });
 
     expect(tx.trustedInstitutionStudent.update).toHaveBeenCalledWith(
@@ -225,10 +241,15 @@ describe('AdminService internal roster management', () => {
         data: {
           fullName: 'Student One',
           email: 'student@example.com',
-          studentId: 'INT-001',
         },
       }),
     );
+
+    await expect(
+      service.updateInternalStudent(actor as never, 'roster-id', {
+        studentId: 'ISAI9999',
+      }),
+    ).rejects.toThrow('Only fullName, email and isActive can be updated');
   });
 
   it('does not allow a matched login email to be reassigned', async () => {
@@ -259,6 +280,10 @@ describe('AdminService internal roster management', () => {
 
   it('detaches linked access before deleting a roster record', async () => {
     const tx = {
+      $queryRaw: vi
+        .fn()
+        .mockResolvedValueOnce([{ studentCode: 'ISAE0002' }])
+        .mockResolvedValueOnce([]),
       trustedInstitutionStudent: {
         findUnique: vi.fn().mockResolvedValue({
           id: 'roster-id',
@@ -292,6 +317,7 @@ describe('AdminService internal roster management', () => {
     expect(tx.institutionMembership.update).toHaveBeenCalledWith({
       where: { id: 'membership-id' },
       data: {
+        studentId: 'ISAE0002',
         studentCategory: 'EXTERNAL',
         paymentStatus: 'PENDING',
         paidAccessUntil: null,
@@ -303,5 +329,116 @@ describe('AdminService internal roster management', () => {
     expect(tx.trustedInstitutionStudent.delete).toHaveBeenCalledWith({
       where: { id: 'roster-id' },
     });
+  });
+});
+
+describe('AdminService external-to-internal conversion', () => {
+  const actor = {
+    authUserId: 'auth-admin',
+    profileId: 'admin-profile',
+    roles: ['ADMIN'],
+  } as const;
+
+  function conversionTx(auditError?: Error) {
+    const current = {
+      id: '00000000-0000-4000-8000-000000000101',
+      userId: 'student-profile',
+      studentId: 'ISAE0025',
+      studentCategory: 'EXTERNAL',
+      paymentStatus: 'PAID',
+      paidAccessUntil: new Date('2026-12-01T00:00:00Z'),
+      user: { userRoles: [{ role: { name: 'STUDENT' } }] },
+    };
+    return {
+      $queryRaw: vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ studentCode: 'ISAI0042' }])
+        .mockResolvedValueOnce([]),
+      institutionMembership: {
+        findUnique: vi.fn().mockResolvedValue(current),
+        update: vi.fn().mockResolvedValue({
+          id: current.id,
+          studentId: 'ISAI0042',
+          studentCategory: 'INTERNAL',
+          paymentStatus: 'NOT_REQUIRED',
+          studentIdHistory: [
+            { studentCode: 'ISAI0042', isCurrent: true },
+            { studentCode: 'ISAE0025', isCurrent: false },
+          ],
+        }),
+      },
+      studentAccessAudit: {
+        create: auditError
+          ? vi.fn().mockRejectedValue(auditError)
+          : vi.fn().mockResolvedValue({}),
+      },
+    };
+  }
+
+  it('rotates the display code while preserving the membership UUID', async () => {
+    const tx = conversionTx();
+    const service = new AdminService({
+      $transaction: vi.fn(async (callback: (client: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    } as never);
+
+    await expect(
+      service.convertExternalStudent(
+        actor as never,
+        '00000000-0000-4000-8000-000000000101',
+        { reason: 'Joined the academy programme' },
+      ),
+    ).resolves.toMatchObject({
+      id: '00000000-0000-4000-8000-000000000101',
+      studentId: 'ISAI0042',
+      studentCategory: 'INTERNAL',
+    });
+    expect(tx.institutionMembership.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: '00000000-0000-4000-8000-000000000101' },
+        data: expect.objectContaining({
+          studentId: 'ISAI0042',
+          studentCategory: 'INTERNAL',
+          paymentStatus: 'NOT_REQUIRED',
+          verifiedById: 'admin-profile',
+        }),
+      }),
+    );
+    expect(tx.studentAccessAudit.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        reason: 'Joined the academy programme',
+        previousCategory: 'EXTERNAL',
+        newCategory: 'INTERNAL',
+      }),
+    });
+  });
+
+  it('rejects conversion without a mandatory reason', async () => {
+    const service = new AdminService({} as never);
+    await expect(
+      service.convertExternalStudent(
+        actor as never,
+        '00000000-0000-4000-8000-000000000101',
+        { reason: ' ' },
+      ),
+    ).rejects.toThrow('reason must contain 3 to 500 characters');
+  });
+
+  it('propagates audit failure so the transaction can roll back', async () => {
+    const tx = conversionTx(new Error('audit write failed'));
+    const service = new AdminService({
+      $transaction: vi.fn(async (callback: (client: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    } as never);
+    await expect(
+      service.convertExternalStudent(
+        actor as never,
+        '00000000-0000-4000-8000-000000000101',
+        { reason: 'Joined the academy programme' },
+      ),
+    ).rejects.toThrow('audit write failed');
   });
 });

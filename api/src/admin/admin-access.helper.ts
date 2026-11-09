@@ -6,6 +6,10 @@ import {
 import type { AuthUser } from '../auth/auth-user.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
+import {
+  generateStudentCode,
+  setStudentIdAuditContext,
+} from '../student-identity/student-id.helper.js';
 
 export const studentAccountRoleFilter = {
   some: { role: { name: 'STUDENT' } },
@@ -85,9 +89,20 @@ export async function setStudentAccessRecord(
       throw new ForbiddenException(
         'Only SUPERADMIN can manage administrator access',
       );
+    if (current.studentCategory === 'EXTERNAL' && category === 'INTERNAL')
+      throw new BadRequestException(
+        'Use the external-to-internal conversion workflow',
+      );
+    const categoryChanged = current.studentCategory !== category;
+    const nextStudentId = categoryChanged
+      ? await generateStudentCode(tx, category)
+      : undefined;
+    if (categoryChanged)
+      await setStudentIdAuditContext(tx, actor.profileId!, reason);
     const updated = await tx.institutionMembership.update({
       where: { id: membershipId },
       data: {
+        ...(nextStudentId ? { studentId: nextStudentId } : {}),
         studentCategory: category,
         paymentStatus: paymentStatus as never,
         paidAccessUntil: category === 'INTERNAL' ? null : paidAccessUntil,
@@ -118,10 +133,114 @@ export async function setStudentAccessRecord(
   });
 }
 
-export function listMembershipsRecords(
+export async function convertExternalStudentRecord(
   prisma: PrismaService,
-  status?: string,
+  actor: AuthUser,
+  membershipId: string,
+  body: unknown,
 ) {
+  if (!actor.profileId)
+    throw new ForbiddenException('Administrator profile is required');
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    throw new BadRequestException('A conversion reason is required');
+  const rawReason = (body as Record<string, unknown>).reason;
+  if (
+    typeof rawReason !== 'string' ||
+    rawReason.trim().length < 3 ||
+    rawReason.trim().length > 500
+  )
+    throw new BadRequestException('reason must contain 3 to 500 characters');
+  const reason = rawReason.trim();
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT "id" FROM "institution_memberships"
+      WHERE "id" = ${membershipId}::uuid
+      FOR UPDATE
+    `;
+    const current = await tx.institutionMembership.findUnique({
+      where: { id: membershipId },
+      select: {
+        id: true,
+        userId: true,
+        studentId: true,
+        studentCategory: true,
+        paymentStatus: true,
+        paidAccessUntil: true,
+        user: {
+          select: {
+            userRoles: { select: { role: { select: { name: true } } } },
+          },
+        },
+      },
+    });
+    if (!current) throw new NotFoundException('Membership not found');
+    if (current.studentCategory !== 'EXTERNAL')
+      throw new BadRequestException('Only external students can be converted');
+    if (current.userId === actor.profileId)
+      throw new ForbiddenException(
+        'Administrators cannot convert their own membership',
+      );
+    const privileged = current.user.userRoles.some(
+      ({ role }) => role.name === 'ADMIN' || role.name === 'SUPERADMIN',
+    );
+    if (privileged && !actor.roles.includes('SUPERADMIN'))
+      throw new ForbiddenException(
+        'Only SUPERADMIN can manage administrator access',
+      );
+
+    const studentId = await generateStudentCode(tx, 'INTERNAL');
+    await setStudentIdAuditContext(tx, actor.profileId, reason);
+    const updated = await tx.institutionMembership.update({
+      where: { id: membershipId },
+      data: {
+        studentId,
+        studentCategory: 'INTERNAL',
+        paymentStatus: 'NOT_REQUIRED',
+        paidAccessUntil: null,
+        status: 'VERIFIED',
+        method: 'MANUAL_ADMIN',
+        verifiedAt: new Date(),
+        verifiedById: actor.profileId,
+      },
+      select: {
+        id: true,
+        studentId: true,
+        status: true,
+        studentCategory: true,
+        paymentStatus: true,
+        paidAccessUntil: true,
+        studentIdHistory: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            studentCode: true,
+            studentType: true,
+            isCurrent: true,
+            changeReason: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+    await tx.studentAccessAudit.create({
+      data: {
+        membershipId,
+        actorUserId: actor.profileId,
+        previousCategory: current.studentCategory,
+        newCategory: 'INTERNAL',
+        previousPaymentStatus: current.paymentStatus,
+        newPaymentStatus: 'NOT_REQUIRED',
+        previousAccessUntil: current.paidAccessUntil,
+        newAccessUntil: null,
+        reason,
+      },
+    });
+    return updated;
+  });
+}
+
+export function listMembershipsRecords(prisma: PrismaService, status?: string) {
   const allowed = ['PENDING', 'VERIFIED', 'REJECTED', 'REVOKED'];
   if (status && status !== 'ALL' && !allowed.includes(status)) {
     throw new BadRequestException('Unknown verification status');
@@ -155,4 +274,3 @@ export function listMembershipsRecords(
     },
   });
 }
-

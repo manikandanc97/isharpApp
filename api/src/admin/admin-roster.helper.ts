@@ -1,9 +1,10 @@
-import {
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { AuthUser } from '../auth/auth-user.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
+import {
+  generateStudentCode,
+  setStudentIdAuditContext,
+} from '../student-identity/student-id.helper.js';
 
 export async function createInternalStudentRecord(
   prisma: PrismaService,
@@ -59,6 +60,11 @@ export async function createInternalStudentRecord(
         return student;
 
       const membership = profile.institutionMembership;
+      await setStudentIdAuditContext(
+        tx,
+        actor.profileId,
+        'ADMIN_INTERNAL_ROSTER_ADDED',
+      );
       const updated = await tx.institutionMembership.update({
         where: { id: membership.id },
         data: {
@@ -117,19 +123,18 @@ export async function updateInternalStudentRecord(
   if (!body || typeof body !== 'object' || Array.isArray(body))
     throw new BadRequestException('A student update object is required');
   const input = body as Record<string, unknown>;
-  const allowed = new Set(['fullName', 'email', 'studentId', 'isActive']);
+  const allowed = new Set(['fullName', 'email', 'isActive']);
   if (
     !Object.keys(input).length ||
     Object.keys(input).some((key) => !allowed.has(key))
   )
     throw new BadRequestException(
-      'Only fullName, email, studentId and isActive can be updated',
+      'Only fullName, email and isActive can be updated',
     );
 
   const data: {
     fullName?: string;
     email?: string;
-    studentId?: string;
     isActive?: boolean;
   } = {};
   if ('fullName' in input) {
@@ -137,7 +142,9 @@ export async function updateInternalStudentRecord(
       throw new BadRequestException('fullName must be text');
     const fullName = input.fullName.trim();
     if (fullName.length < 2 || fullName.length > 150)
-      throw new BadRequestException('fullName must contain 2 to 150 characters');
+      throw new BadRequestException(
+        'fullName must contain 2 to 150 characters',
+      );
     data.fullName = fullName;
   }
   if ('email' in input) {
@@ -147,16 +154,6 @@ export async function updateInternalStudentRecord(
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320)
       throw new BadRequestException('A valid email is required');
     data.email = email;
-  }
-  if ('studentId' in input) {
-    if (typeof input.studentId !== 'string')
-      throw new BadRequestException('studentId must be text');
-    const studentId = input.studentId.trim().toUpperCase();
-    if (!studentId || studentId.length > 64)
-      throw new BadRequestException(
-        'studentId must contain 1 to 64 characters',
-      );
-    data.studentId = studentId;
   }
   if ('isActive' in input) {
     if (typeof input.isActive !== 'boolean')
@@ -188,17 +185,18 @@ export async function updateInternalStudentRecord(
           'A matched login email cannot be changed. Delete the roster entry and add the correct email instead',
         );
 
-      if (current.membership && data.studentId)
-        await tx.institutionMembership.update({
-          where: { id: current.membership.id },
-          data: { studentId: data.studentId },
-        });
-
       if (current.membership && data.isActive === false) {
         const membership = current.membership;
+        const studentId = await generateStudentCode(tx, 'EXTERNAL');
+        await setStudentIdAuditContext(
+          tx,
+          actor.profileId,
+          'ADMIN_INTERNAL_ROSTER_DEACTIVATED',
+        );
         const updatedMembership = await tx.institutionMembership.update({
           where: { id: membership.id },
           data: {
+            studentId,
             studentCategory: 'EXTERNAL',
             paymentStatus: 'PENDING',
             paidAccessUntil: null,
@@ -280,9 +278,16 @@ export async function deleteInternalStudentRecord(
     if (!current) throw new NotFoundException('Internal student not found');
     if (current.membership) {
       const membership = current.membership;
+      const studentId = await generateStudentCode(tx, 'EXTERNAL');
+      await setStudentIdAuditContext(
+        tx,
+        actor.profileId,
+        'ADMIN_INTERNAL_ROSTER_RECORD_DELETED',
+      );
       const updated = await tx.institutionMembership.update({
         where: { id: membership.id },
         data: {
+          studentId,
           studentCategory: 'EXTERNAL',
           paymentStatus: 'PENDING',
           paidAccessUntil: null,
@@ -308,4 +313,3 @@ export async function deleteInternalStudentRecord(
     return { id, deleted: true };
   });
 }
-

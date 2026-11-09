@@ -54,7 +54,6 @@ Use these exact names. Values below are placeholders only:
 API_BASE_URL=http://localhost:3001
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<public-anon-or-publishable-key>
-DUMMY_AUTH_ENABLED=false
 ```
 
 The Supabase publishable/anon key is designed for browser use. Never add a
@@ -107,49 +106,6 @@ After `/auth/callback` exchanges the one-time PKCE code, it calls NestJS
 select the destination. A valid Google identity with no approved database role
 goes to `/auth/pending`; Google sign-in never auto-assigns a privileged role.
 
-### Development-only test login
-
-Dummy authentication is disabled by default. To test frontend/API integration
-without creating Supabase users, add `NODE_ENV=development` and
-`DUMMY_AUTH_ENABLED=true` to `api/.env`, then add
-`DUMMY_AUTH_ENABLED=true` to `web/.env.local`.
-
-`api/.env`:
-
-```dotenv
-NODE_ENV=development
-DUMMY_AUTH_ENABLED=true
-DUMMY_AUTH_PASSWORD=<choose-a-unique-12+-character-password>
-```
-
-`web/.env.local`:
-
-```dotenv
-DUMMY_AUTH_ENABLED=true
-```
-
-The dummy endpoints are retained strictly for automated/local integration tests
-and are not rendered in the normal student or administrator login UI. Test
-identities map as follows:
-
-| Button | Test email | API role | Dashboard |
-| --- | --- | --- | --- |
-| Student | `student@isharpacademy.local` | `STUDENT` | `/dashboard/student` |
-| Admin | `admin@isharpacademy.local` | `ADMIN` | `/admin` |
-| Super Admin | `superadmin@isharpacademy.local` | `SUPERADMIN` | `/dashboard/superadmin` |
-
-No Supabase user is required. Enter the locally configured
-`DUMMY_AUTH_PASSWORD`; NestJS validates it, maps the selected identity to a
-fixed role, issues a random one-hour in-memory session, and the Next.js proxy
-stores it in an HttpOnly, SameSite=Strict cookie. The API rejects extra role
-fields, fabricated sessions, and insufficient roles. Dummy sessions have no
-database profile or database privileges; restarting the API invalidates them.
-
-Both applications refuse `DUMMY_AUTH_ENABLED=true` unless
-`NODE_ENV=development`. The frontend production build and API production
-startup fail explicitly if this is misconfigured. Remove the setting or set it
-to `false` to use only the normal Supabase JWT flow.
-
 Protected API test endpoints:
 
 - `GET /api/test/student` (`STUDENT` or `SUPERADMIN`)
@@ -162,7 +118,7 @@ treated as proof of access.
 
 ### Local Google OAuth test
 
-1. Keep dummy auth off in both apps and start the API and frontend.
+1. Start the API and frontend with Supabase and PostgreSQL configured.
 2. Verify the local callback is allow-listed in Supabase.
 3. Open `http://localhost:3000/login` and select **Continue with Google**.
 4. Cancel once to verify the friendly cancellation state on `/login`.

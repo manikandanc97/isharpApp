@@ -8,8 +8,12 @@ import {
 } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
+  generateStudentCode,
+  setStudentIdAuditContext,
+} from '../student-identity/student-id.helper.js';
+import {
   cleanEmail,
-  externalStudentId,
+  cleanPhone,
   extractDisplayName,
   studentProfileSelect,
   type ResolvedProfile,
@@ -38,6 +42,7 @@ export class StudentAccessResolver {
     payload: JWTPayload,
   ): Promise<ResolvedProfile> {
     const email = cleanEmail(payload.email);
+    const phone = cleanPhone(payload);
 
     // Most authenticated requests only need an existing, unchanged profile.
     // Keep that hot path outside an interactive transaction so parallel page
@@ -51,16 +56,17 @@ export class StudentAccessResolver {
         throw new ConflictException(
           'Login email does not match the linked profile',
         );
-      if (!email) return existing;
+      if (!email && (!phone || existing.phone === phone)) return existing;
 
       const isStudent = existing.userRoles.some(
         ({ role }) => role.name === 'STUDENT',
       );
-      if (!isStudent && existing.email) return existing;
+      if (!isStudent && existing.email && (!phone || existing.phone === phone))
+        return existing;
 
       if (isStudent && existing.email) {
         const roster = await this.prisma.trustedInstitutionStudent.findUnique({
-          where: { email },
+          where: { email: email ?? existing.email },
           select: {
             id: true,
             studentId: true,
@@ -85,7 +91,9 @@ export class StudentAccessResolver {
           (!internal &&
             membership.studentCategory === StudentCategory.INTERNAL);
         const rosterNeedsLink = internal && !roster.authUserId;
-        if (!accessChanged && !rosterNeedsLink) return existing;
+        const contactNeedsUpdate = Boolean(phone && !existing.phone);
+        if (!accessChanged && !rosterNeedsLink && !contactNeedsUpdate)
+          return existing;
       }
     }
 
@@ -95,25 +103,28 @@ export class StudentAccessResolver {
           where: { authUserId },
           select: studentProfileSelect,
         });
-        if (!profile && !email) return null;
+        if (!profile && !email && !phone) return null;
         if (!profile) {
-          const loginEmail = email!;
+          const loginEmail = email;
+          const loginIdentifier = loginEmail ?? phone!;
           const role = await tx.role.findUnique({
             where: { name: 'STUDENT' },
             select: { id: true },
           });
           if (!role)
             throw new ConflictException('STUDENT role is not configured');
-          const roster = await tx.trustedInstitutionStudent.findUnique({
-            where: { email: loginEmail },
-            select: {
-              id: true,
-              studentId: true,
-              fullName: true,
-              authUserId: true,
-              isActive: true,
-            },
-          });
+          const roster = loginEmail
+            ? await tx.trustedInstitutionStudent.findUnique({
+                where: { email: loginEmail },
+                select: {
+                  id: true,
+                  studentId: true,
+                  fullName: true,
+                  authUserId: true,
+                  isActive: true,
+                },
+              })
+            : null;
           const internal =
             roster?.isActive === true &&
             (!roster.authUserId || roster.authUserId === authUserId);
@@ -125,16 +136,15 @@ export class StudentAccessResolver {
             data: {
               authUserId,
               email: loginEmail,
+              phone,
               displayName:
                 internal && roster?.fullName
                   ? roster.fullName
-                  : extractDisplayName(payload, loginEmail),
+                  : extractDisplayName(payload, loginIdentifier),
               userRoles: { create: { roleId: role.id } },
               institutionMembership: {
                 create: {
-                  studentId: internal
-                    ? roster!.studentId
-                    : externalStudentId(authUserId),
+                  ...(internal ? { studentId: roster!.studentId } : {}),
                   status: internal
                     ? MembershipVerificationStatus.VERIFIED
                     : MembershipVerificationStatus.PENDING,
@@ -165,10 +175,14 @@ export class StudentAccessResolver {
           throw new ConflictException(
             'Login email does not match the linked profile',
           );
-        if (email && !profile.email)
+        const profileUpdate = {
+          ...(email && !profile.email ? { email } : {}),
+          ...(phone && !profile.phone ? { phone } : {}),
+        };
+        if (Object.keys(profileUpdate).length)
           profile = await tx.userProfile.update({
             where: { id: profile.id },
-            data: { email },
+            data: profileUpdate,
             select: studentProfileSelect,
           });
         const isStudent = profile.userRoles.some(
@@ -200,9 +214,7 @@ export class StudentAccessResolver {
           await tx.institutionMembership.create({
             data: {
               userId: profile.id,
-              studentId: internal
-                ? roster!.studentId
-                : externalStudentId(authUserId),
+              ...(internal ? { studentId: roster!.studentId } : {}),
               status: internal
                 ? MembershipVerificationStatus.VERIFIED
                 : MembershipVerificationStatus.PENDING,
@@ -236,11 +248,21 @@ export class StudentAccessResolver {
             (membership.trustedRecordId !== roster!.id ||
               membership.studentId !== roster!.studentId))
         ) {
+          const nextStudentId = internal
+            ? roster!.studentId
+            : await generateStudentCode(tx, StudentCategory.EXTERNAL);
+          await setStudentIdAuditContext(
+            tx,
+            null,
+            internal
+              ? 'AUTO_INTERNAL_EMAIL_ROSTER_MATCH'
+              : 'AUTO_INTERNAL_ROSTER_MATCH_REMOVED',
+          );
           const updated = await tx.institutionMembership.update({
             where: { id: membership.id },
             data: internal
               ? {
-                  studentId: roster!.studentId,
+                  studentId: nextStudentId,
                   status: MembershipVerificationStatus.VERIFIED,
                   studentCategory: StudentCategory.INTERNAL,
                   paymentStatus: StudentPaymentStatus.NOT_REQUIRED,
@@ -251,6 +273,7 @@ export class StudentAccessResolver {
                   verifiedById: null,
                 }
               : {
+                  studentId: nextStudentId,
                   status: MembershipVerificationStatus.PENDING,
                   studentCategory: StudentCategory.EXTERNAL,
                   paymentStatus: StudentPaymentStatus.PENDING,

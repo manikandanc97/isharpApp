@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import type { AuthenticatedRequest } from './auth-user.js';
-import { DevAuthService } from './dev-auth.service.js';
+import { MembershipVerificationStatus } from '../generated/prisma/client.js';
 import { isRoleName } from './role.js';
 import { SupabaseTokenVerifier } from './supabase-token-verifier.service.js';
 import { StudentAccessResolver } from './student-access-resolver.service.js';
@@ -16,7 +16,6 @@ import { StudentAccessResolver } from './student-access-resolver.service.js';
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly tokenVerifier: SupabaseTokenVerifier,
-    private readonly devAuth: DevAuthService,
     private readonly studentAccess: StudentAccessResolver,
   ) {}
 
@@ -26,12 +25,6 @@ export class AuthGuard implements CanActivate {
     const match = authorization?.match(/^Bearer\s+(\S+)$/i);
     if (!match) {
       throw new UnauthorizedException('Bearer access token is required');
-    }
-
-    const devUser = this.devAuth.authenticate(match[1]);
-    if (devUser) {
-      (request as AuthenticatedRequest).user = devUser;
-      return true;
     }
 
     const payload = await this.tokenVerifier.verify(match[1]);
@@ -58,10 +51,12 @@ export class AuthGuard implements CanActivate {
               profile.institutionMembership.paidAccessUntil?.toISOString() ??
               null,
             hasLearningAccess:
-              profile.institutionMembership.studentCategory === 'INTERNAL' ||
-              (profile.institutionMembership.paymentStatus === 'PAID' &&
-                (!profile.institutionMembership.paidAccessUntil ||
-                  profile.institutionMembership.paidAccessUntil > new Date())),
+              profile.institutionMembership.status ===
+                MembershipVerificationStatus.VERIFIED &&
+              (profile.institutionMembership.studentCategory === 'INTERNAL' ||
+                (profile.institutionMembership.paymentStatus === 'PAID' &&
+                  (!profile.institutionMembership.paidAccessUntil ||
+                    profile.institutionMembership.paidAccessUntil > new Date()))),
           }
         : null,
     };

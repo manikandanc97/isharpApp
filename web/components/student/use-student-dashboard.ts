@@ -3,8 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AuthenticatedSession } from "@/lib/auth-session";
-import { hasRequiredRole } from "@/lib/role-policy";
-import type { LanguageMode, TabId } from "./student-types";
+import type { LanguageMode, StudentPortalData, TabId } from "./student-types";
 
 export type StudentDashboardStatus =
   | "loading"
@@ -14,96 +13,110 @@ export type StudentDashboardStatus =
   | "payment-required"
   | "error";
 
+const DASHBOARD_LOAD_TIMEOUT_MS = 15_000;
+
 export function useStudentDashboard() {
   const router = useRouter();
   const [session, setSession] = useState<AuthenticatedSession | null>(null);
+  const [portalData, setPortalData] = useState<StudentPortalData | null>(null);
   const [status, setStatus] = useState<StudentDashboardStatus>("loading");
   const [statusMessage, setStatusMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [profileError, setProfileError] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
-
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [selectedLanguage, setSelectedLanguage] =
     useState<LanguageMode>("bilingual");
-
-  // Interactive DPP Drill Runner state
-  const [drillOpen, setDrillOpen] = useState(false);
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [solvedCount, setSolvedCount] = useState(12);
-
-  // Logout confirmation modal state
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  // Authenticate session and check student RBAC access
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      DASHBOARD_LOAD_TIMEOUT_MS,
+    );
+
     async function load() {
       try {
-        const sessionResponse = await fetch("/api/session", {
+        const dashboardResponse = await fetch("/api/student/dashboard", {
           cache: "no-store",
+          signal: controller.signal,
         });
-        if (sessionResponse.status === 401) {
+        const payload = (await dashboardResponse.json().catch(() => ({}))) as
+          | StudentPortalData
+          | { message?: string };
+
+        if (dashboardResponse.status === 401) {
           if (active) setStatus("unauthenticated");
           return;
         }
-        if (!sessionResponse.ok)
-          throw new Error("Authentication API connection failed");
-        const currentSession =
-          (await sessionResponse.json()) as AuthenticatedSession;
-        if (active) setSession(currentSession);
-
-        if (!hasRequiredRole(currentSession.roles, "STUDENT")) {
-          if (active) setStatus("forbidden");
-          return;
-        }
-
-        const accessResponse = await fetch("/api/access/student", {
-          cache: "no-store",
-        });
-        const payload = (await accessResponse.json()) as { message?: string };
-        if (accessResponse.status === 401) {
-          if (active) setStatus("unauthenticated");
-          return;
-        }
-        if (accessResponse.status === 403) {
+        if (dashboardResponse.status === 403) {
           if (active) {
-            setStatusMessage(
-              payload.message ?? "An active access plan is required",
+            const message =
+              "message" in payload
+                ? payload.message ?? "Student access is required"
+                : "Student access is required";
+            setStatusMessage(message);
+            setStatus(
+              message === "Insufficient permissions"
+                ? "forbidden"
+                : "payment-required",
             );
-            setStatus("payment-required");
           }
           return;
         }
-        if (!accessResponse.ok)
-          throw new Error(payload.message ?? "API connection failed");
+        if (!dashboardResponse.ok || !("student" in payload)) {
+          throw new Error(
+            "message" in payload
+              ? payload.message ?? "Student data could not be loaded"
+              : "Student data could not be loaded",
+          );
+        }
+
         if (active) {
-          setStatusMessage(payload.message ?? "API access confirmed");
+          setSession(payload.session);
+          setPortalData(payload);
           setStatus("ready");
         }
       } catch (error) {
         if (active) {
           setStatusMessage(
-            error instanceof Error ? error.message : "API connection failed",
+            error instanceof DOMException && error.name === "AbortError"
+              ? "Student dashboard request timed out. Please try again."
+              : error instanceof Error
+                ? error.message
+                : "Student data could not be loaded",
           );
           setStatus("error");
         }
       }
     }
+
     void load();
     return () => {
       active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
     };
-  }, []);
+  }, [reloadKey]);
+
+  function retryLoad() {
+    setPortalData(null);
+    setStatusMessage("");
+    setStatus("loading");
+    setReloadKey((current) => current + 1);
+  }
 
   async function confirmSignOut() {
+    if (isSigningOut) return;
     setIsSigningOut(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Unable to sign out");
       setLogoutDialogOpen(false);
       router.replace("/login");
       router.refresh();
@@ -112,12 +125,8 @@ export function useStudentDashboard() {
     }
   }
 
-  function promptSignOut() {
-    setLogoutDialogOpen(true);
-  }
-
   function openProfile() {
-    setProfileName(session?.displayName ?? "");
+    setProfileName(portalData?.student.displayName ?? "");
     setProfileError("");
     setProfileOpen(true);
   }
@@ -145,11 +154,15 @@ export function useStudentDashboard() {
         displayName?: string;
         message?: string;
       };
-      if (!response.ok)
-        throw new Error(payload.message ?? "Unable to update profile");
+      if (!response.ok) throw new Error(payload.message ?? "Unable to update profile");
+
+      const savedName = payload.displayName ?? displayName;
       setSession((current) =>
+        current ? { ...current, displayName: savedName } : current,
+      );
+      setPortalData((current) =>
         current
-          ? { ...current, displayName: payload.displayName ?? displayName }
+          ? { ...current, student: { ...current.student, displayName: savedName } }
           : current,
       );
       setProfileOpen(false);
@@ -162,17 +175,9 @@ export function useStudentDashboard() {
     }
   }
 
-  const studentCategory = session?.studentAccess?.category ?? "INTERNAL";
-  const isInternal = studentCategory === "INTERNAL";
-  const displayName = session?.displayName?.trim() || "Student";
-  const studentIdDisplay =
-    session?.studentAccess?.studentId || "Student ID unavailable";
-  const profileInitial = displayName.charAt(0).toUpperCase();
-  const greetingName = displayName.split(/\s+/)[0];
-
   return {
-    router,
     session,
+    portalData,
     status,
     statusMessage,
     profileOpen,
@@ -185,29 +190,13 @@ export function useStudentDashboard() {
     setActiveTab,
     selectedLanguage,
     setSelectedLanguage,
-    drillOpen,
-    setDrillOpen,
-    currentQIndex,
-    setCurrentQIndex,
-    selectedAnswer,
-    setSelectedAnswer,
-    showExplanation,
-    setShowExplanation,
-    solvedCount,
-    setSolvedCount,
     logoutDialogOpen,
     setLogoutDialogOpen,
     isSigningOut,
     confirmSignOut,
-    promptSignOut,
+    promptSignOut: () => setLogoutDialogOpen(true),
     openProfile,
     saveProfile,
-    studentCategory,
-    isInternal,
-    displayName,
-    studentIdDisplay,
-    profileInitial,
-    greetingName,
+    retryLoad,
   };
 }
-

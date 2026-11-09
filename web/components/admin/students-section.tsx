@@ -1,8 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { LoaderCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { api } from "./admin-api";
 import {
+  formatDate,
   LightLuxuryPanel,
   LightSearchBox,
   TablePagination,
@@ -24,6 +33,7 @@ export interface StudentsSectionProps {
   onManageAccess: (user: User) => void;
   onRosterCreated: (student: InternalStudent) => void;
   onRosterDeleted: (studentId: string) => void;
+  onConverted: () => void;
   onNotice: (message: string) => void;
   onError: (message: string) => void;
 }
@@ -37,6 +47,7 @@ export function StudentsSection({
   onManageAccess,
   onRosterCreated,
   onRosterDeleted,
+  onConverted,
   onNotice,
   onError,
 }: StudentsSectionProps) {
@@ -48,6 +59,33 @@ export function StudentsSection({
   const [studentType, setStudentType] = useState<
     "ALL" | "INTERNAL" | "EXTERNAL"
   >("ALL");
+  const [detailsUser, setDetailsUser] = useState<User | null>(null);
+  const [conversionUser, setConversionUser] = useState<User | null>(null);
+  const [conversionReason, setConversionReason] = useState("");
+  const [converting, setConverting] = useState(false);
+  const [matchedUsers, setMatchedUsers] = useState<User[] | null>(null);
+
+  useEffect(() => {
+    const normalized = query.trim();
+    if (!normalized) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void api<User[]>(`users?query=${encodeURIComponent(normalized)}`)
+        .then((result) => {
+          if (!cancelled) setMatchedUsers(result);
+        })
+        .catch((error: unknown) => {
+          if (!cancelled)
+            onError(
+              error instanceof Error ? error.message : "Student search failed",
+            );
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [onError, query]);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -85,13 +123,15 @@ export function StudentsSection({
         ? studentIdMatch
         : undefined;
     };
-    const accountEntries: StudentDirectoryEntry[] = users
+    const accountEntries: StudentDirectoryEntry[] = (
+      normalizedQuery ? (matchedUsers ?? users) : users
+    )
       .filter((user) => {
         const rosterStudent = rosterForUser(user);
         return (
           (studentType === "ALL" ||
             user.institutionMembership?.studentCategory === studentType) &&
-          `${user.displayName} ${user.email ?? ""} ${user.institutionMembership?.studentId ?? ""} ${rosterStudent?.studentId ?? ""} ${rosterStudent?.fullName ?? ""}`
+          `${user.displayName} ${user.email ?? ""} ${user.phone ?? ""} ${user.institutionMembership?.studentId ?? ""} ${user.institutionMembership?.studentIdHistory?.map((item) => item.studentCode).join(" ") ?? ""} ${rosterStudent?.studentId ?? ""} ${rosterStudent?.fullName ?? ""}`
             .toLowerCase()
             .includes(normalizedQuery)
         );
@@ -131,7 +171,7 @@ export function StudentsSection({
         new Date(right.createdAt).getTime() -
         new Date(left.createdAt).getTime(),
     );
-  }, [internalStudents, query, studentType, users]);
+  }, [internalStudents, matchedUsers, query, studentType, users]);
 
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -169,6 +209,30 @@ export function StudentsSection({
     }
   }
 
+  async function convertStudent() {
+    const membership = conversionUser?.institutionMembership;
+    if (!membership || conversionReason.trim().length < 3) return;
+    setConverting(true);
+    try {
+      await api(`memberships/${membership.id}/convert-to-internal`, {
+        method: "POST",
+        body: JSON.stringify({ reason: conversionReason.trim() }),
+      });
+      onNotice(
+        `${conversionUser.displayName} was converted to an internal student.`,
+      );
+      setConversionUser(null);
+      setConversionReason("");
+      onConverted();
+    } catch (error) {
+      onError(
+        error instanceof Error ? error.message : "Student conversion failed",
+      );
+    } finally {
+      setConverting(false);
+    }
+  }
+
   return (
     <LightLuxuryPanel
       title="Student directory"
@@ -194,6 +258,7 @@ export function StudentsSection({
           value={query}
           onChange={(value) => {
             setQuery(value);
+            setMatchedUsers(null);
             setPage(1);
           }}
           placeholder="Search name or student ID…"
@@ -237,6 +302,11 @@ export function StudentsSection({
           void deleteRosterStudent(selectedStudent)
         }
         onManageAccess={onManageAccess}
+        onViewDetails={setDetailsUser}
+        onConvert={(user) => {
+          setConversionReason("");
+          setConversionUser(user);
+        }}
         onToggle={onToggle}
       />
       <TablePagination
@@ -245,10 +315,104 @@ export function StudentsSection({
         totalItems={filtered.length}
         onPageChange={setPage}
       />
+
+      <Dialog
+        open={Boolean(detailsUser)}
+        onOpenChange={(open) => !open && setDetailsUser(null)}
+      >
+        <DialogContent className="max-w-lg rounded-2xl bg-white p-6">
+          <DialogTitle>Student identity</DialogTitle>
+          <DialogDescription>
+            Current and previous official student IDs for{" "}
+            {detailsUser?.displayName}.
+          </DialogDescription>
+          <div className="mt-4 rounded-xl border border-slate-200 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Current Student ID
+            </p>
+            <p className="mt-1 text-lg font-bold text-slate-900">
+              {detailsUser?.institutionMembership?.studentId ?? "—"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {detailsUser?.institutionMembership?.studentCategory ??
+                "No student type"}
+            </p>
+          </div>
+          <div className="mt-4 space-y-2">
+            <p className="text-sm font-semibold text-slate-900">ID history</p>
+            {detailsUser?.institutionMembership?.studentIdHistory?.map(
+              (item) => (
+                <div
+                  key={item.id}
+                  className="flex items-start justify-between gap-4 rounded-lg border border-slate-100 px-3 py-2 text-xs"
+                >
+                  <div>
+                    <p className="font-semibold text-slate-800">
+                      {item.studentCode}
+                    </p>
+                    <p className="text-slate-500">
+                      {item.studentType} · {item.changeReason}
+                    </p>
+                  </div>
+                  <div className="text-right text-slate-400">
+                    <p>{item.isCurrent ? "Current" : "Previous"}</p>
+                    <p>{formatDate(item.createdAt)}</p>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(conversionUser)}
+        onOpenChange={(open) => !open && !converting && setConversionUser(null)}
+      >
+        <DialogContent className="max-w-lg rounded-2xl bg-white p-6">
+          <DialogTitle>Convert external student?</DialogTitle>
+          <DialogDescription>
+            {conversionUser?.displayName} will receive a new internal Student
+            ID. Their UUID, login, records, and current external ID history will
+            be preserved.
+          </DialogDescription>
+          <label className="mt-4 grid gap-2 text-sm font-semibold text-slate-700">
+            Conversion reason
+            <textarea
+              required
+              minLength={3}
+              maxLength={500}
+              rows={4}
+              value={conversionReason}
+              onChange={(event) => setConversionReason(event.target.value)}
+              className="resize-none rounded-xl border border-slate-300 p-3 font-normal outline-none focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
+              placeholder="Why is this student joining the institute?"
+            />
+          </label>
+          <div className="mt-5 flex justify-end gap-3">
+            <Button
+              variant="outline"
+              disabled={converting}
+              onClick={() => setConversionUser(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={converting || conversionReason.trim().length < 3}
+              onClick={() => void convertStudent()}
+              className="bg-brand-blue text-white hover:bg-blue-700"
+            >
+              {converting && (
+                <LoaderCircle className="mr-2 size-4 animate-spin" />
+              )}
+              Confirm conversion
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </LightLuxuryPanel>
   );
 }
 
 // Legacy verification UI retained for audit-history compatibility.
 export { Verification } from "./verification-section";
-

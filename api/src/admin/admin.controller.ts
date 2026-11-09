@@ -99,6 +99,15 @@ export class AdminController {
     return this.admin.setStudentAccess(request.user, id, body);
   }
 
+  @Post('memberships/:id/convert-to-internal')
+  convertExternalStudent(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() body: unknown,
+  ) {
+    return this.admin.convertExternalStudent(request.user, id, body);
+  }
+
   @Get('catalog')
   catalog() {
     return this.admin.catalog();
