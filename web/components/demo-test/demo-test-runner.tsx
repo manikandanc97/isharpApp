@@ -13,9 +13,12 @@ import {
   Flag,
   Globe,
   HelpCircle,
+  LayoutGrid,
   Maximize2,
   Minimize2,
   ShieldAlert,
+  Sparkles,
+  TrendingUp,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -73,6 +76,7 @@ export function DemoTestRunner({
 
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
+  const [isMobilePaletteOpen, setIsMobilePaletteOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Filtered indices based on subject tab
@@ -97,6 +101,11 @@ export function DemoTestRunner({
 
   const currentQuestionIdRef = useRef(currentQuestion.id);
   currentQuestionIdRef.current = currentQuestion.id;
+
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
+
+  const isSubmittedRef = useRef(false);
 
   // Mark visited whenever currentIndex changes
   useEffect(() => {
@@ -123,8 +132,6 @@ export function DemoTestRunner({
       setSecondsRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          // Auto submit using current answers snapshot
-          onSubmit(answersRef.current, totalSeconds);
           return 0;
         }
         return prev - 1;
@@ -146,7 +153,15 @@ export function DemoTestRunner({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [totalSeconds, onSubmit]);
+  }, []);
+
+  // Safe auto-submit when timer expires (dispatched outside state updater)
+  useEffect(() => {
+    if (secondsRemaining <= 0 && !isSubmittedRef.current) {
+      isSubmittedRef.current = true;
+      onSubmitRef.current(answersRef.current, totalSeconds);
+    }
+  }, [secondsRemaining, totalSeconds]);
 
   // Keyboard navigation shortcuts
   useEffect(() => {
@@ -218,9 +233,11 @@ export function DemoTestRunner({
   };
 
   const handleConfirmSubmit = () => {
+    if (isSubmittedRef.current) return;
+    isSubmittedRef.current = true;
     setIsSubmitDialogOpen(false);
-    const elapsed = totalSeconds - secondsRemaining;
-    onSubmit(answers, elapsed);
+    const elapsed = Math.max(0, totalSeconds - secondsRemaining);
+    onSubmit(answersRef.current, elapsed);
   };
 
   const toggleFullscreen = () => {
@@ -263,6 +280,110 @@ export function DemoTestRunner({
 
     return { answered, notAnswered, marked, answeredAndMarked, notVisited };
   }, [answers, questions]);
+
+  const attemptedCount = summaryCounts.answered + summaryCounts.answeredAndMarked;
+  const remainingCount = summaryCounts.notAnswered + summaryCounts.notVisited;
+  const progressPercent = Math.round((attemptedCount / questions.length) * 100);
+
+  const renderPaletteContent = (isMobile = false) => (
+    <div className="space-y-3">
+      {/* 01. Status Legend Card */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs space-y-2.5">
+        <p className="text-2xs font-bold uppercase tracking-wider text-slate-500">
+          Question Status
+        </p>
+
+        <div className="grid grid-cols-2 gap-2 text-2xs font-semibold">
+          {/* Answered */}
+          <div className="flex items-center justify-between rounded-xl bg-emerald-50/80 border border-emerald-200/70 px-2.5 py-1.5 text-emerald-800">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="truncate">Answered</span>
+            </div>
+            <span className="font-bold font-mono ml-1">{attemptedCount}</span>
+          </div>
+
+          {/* Not Answered */}
+          <div className="flex items-center justify-between rounded-xl bg-rose-50/80 border border-rose-200/70 px-2.5 py-1.5 text-rose-800">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="size-2 rounded-full bg-rose-500 shrink-0" />
+              <span className="truncate">Not Answered</span>
+            </div>
+            <span className="font-bold font-mono ml-1">{summaryCounts.notAnswered}</span>
+          </div>
+
+          {/* Marked */}
+          <div className="flex items-center justify-between rounded-xl bg-purple-50/80 border border-purple-200/70 px-2.5 py-1.5 text-purple-800">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="size-2 rounded-full bg-purple-600 shrink-0" />
+              <span className="truncate">Marked</span>
+            </div>
+            <span className="font-bold font-mono ml-1">{summaryCounts.marked}</span>
+          </div>
+
+          {/* Not Visited */}
+          <div className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200 px-2.5 py-1.5 text-slate-700">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="size-2 rounded-full bg-slate-300 shrink-0" />
+              <span className="truncate">Not Visited</span>
+            </div>
+            <span className="font-bold font-mono ml-1">{summaryCounts.notVisited}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 02. Questions Matrix Card - Neat & Simple */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-2xs font-bold uppercase tracking-wider text-slate-500">
+            Questions ({visibleIndices.length})
+          </p>
+          <span className="text-2xs font-semibold text-slate-400 font-mono">
+            Q{currentIndex + 1} Selected
+          </span>
+        </div>
+
+        {/* Clean 4-Column Buttons Grid */}
+        <div className="grid grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1">
+          {visibleIndices.map((idx) => {
+            const q = questions[idx];
+            const status = getQuestionStatus(q.id);
+            const isCurrent = idx === currentIndex;
+
+            let btnStyle = "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200";
+            if (status === "answered") {
+              btnStyle = "bg-emerald-600 text-white border-emerald-600 shadow-2xs";
+            } else if (status === "marked_for_review") {
+              btnStyle = "bg-purple-600 text-white border-purple-600 shadow-2xs";
+            } else if (status === "answered_and_marked") {
+              btnStyle = "bg-purple-600 text-white border-2 border-emerald-400 shadow-2xs";
+            } else if (status === "unanswered") {
+              btnStyle = "bg-rose-500 text-white border-rose-500 shadow-2xs";
+            }
+
+            return (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => {
+                  handleJumpTo(idx);
+                  if (isMobile) setIsMobilePaletteOpen(false);
+                }}
+                className={`grid size-10 place-items-center rounded-xl font-mono text-xs font-bold border transition cursor-pointer ${btnStyle} ${
+                  isCurrent
+                    ? "scale-105 shadow-md font-black"
+                    : "hover:scale-[1.02]"
+                }`}
+                title={`Question ${idx + 1}`}
+              >
+                {idx + 1}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 
   const isLowTime = secondsRemaining <= 120; // 2 minutes
 
@@ -330,6 +451,18 @@ export function DemoTestRunner({
             title="Toggle Fullscreen"
           >
             {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+          </Button>
+
+          {/* Mobile Palette Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMobilePaletteOpen(true)}
+            className="lg:hidden rounded-full border-slate-300 text-xs font-semibold px-2.5 py-1 text-slate-700 hover:text-slate-900"
+            title="Open Question Palette"
+          >
+            <LayoutGrid className="size-3.5 mr-1 text-brand-red" />
+            <span>Palette ({summaryCounts.answered + summaryCounts.answeredAndMarked}/{questions.length})</span>
           </Button>
 
           {/* Submit Test Button */}
@@ -556,87 +689,122 @@ export function DemoTestRunner({
         </main>
 
         {/* Right: NTA-Standard Question Palette */}
-        <aside className="hidden lg:flex w-72 shrink-0 flex-col border-l border-slate-200 bg-slate-50/70 p-4 justify-between">
-          <div className="space-y-4">
-            {/* Status Legend */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
-              <p className="text-2xs font-bold uppercase tracking-wider text-slate-500">
-                Question Status Palette
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-2xs font-semibold">
-                <div className="flex items-center gap-1.5 text-emerald-800">
-                  <span className="size-3 rounded-full bg-emerald-500" />
-                  <span>Answered ({summaryCounts.answered})</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-rose-700">
-                  <span className="size-3 rounded-full bg-rose-500" />
-                  <span>Not Answered ({summaryCounts.notAnswered})</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-purple-700">
-                  <span className="size-3 rounded-full bg-purple-600" />
-                  <span>Marked ({summaryCounts.marked})</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <span className="size-3 rounded-full bg-slate-300" />
-                  <span>Not Visited ({summaryCounts.notVisited})</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Question Buttons Matrix */}
-            <div>
-              <p className="text-2xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                Questions ({visibleIndices.length})
-              </p>
-              <div className="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto p-1">
-                {visibleIndices.map((idx) => {
-                  const q = questions[idx];
-                  const status = getQuestionStatus(q.id);
-                  const isCurrent = idx === currentIndex;
-
-                  let btnStyle = "bg-slate-200 text-slate-700 border-slate-300";
-                  if (status === "answered") {
-                    btnStyle = "bg-emerald-600 text-white border-emerald-700";
-                  } else if (status === "marked_for_review") {
-                    btnStyle = "bg-purple-600 text-white border-purple-700";
-                  } else if (status === "answered_and_marked") {
-                    btnStyle = "bg-purple-700 text-white border-purple-800 ring-2 ring-emerald-400";
-                  } else if (status === "unanswered") {
-                    btnStyle = "bg-rose-500 text-white border-rose-600";
-                  }
-
-                  return (
-                    <button
-                      key={q.id}
-                      type="button"
-                      onClick={() => handleJumpTo(idx)}
-                      className={`grid size-9 place-items-center rounded-xl font-mono text-xs font-bold border transition ${btnStyle} ${
-                        isCurrent ? "ring-2 ring-slate-900 ring-offset-2 scale-105" : "hover:opacity-90"
-                      }`}
-                    >
-                      {idx + 1}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        <aside className="hidden lg:flex w-80 shrink-0 flex-col border-l border-slate-200 bg-slate-50/60 justify-between overflow-hidden">
+          {/* Scrollable Upper Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+            {renderPaletteContent(false)}
           </div>
 
-          {/* Quick Submit Block */}
-          <div className="border-t border-slate-200 pt-3 space-y-2">
-            <div className="text-2xs text-slate-500 flex justify-between">
-              <span>Attempted: {summaryCounts.answered + summaryCounts.answeredAndMarked} / {questions.length}</span>
-              <span>Remaining: {summaryCounts.notAnswered + summaryCounts.notVisited}</span>
+          {/* Sticky Bottom Submission Block */}
+          <div className="border-t border-slate-200 bg-white p-4 space-y-3 shadow-xs">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  <span>
+                    Attempted:{" "}
+                    <strong className="text-slate-900">{attemptedCount}/{questions.length}</strong>{" "}
+                    <span className="text-slate-400 font-normal">({progressPercent}%)</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <span className="size-1.5 rounded-full bg-rose-500" />
+                  <span>
+                    Pending: <strong className="text-slate-900">{remainingCount}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
+
             <Button
               onClick={() => setIsSubmitDialogOpen(true)}
-              className="w-full rounded-full bg-brand-red py-2 text-xs font-bold text-white shadow-primary hover:bg-brand-red-hover"
+              className="w-full rounded-xl bg-linear-to-r from-brand-red to-rose-600 hover:from-brand-red-hover hover:to-rose-700 py-2.5 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
             >
-              Finish &amp; View Scorecard
+              <CheckCircle2 className="size-4" />
+              <span>Finish &amp; View Scorecard</span>
             </Button>
+
+            <p className="text-3xs text-slate-400 text-center font-medium">
+              Instant AI Scorecard &amp; Detailed Solutions
+            </p>
           </div>
         </aside>
       </div>
+
+      {/* 03b. MOBILE QUESTION PALETTE DIALOG */}
+      <Dialog open={isMobilePaletteOpen} onOpenChange={setIsMobilePaletteOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-3xl p-5">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <LayoutGrid className="size-4 text-brand-red" />
+              <span>Question Palette ({questions.length} Questions)</span>
+            </DialogTitle>
+            <DialogDescription className="text-2xs text-slate-500">
+              Tap any question number to navigate directly.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 pt-2">
+            {renderPaletteContent(true)}
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-100 space-y-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  <span>
+                    Attempted:{" "}
+                    <strong className="text-slate-900">{attemptedCount}/{questions.length}</strong>{" "}
+                    <span className="text-slate-400 font-normal">({progressPercent}%)</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <span className="size-1.5 rounded-full bg-rose-500" />
+                  <span>
+                    Pending: <strong className="text-slate-900">{remainingCount}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMobilePaletteOpen(false)}
+                className="flex-1 rounded-xl text-xs font-semibold"
+              >
+                Close
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setIsMobilePaletteOpen(false);
+                  setIsSubmitDialogOpen(true);
+                }}
+                className="flex-1 rounded-xl bg-brand-red text-xs font-bold text-white shadow-primary hover:bg-brand-red-hover"
+              >
+                Submit Test
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 04. SUBMIT CONFIRMATION DIALOG */}
       <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
