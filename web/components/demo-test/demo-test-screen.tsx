@@ -164,9 +164,7 @@ export function DemoTestScreen({
           <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-8 py-3 shadow-xs">
             <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Link href="/" className="flex items-center transition hover:opacity-90">
-                  <BrandLogo priority className="h-8 sm:h-9 w-auto" />
-                </Link>
+                <BrandLogo priority className="h-8 sm:h-9 w-auto" />
                 <span className="hidden sm:block h-5 w-px bg-slate-200" aria-hidden="true" />
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="border-rose-200 bg-rose-50 text-brand-red text-2xs font-bold uppercase tracking-wider">
