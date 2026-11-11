@@ -49,7 +49,7 @@ export const features: readonly FeatureItem[] = [
     description:
       "Targeted Daily Practice Problems (DPP) engineered to build unbroken study momentum with instant solution analysis.",
     icon: BookOpenCheck,
-    image: "/experience/daily-practice.jpg",
+    image: "/experience/daily-practice.webp",
     imageAlt: "Luxury 3D illustration of daily study calendar and milestone progress nodes",
     accent: "red",
     metricBadge: {
@@ -79,7 +79,7 @@ export const features: readonly FeatureItem[] = [
     description:
       "Condition your mindset for high-pressure testing with simulated papers calibrated to exact NTA exam difficulty.",
     icon: FileCheck2,
-    image: "/experience/exam-testing.jpg",
+    image: "/experience/exam-testing.webp",
     imageAlt: "Luxury 3D illustration of precision chronograph timer and exam sheets",
     accent: "red",
     metricBadge: {
@@ -109,7 +109,7 @@ export const features: readonly FeatureItem[] = [
     description:
       "Master complex scientific derivations through intuitive Tamil-led explanations paired with standard English terms.",
     icon: Languages,
-    image: "/experience/bilingual-learning.jpg",
+    image: "/experience/bilingual-learning.webp",
     imageAlt: "Luxury 3D illustration of glowing bilingual typography ribbons and audio waves",
     accent: "red",
     metricBadge: {
@@ -139,7 +139,7 @@ export const features: readonly FeatureItem[] = [
     description:
       "Eliminate guesswork with an automated diagnostic engine that pinpoints knowledge gaps and creates revision paths.",
     icon: LineChart,
-    image: "/experience/precision-analytics.jpg",
+    image: "/experience/precision-analytics.webp",
     imageAlt: "Luxury 3D illustration of holographic diagnostic charts and target reticle",
     accent: "blue",
     metricBadge: {

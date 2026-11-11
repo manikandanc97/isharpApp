@@ -124,9 +124,9 @@ export function DemoTestDialog({
 
   useEffect(() => {
     if (open && phase === "scorecard") {
-      setPhase("lobby");
+      queueMicrotask(() => setPhase("lobby"));
     }
-  }, [open]);
+  }, [open, phase]);
 
   // Question count options based on subject mode
   const countOptions =

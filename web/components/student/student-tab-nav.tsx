@@ -78,7 +78,7 @@ export function StudentTabNav({
               className={cn(
                 "group inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer select-none",
                 isActive
-                  ? "bg-slate-900 text-white shadow-xs"
+                  ? "bg-brand-blue text-white shadow-secondary"
                   : "bg-white text-slate-600 border border-slate-200/80 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900",
               )}
             >

@@ -1,24 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  Bookmark,
   CheckCircle2,
   Clock,
   Eraser,
-  Eye,
   Flag,
-  Globe,
-  HelpCircle,
   LayoutGrid,
   Maximize2,
   Minimize2,
-  ShieldAlert,
-  Sparkles,
-  TrendingUp,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +26,6 @@ import {
 } from "@/components/ui/dialog";
 import { formatTime } from "./demo-test-calculator";
 import type {
-  DemoOption,
   DemoQuestion,
   DemoTestPackage,
   QuestionStatus,
@@ -97,34 +89,38 @@ export function DemoTestRunner({
   };
 
   const answersRef = useRef(answers);
-  answersRef.current = answers;
-
   const currentQuestionIdRef = useRef(currentQuestion.id);
-  currentQuestionIdRef.current = currentQuestion.id;
-
   const onSubmitRef = useRef(onSubmit);
-  onSubmitRef.current = onSubmit;
-
   const isSubmittedRef = useRef(false);
 
-  // Mark visited whenever currentIndex changes
   useEffect(() => {
-    setAnswers((prev) => {
-      const existing = prev[currentQuestion.id];
-      if (existing?.visited) return prev;
-      return {
-        ...prev,
-        [currentQuestion.id]: {
-          ...(existing || {
-            questionId: currentQuestion.id,
-            markedForReview: false,
-            timeSpentSeconds: 0,
-          }),
-          visited: true,
-        },
-      };
-    });
-  }, [currentIndex, currentQuestion.id]);
+    answersRef.current = answers;
+    currentQuestionIdRef.current = currentQuestion.id;
+    onSubmitRef.current = onSubmit;
+  });
+
+  const markVisited = useCallback(
+    (targetIndex: number) => {
+      const targetQ = questions[targetIndex];
+      if (targetQ) {
+        setAnswers((prev) => {
+          if (prev[targetQ.id]?.visited) return prev;
+          return {
+            ...prev,
+            [targetQ.id]: {
+              ...(prev[targetQ.id] || {
+                questionId: targetQ.id,
+                markedForReview: false,
+                timeSpentSeconds: 0,
+              }),
+              visited: true,
+            },
+          };
+        });
+      }
+    },
+    [questions],
+  );
 
   // Timer countdown and reliable question dwell time tracking
   useEffect(() => {
@@ -163,6 +159,65 @@ export function DemoTestRunner({
     }
   }, [secondsRemaining, totalSeconds]);
 
+  const handleSelectOption = useCallback((optionId: string) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: {
+        ...prev[currentQuestion.id],
+        selectedOptionId: optionId,
+        visited: true,
+      },
+    }));
+  }, [currentQuestion.id]);
+
+  const handleClearResponse = () => {
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: {
+        ...prev[currentQuestion.id],
+        selectedOptionId: undefined,
+      },
+    }));
+  };
+
+  const handlePrev = useCallback(() => {
+    setCurrentIndex((idx) => {
+      const nextIdx = idx > 0 ? idx - 1 : idx;
+      markVisited(nextIdx);
+      return nextIdx;
+    });
+  }, [markVisited]);
+
+  const handleNext = useCallback(() => {
+    setCurrentIndex((idx) => {
+      const nextIdx = idx < questions.length - 1 ? idx + 1 : idx;
+      markVisited(nextIdx);
+      return nextIdx;
+    });
+  }, [markVisited, questions.length]);
+
+  const handleToggleMarkForReview = () => {
+    setAnswers((prev) => {
+      const isMarked = !prev[currentQuestion.id]?.markedForReview;
+      return {
+        ...prev,
+        [currentQuestion.id]: {
+          ...prev[currentQuestion.id],
+          markedForReview: isMarked,
+        },
+      };
+    });
+    handleNext();
+  };
+
+  const handleJumpTo = useCallback(
+    (index: number) => {
+      markVisited(index);
+      setCurrentIndex(index);
+    },
+    [markVisited],
+  );
+
   // Keyboard navigation shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -179,58 +234,7 @@ export function DemoTestRunner({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  });
-
-  const handleSelectOption = (optionId: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.id]: {
-        ...prev[currentQuestion.id],
-        selectedOptionId: optionId,
-        visited: true,
-      },
-    }));
-  };
-
-  const handleClearResponse = () => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.id]: {
-        ...prev[currentQuestion.id],
-        selectedOptionId: undefined,
-      },
-    }));
-  };
-
-  const handleToggleMarkForReview = () => {
-    setAnswers((prev) => {
-      const isMarked = !prev[currentQuestion.id]?.markedForReview;
-      return {
-        ...prev,
-        [currentQuestion.id]: {
-          ...prev[currentQuestion.id],
-          markedForReview: isMarked,
-        },
-      };
-    });
-    handleNext();
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handleJumpTo = (index: number) => {
-    setCurrentIndex(index);
-  };
+  }, [currentQuestion, handleNext, handlePrev, handleSelectOption, isExitDialogOpen, isSubmitDialogOpen]);
 
   const handleConfirmSubmit = () => {
     if (isSubmittedRef.current) return;
@@ -251,15 +255,18 @@ export function DemoTestRunner({
   };
 
   // Compute status for palette
-  const getQuestionStatus = (qId: string): QuestionStatus => {
-    const rec = answers[qId];
-    if (!rec || !rec.visited) return "not_visited";
-    const hasAnswer = Boolean(rec.selectedOptionId);
-    if (hasAnswer && rec.markedForReview) return "answered_and_marked";
-    if (rec.markedForReview) return "marked_for_review";
-    if (hasAnswer) return "answered";
-    return "unanswered";
-  };
+  const getQuestionStatus = useCallback(
+    (qId: string): QuestionStatus => {
+      const rec = answers[qId];
+      if (!rec || !rec.visited) return "not_visited";
+      const hasAnswer = Boolean(rec.selectedOptionId);
+      if (hasAnswer && rec.markedForReview) return "answered_and_marked";
+      if (rec.markedForReview) return "marked_for_review";
+      if (hasAnswer) return "answered";
+      return "unanswered";
+    },
+    [answers],
+  );
 
   // Status counts
   const summaryCounts = useMemo(() => {
@@ -279,7 +286,7 @@ export function DemoTestRunner({
     });
 
     return { answered, notAnswered, marked, answeredAndMarked, notVisited };
-  }, [answers, questions]);
+  }, [getQuestionStatus, questions]);
 
   const attemptedCount = summaryCounts.answered + summaryCounts.answeredAndMarked;
   const remainingCount = summaryCounts.notAnswered + summaryCounts.notVisited;
@@ -492,7 +499,7 @@ export function DemoTestRunner({
           onClick={() => setActiveSubject("ALL")}
           className={`flex items-center gap-1.5 rounded-full px-3 py-1 transition ${
             activeSubject === "ALL"
-              ? "bg-slate-900 text-white shadow-xs"
+              ? "bg-brand-blue text-white shadow-xs"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
           }`}
         >
@@ -516,7 +523,7 @@ export function DemoTestRunner({
               }`}
             >
               <span>{sub.name}</span>
-              <span className="rounded-full bg-black/15 px-1.5 py-0.2 font-mono text-2xs">
+              <span className="rounded-full bg-slate-200 px-1.5 py-0.2 font-mono text-2xs">
                 {sub.count}
               </span>
             </button>
@@ -532,7 +539,7 @@ export function DemoTestRunner({
             {/* Question Header Meta */}
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <span className="rounded-md bg-slate-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                <span className="rounded-md bg-brand-blue px-2 py-0.5 font-mono text-xs font-bold text-white">
                   Question {currentIndex + 1}
                 </span>
                 <span className="text-xs font-bold text-slate-700">
@@ -679,7 +686,7 @@ export function DemoTestRunner({
                 size="sm"
                 onClick={handleNext}
                 disabled={currentIndex === questions.length - 1}
-                className="rounded-full bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800"
+                className="rounded-full bg-brand-blue text-xs font-semibold text-white hover:bg-brand-blue-hover"
               >
                 Save &amp; Next
                 <ArrowRight className="size-3.5 ml-1" />

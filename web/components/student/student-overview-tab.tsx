@@ -281,7 +281,7 @@ export function StudentOverviewTab({
                     <Button
                       size="sm"
                       onClick={() => onOpenMockDetails(upcomingMock)}
-                      className="rounded-full bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800"
+                      className="rounded-full bg-brand-blue text-xs font-semibold text-white hover:bg-brand-blue-hover"
                     >
                       <span>Test Rules</span>
                       <ArrowRight className="ml-1 size-3" />
@@ -290,7 +290,7 @@ export function StudentOverviewTab({
                     <Button
                       size="sm"
                       onClick={() => onTabChange("mocks")}
-                      className="rounded-full bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800"
+                      className="rounded-full bg-brand-red text-xs font-semibold text-white hover:bg-brand-red-hover"
                     >
                       <span>Take Test</span>
                     </Button>

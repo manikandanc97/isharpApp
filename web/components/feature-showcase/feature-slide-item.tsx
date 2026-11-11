@@ -124,7 +124,7 @@ export function FeatureSlideItem({
               src={feature.image}
               alt={feature.imageAlt}
               fill
-              priority={index === 0}
+              loading={index === 0 ? "eager" : "lazy"}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 45vw, 400px"
               className={cn(
                 "object-cover transition-transform duration-700 ease-out",

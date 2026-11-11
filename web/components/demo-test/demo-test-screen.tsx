@@ -108,8 +108,8 @@ export function DemoTestScreen({
     loadQuestions(questionCount, subjectMode);
   };
 
-  const handleExitToLogin = () => {
-    router.push("/login");
+  const handleExitToHome = () => {
+    router.push("/");
   };
 
   // Question count options based on subject mode
@@ -164,7 +164,9 @@ export function DemoTestScreen({
           <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-8 py-3 shadow-xs">
             <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <BrandLogo priority className="h-8 sm:h-9 w-auto" />
+                <Link href="/" className="flex items-center transition hover:opacity-90">
+                  <BrandLogo priority className="h-8 sm:h-9 w-auto" />
+                </Link>
                 <span className="hidden sm:block h-5 w-px bg-slate-200" aria-hidden="true" />
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="border-rose-200 bg-rose-50 text-brand-red text-2xs font-bold uppercase tracking-wider">
@@ -178,11 +180,11 @@ export function DemoTestScreen({
 
               <div className="flex items-center gap-3">
                 <Link
-                  href="/login"
+                  href="/"
                   className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition"
                 >
                   <ArrowLeft className="size-3.5" />
-                  <span>Return to Login</span>
+                  <span>Return to Home</span>
                 </Link>
               </div>
             </div>
@@ -449,10 +451,10 @@ export function DemoTestScreen({
 
                   <Button
                     variant="ghost"
-                    onClick={handleExitToLogin}
+                    onClick={handleExitToHome}
                     className="w-full rounded-full text-xs font-semibold text-slate-500 hover:text-slate-900"
                   >
-                    Return to Login Portal
+                    Return to Home
                   </Button>
                 </div>
               </div>
@@ -467,7 +469,7 @@ export function DemoTestScreen({
           testPackage={testPackage}
           initialLanguage={languageMode}
           onSubmit={handleExamSubmit}
-          onExit={handleExitToLogin}
+          onExit={handleExitToHome}
         />
       )}
 
@@ -479,7 +481,7 @@ export function DemoTestScreen({
           answers={submittedAnswers}
           initialLanguage={languageMode}
           onRetake={handleRetake}
-          onClose={handleExitToLogin}
+          onClose={handleExitToHome}
         />
       )}
     </div>

@@ -14,25 +14,25 @@ import { PageContainer, Stack } from "@/components/layout/layout-primitives";
 
 export function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden border-t border-slate-800 bg-slate-950 text-white">
-      {/* Editorial Luxury Quote Bar */}
-      <div className="border-b border-slate-800 bg-slate-900/50">
-        <PageContainer className="flex flex-col items-center justify-between gap-4 py-5 text-center md:flex-row md:text-left">
+    <footer className="relative overflow-hidden border-t border-slate-200/90 bg-[#f4f6fb] text-slate-700">
+      {/* Editorial Quote Bar - Authoritative Brand Blue Banner */}
+      <div className="border-b border-blue-900/30 bg-gradient-to-r from-[#141b4e] via-brand-blue to-[#141b4e] text-white shadow-xs">
+        <PageContainer className="flex flex-col items-center justify-between gap-4 py-3.5 text-center md:flex-row md:text-left">
           <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-lg bg-amber-400/10 text-amber-300 border border-amber-400/20 shadow-2xs">
-              <Sparkles className="size-4.5" />
+            <span className="grid size-8.5 place-items-center rounded-xl bg-white/10 text-rose-300 border border-white/20 shadow-2xs">
+              <Sparkles className="size-4" />
             </span>
             <div>
               <p className="text-xs sm:text-sm font-semibold text-white">
                 &ldquo;Consistency beats intensity. When practice becomes reflex, rank becomes inevitable.&rdquo;
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs font-medium text-rose-200">
                 — I-Sharp Academic Directorate
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3.5 py-1 text-xs text-slate-300">
-            <ShieldCheck className="size-3.5 text-emerald-400" />
+          <div className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-semibold text-white shadow-2xs">
+            <ShieldCheck className="size-3.5 text-rose-300" />
             <span>NTA Calibrated Curriculum Standard</span>
           </div>
         </PageContainer>
@@ -45,76 +45,87 @@ export function SiteFooter() {
           {/* Brand Info */}
           <Stack gap="lg" className="lg:col-span-2">
             <Stack gap="sm">
-              <div className="w-fit rounded-xl bg-white p-2.5 shadow-sm">
+              <div className="w-fit">
                 <BrandLogo />
               </div>
-              <p className="max-w-sm text-xs leading-relaxed text-slate-400 sm:text-sm">
+              <p className="max-w-sm text-xs leading-relaxed text-slate-600 sm:text-sm">
                 Premier NEET, IIT-JEE &amp; MBA Entrance coaching centre in Coimbatore.
                 Empowering students with disciplined pedagogy, separate Tamil Medium foundation batches,
                 calibrated test series, and personalized one-on-one doubt clearance.
               </p>
             </Stack>
-            <Stack gap="sm" className="text-xs text-slate-300">
+            <Stack gap="sm" className="text-xs text-slate-600">
               <div className="flex items-start gap-2.5">
                 <Phone className="size-4 text-brand-red shrink-0 mt-0.5" />
                 <div className="flex flex-col">
-                  <span>Helpline: <a href="tel:+919894850370" className="hover:text-white font-medium">+91 98948 50370</a> / <a href="tel:+918148217151" className="hover:text-white font-medium">+91 81482 17151</a></span>
+                  <span>
+                    Helpline:{" "}
+                    <a href="tel:+919894850370" className="hover:text-brand-red font-semibold text-slate-800 transition">
+                      +91 98948 50370
+                    </a>{" "}
+                    /{" "}
+                    <a href="tel:+918148217151" className="hover:text-brand-red font-semibold text-slate-800 transition">
+                      +91 81482 17151
+                    </a>
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
-                <Mail className="size-4 text-blue-400 shrink-0" />
-                <a href="mailto:isharpacademy@gmail.com" className="hover:text-white">isharpacademy@gmail.com</a>
+                <Mail className="size-4 text-brand-blue shrink-0" />
+                <a href="mailto:isharpacademy@gmail.com" className="hover:text-brand-blue font-semibold text-slate-800 transition">
+                  isharpacademy@gmail.com
+                </a>
               </div>
               <div className="flex items-start gap-2.5">
                 <MapPin className="size-4 text-brand-red shrink-0 mt-0.5" />
-                <span className="leading-snug">
+                <span className="leading-snug text-slate-600">
                   2nd Floor, AK Complex, No.207, 6th Street, Cross Cut Rd, Gandhipuram, Coimbatore – 641012, Tamil Nadu
                 </span>
               </div>
             </Stack>
 
-            {/* Enterprise Security Badges */}
-            <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-400">
-                <Lock className="size-3 text-emerald-400" /> 256-Bit TLS
+            {/* Security Badges */}
+            <div className="flex flex-wrap items-center gap-2 border-t border-slate-200/90 pt-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-semibold text-brand-blue shadow-2xs">
+                <Lock className="size-3 text-brand-blue" /> 256-Bit TLS
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-400">
-                <CheckCircle2 className="size-3 text-blue-400" /> ISO 9001:2015
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-semibold text-brand-blue shadow-2xs">
+                <CheckCircle2 className="size-3 text-brand-blue" /> ISO 9001:2015
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-400">
-                <ShieldCheck className="size-3 text-amber-400" /> NTA Aligned
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-white px-3 py-1 text-xs font-semibold text-brand-red shadow-2xs">
+                <ShieldCheck className="size-3 text-brand-red" /> NTA Aligned
               </span>
             </div>
           </Stack>
 
           {/* Column 1: Academic Programs */}
           <Stack gap="sm">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-white">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Academic Curriculums
             </h4>
-            <ul className="space-y-2.5 text-xs text-slate-400">
+            <ul className="space-y-2.5 text-xs text-slate-600">
               <li>
-                <a href="#courses" className="hover:text-white transition">
+                <a href="#courses" className="hover:text-brand-red font-medium transition">
                   NEET Classroom &amp; Distance Prep
                 </a>
               </li>
               <li>
-                <a href="#courses" className="hover:text-white transition">
+                <a href="#courses" className="hover:text-brand-red font-medium transition">
                   NEET Tamil Medium Foundation
                 </a>
               </li>
               <li>
-                <a href="#courses" className="hover:text-white transition">
+                <a href="#courses" className="hover:text-brand-red font-medium transition">
                   IIT-JEE Main &amp; Advanced
                 </a>
               </li>
               <li>
-                <a href="#courses" className="hover:text-white transition">
+                <a href="#courses" className="hover:text-brand-red font-medium transition">
                   NEET All-India Test Series (AITS)
                 </a>
               </li>
               <li>
-                <a href="#courses" className="hover:text-white transition">
+                <a href="#courses" className="hover:text-brand-red font-medium transition">
                   TANCET, MAT &amp; CAT (MBA)
                 </a>
               </li>
@@ -123,32 +134,32 @@ export function SiteFooter() {
 
           {/* Column 2: Preparation Pillars */}
           <Stack gap="sm">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-white">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Learning System
             </h4>
-            <ul className="space-y-2.5 text-xs text-slate-400">
+            <ul className="space-y-2.5 text-xs text-slate-600">
               <li>
-                <a href="#experience" className="hover:text-white transition">
+                <a href="#experience" className="hover:text-brand-blue font-medium transition">
                   Daily Practice (DPP)
                 </a>
               </li>
               <li>
-                <a href="#experience" className="hover:text-white transition">
+                <a href="#experience" className="hover:text-brand-blue font-medium transition">
                   NTA Exam Simulation
                 </a>
               </li>
               <li>
-                <a href="#experience" className="hover:text-white transition">
+                <a href="#experience" className="hover:text-brand-blue font-medium transition">
                   Bilingual Audio Lectures
                 </a>
               </li>
               <li>
-                <a href="#journey" className="hover:text-white transition">
+                <a href="#journey" className="hover:text-brand-blue font-medium transition">
                   Diagnostic Rank Telemetry
                 </a>
               </li>
               <li>
-                <a href="#achievements" className="hover:text-white transition">
+                <a href="#achievements" className="hover:text-brand-blue font-medium transition">
                   Verified Selections
                 </a>
               </li>
@@ -157,32 +168,32 @@ export function SiteFooter() {
 
           {/* Column 3: Portals & Compliance */}
           <Stack gap="sm">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-white">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Portals &amp; Access
             </h4>
-            <ul className="space-y-2.5 text-xs text-slate-400">
+            <ul className="space-y-2.5 text-xs text-slate-600">
               <li>
-                <Link href="/login" className="hover:text-white transition">
+                <Link href="/login" className="hover:text-brand-red font-medium transition">
                   Student Portal Login
                 </Link>
               </li>
               <li>
-                <Link href="/register" className="hover:text-white transition">
+                <Link href="/register" className="hover:text-brand-red font-medium transition">
                   Create Student Account
                 </Link>
               </li>
               <li>
-                <Link href="/administration" className="hover:text-white transition">
+                <Link href="/administration" className="hover:text-brand-red font-medium transition">
                   Administrator SSO
                 </Link>
               </li>
               <li>
-                <a href="#courses" className="hover:text-white transition">
+                <a href="#courses" className="hover:text-brand-red font-medium transition">
                   Academic Calendar 2026
                 </a>
               </li>
               <li>
-                <a href="tel:+919894850370" className="hover:text-white transition">
+                <a href="tel:+919894850370" className="hover:text-brand-red font-medium transition">
                   Direct Student Grievance: +91 98948 50370
                 </a>
               </li>
@@ -190,12 +201,12 @@ export function SiteFooter() {
           </Stack>
         </div>
 
-        {/* Enterprise Bottom Legal & Status Strip */}
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-6 text-xs text-slate-500 sm:flex-row">
+        {/* Bottom Legal & Status Strip */}
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-200/90 pt-6 text-xs text-slate-500 sm:flex-row">
           <div className="flex flex-wrap items-center gap-3">
             <p>© 2026 I-Sharp Academy. All rights reserved.</p>
             <span>·</span>
-            <span className="text-slate-400">Tamil Nadu, India</span>
+            <span className="text-slate-600 font-medium">Tamil Nadu, India</span>
           </div>
 
           <div className="flex items-center gap-4">

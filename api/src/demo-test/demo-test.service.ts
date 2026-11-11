@@ -56,11 +56,18 @@ function shuffleArray<T>(array: T[]): T[] {
 export class DemoTestService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generateDemoTest(
-    targetCount = 9,
-    subject?: string,
-  ): Promise<DemoTestPayload> {
-    const rawQuestions = await this.prisma.question.findMany({
+  private questionsCache: {
+    data: Awaited<ReturnType<DemoTestService['fetchFromDatabase']>>;
+    expiresAt: number;
+  } | null = null;
+  private readonly CACHE_TTL_MS = 60_000;
+
+  invalidateCache() {
+    this.questionsCache = null;
+  }
+
+  private async fetchFromDatabase() {
+    return this.prisma.question.findMany({
       where: { isActive: true },
       include: {
         options: { orderBy: { position: 'asc' } },
@@ -72,6 +79,23 @@ export class DemoTestService {
         },
       },
     });
+  }
+
+  private async fetchActiveQuestions() {
+    const now = Date.now();
+    if (this.questionsCache && this.questionsCache.expiresAt > now) {
+      return this.questionsCache.data;
+    }
+    const data = await this.fetchFromDatabase();
+    this.questionsCache = { data, expiresAt: now + this.CACHE_TTL_MS };
+    return data;
+  }
+
+  async generateDemoTest(
+    targetCount = 9,
+    subject?: string,
+  ): Promise<DemoTestPayload> {
+    const rawQuestions = await this.fetchActiveQuestions();
 
     if (!rawQuestions.length) {
       return {

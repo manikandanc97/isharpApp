@@ -72,7 +72,7 @@ export function AdminSidebar({
                 }}
                 className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-3 text-left transition-all ${
                   isActive
-                    ? "bg-slate-900 text-white shadow-xs"
+                    ? "bg-brand-blue text-white shadow-xs"
                     : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-950"
                 }`}
               >

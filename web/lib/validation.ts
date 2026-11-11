@@ -1,4 +1,5 @@
-export const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Basic structural check; Supabase validates deliverability authoritatively.
+export const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const phonePattern = /^\+?[0-9]{8,15}$/;
 
 export function normalizePhone(value: string): string {

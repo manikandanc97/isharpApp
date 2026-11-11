@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import {
   ArrowRight,
@@ -54,12 +52,12 @@ const portalLinks: readonly PortalLink[] = [
   {
     title: "Administration",
     badge: "Admin",
-    badgeColor: "bg-slate-100 text-slate-700 border-slate-200",
+    badgeColor: "bg-blue-50 text-brand-blue border-blue-200/80",
     description: "Curriculum tracking & question bank",
     href: "/administration",
     icon: ShieldCheck,
-    solidBg: "bg-slate-900",
-    accentBorder: "hover:border-slate-400 hover:shadow-slate-500/5",
+    solidBg: "bg-brand-navy",
+    accentBorder: "hover:border-brand-blue/50 hover:shadow-blue-500/5",
   },
 ];
 

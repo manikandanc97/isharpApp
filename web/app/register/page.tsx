@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
@@ -42,6 +42,14 @@ export default function RegisterPage() {
   const [authError, setAuthError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   function validate() {
     const nextErrors = validateRegistration({
@@ -72,7 +80,7 @@ export default function RegisterPage() {
       });
 
       if (error) {
-        setAuthError(getSignupErrorMessage(error));
+        if (isMountedRef.current) setAuthError(getSignupErrorMessage(error));
         return;
       }
 
@@ -80,9 +88,7 @@ export default function RegisterPage() {
         Array.isArray(data.user?.identities) &&
         data.user.identities.length === 0
       ) {
-        setAuthError(
-          "This email already has an account. Sign in instead, or use Forgot password.",
-        );
+        if (isMountedRef.current) setAuthError("existing-account");
         return;
       }
 
@@ -95,11 +101,12 @@ export default function RegisterPage() {
         return;
       }
 
-      setConfirmationEmail(normalizedEmail);
+      if (isMountedRef.current) setConfirmationEmail(normalizedEmail);
     } catch {
-      setAuthError("Registration failed. Please check your network connection.");
+      if (isMountedRef.current)
+        setAuthError("Registration failed. Please check your network connection.");
     } finally {
-      setIsSubmitting(false);
+      if (isMountedRef.current) setIsSubmitting(false);
     }
   }
 
@@ -107,18 +114,25 @@ export default function RegisterPage() {
     "h-11 w-full rounded-2xl border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-900 shadow-2xs outline-hidden placeholder:text-slate-400 focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/15 aria-invalid:border-rose-500 aria-invalid:ring-4 aria-invalid:ring-rose-500/15";
 
   return (
-    <div className="relative min-h-screen bg-linear-to-b from-slate-50 via-white to-slate-100/60 py-6 sm:py-10">
-      <PageContainer className="flex items-center justify-between">
-        <BrandLogo priority />
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 transition hover:text-brand-blue"
-        >
-          <ArrowLeft className="size-4" /> Back to Home
-        </Link>
-      </PageContainer>
+    <div className="relative min-h-screen bg-linear-to-b from-slate-50 via-white to-slate-100/60">
+      {/* Minimal sticky navbar — consistent with SiteHeader */}
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-xs">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-brand-red"
+          aria-hidden="true"
+        />
+        <PageContainer className="flex h-(--layout-site-header-height) items-center justify-between gap-4">
+          <BrandLogo priority />
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 transition-colors hover:text-brand-blue"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" /> Back to Home
+          </Link>
+        </PageContainer>
+      </header>
 
-      <PageContainer className="pt-(--space-content)">
+      <PageContainer className="py-(--space-content)">
         <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
           <RegisterBenefitsSidebar />
 
@@ -151,7 +165,10 @@ export default function RegisterPage() {
                       </Link>
                     </p>
                   </Stack>
-                  <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-brand-blue">
+                  <div
+                    className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-brand-blue"
+                    aria-hidden="true"
+                  >
                     <UserCheck className="size-5" />
                   </div>
                 </div>
@@ -183,13 +200,16 @@ export default function RegisterPage() {
                     <div className="relative">
                       <input
                         id="email"
+                        name="email"
                         type="email"
-                        autoComplete="email"
+                        autoComplete="username"
                         inputMode="email"
                         placeholder="student@example.com"
                         value={email}
                         disabled={isSubmitting}
+                        required
                         aria-invalid={Boolean(errors.email)}
+                        aria-describedby={errors.email ? "email-error" : undefined}
                         className={cn(inputStyle, "pl-10")}
                         onChange={(event) => {
                           setEmail(event.target.value);
@@ -197,9 +217,9 @@ export default function RegisterPage() {
                           setAuthError("");
                         }}
                       />
-                      <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                      <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
                     </div>
-                    {errors.email && <FieldError message={errors.email} />}
+                    {errors.email && <FieldError id="email-error" message={errors.email} />}
                   </div>
 
                   <div className="space-y-1.5">
@@ -208,19 +228,22 @@ export default function RegisterPage() {
                     </label>
                     <PasswordInput
                       id="password"
+                      name="password"
                       autoComplete="new-password"
                       placeholder="Minimum 8 characters"
                       value={password}
                       disabled={isSubmitting}
+                      required
                       aria-invalid={Boolean(errors.password)}
-                      className={cn(inputStyle, "pl-10")}
+                      aria-describedby={errors.password ? "password-error" : undefined}
+                      className={inputStyle}
                       onChange={(event) => {
                         setPassword(event.target.value);
                         setErrors((current) => ({ ...current, password: undefined }));
                         setAuthError("");
                       }}
                     />
-                    {errors.password && <FieldError message={errors.password} />}
+                    {errors.password && <FieldError id="password-error" message={errors.password} />}
                   </div>
 
                   <div className="space-y-1.5">
@@ -229,12 +252,16 @@ export default function RegisterPage() {
                     </label>
                     <PasswordInput
                       id="confirm-password"
+                      name="confirm-password"
                       autoComplete="new-password"
                       placeholder="Re-enter your password"
                       value={confirmPassword}
                       disabled={isSubmitting}
+                      required
+                      hasLeftIcon={false}
                       aria-invalid={Boolean(errors.confirmPassword)}
-                      className={cn(inputStyle, "pl-10")}
+                      aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
+                      className={inputStyle}
                       onChange={(event) => {
                         setConfirmPassword(event.target.value);
                         setErrors((current) => ({
@@ -245,14 +272,28 @@ export default function RegisterPage() {
                       }}
                     />
                     {errors.confirmPassword && (
-                      <FieldError message={errors.confirmPassword} />
+                      <FieldError id="confirm-password-error" message={errors.confirmPassword} />
                     )}
                   </div>
 
                   {authError && (
                     <div role="alert" className="flex gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-700">
-                      <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />
-                      <span>{authError}</span>
+                      <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-600" aria-hidden="true" />
+                      {authError === "existing-account" ? (
+                        <span>
+                          This email already has an account.{" "}
+                          <Link href="/login" className="font-semibold underline hover:no-underline">
+                            Sign in here
+                          </Link>
+                          , or use{" "}
+                          <Link href="/login?forgot=1" className="font-semibold underline hover:no-underline">
+                            Forgot password
+                          </Link>
+                          .
+                        </span>
+                      ) : (
+                        <span>{authError}</span>
+                      )}
                     </div>
                   )}
 
@@ -262,16 +303,16 @@ export default function RegisterPage() {
                     className="h-11 w-full rounded-full bg-brand-red text-sm font-semibold text-white shadow-primary hover:bg-brand-red-hover"
                   >
                     {isSubmitting ? (
-                      <LoaderCircle className="mr-2 size-4 animate-spin" />
+                      <LoaderCircle className="mr-2 size-4 animate-spin" aria-hidden="true" />
                     ) : (
-                      <ShieldCheck className="mr-2 size-4" />
+                      <ShieldCheck className="mr-2 size-4" aria-hidden="true" />
                     )}
                     {isSubmitting ? "Creating account…" : "Create my student account"}
                   </Button>
                 </form>
 
                 <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500">
-                  <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
                   Your password is handled by secure authentication. I-Sharp
                   administrators cannot view it.
                 </div>
@@ -284,10 +325,10 @@ export default function RegisterPage() {
   );
 }
 
-function FieldError({ message }: { message: string }) {
+function FieldError({ id, message }: { id: string; message: string }) {
   return (
-    <p role="alert" className="flex items-center gap-1 text-xs font-semibold text-rose-600">
-      <AlertCircle className="size-3.5 shrink-0" />
+    <p id={id} role="status" aria-live="polite" className="flex items-center gap-1 text-xs font-semibold text-rose-600">
+      <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
       <span>{message}</span>
     </p>
   );

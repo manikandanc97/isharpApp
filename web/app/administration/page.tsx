@@ -39,7 +39,7 @@ const adminPillars = [
 
 export default function AdministrationPage() {
   return (
-    <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-brand-navy selection:text-white antialiased lg:h-svh lg:overflow-hidden">
+    <div className="flex min-h-svh flex-col bg-slate-50/70 font-sans text-slate-900 selection:bg-brand-navy selection:text-white antialiased">
       {/* 01. NAVIGATION HEADER (h-16, max-w-6xl aligned across the application) */}
       <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-xs">
         <PageContainer className="flex h-(--layout-site-header-height) items-center justify-between gap-4">
@@ -79,8 +79,8 @@ export default function AdministrationPage() {
         </PageContainer>
       </header>
 
-      {/* 02. MAIN CONTENT AREA - Perfectly fitted for laptop viewports */}
-      <main className="relative flex min-h-0 flex-1 items-center overflow-y-auto py-(--space-content) lg:overflow-hidden lg:py-0">
+      {/* 02. MAIN CONTENT AREA */}
+      <main className="relative flex min-h-0 flex-1 items-center py-(--space-content) sm:py-8 lg:py-10">
         <PageContainer className="relative grid grid-cols-[minmax(0,1fr)] items-center gap-(--space-layout) lg:grid-cols-12 lg:gap-10 xl:gap-14">
           {/* Left Column: Academic Brand Presentation (Compact for laptop screen) */}
           <section

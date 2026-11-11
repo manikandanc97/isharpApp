@@ -29,5 +29,6 @@ export function getSignupErrorMessage(error: AuthErrorLike) {
     return "Use a real, deliverable email address. Any valid email can create an account; only an exact I-Sharp roster match receives free access.";
   }
 
-  return error.message;
+  // Don't expose raw server error messages to users.
+  return "Something went wrong. Please try again or contact I-Sharp support.";
 }

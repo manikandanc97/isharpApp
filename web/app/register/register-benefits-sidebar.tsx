@@ -36,13 +36,13 @@ export function RegisterBenefitsSidebar() {
             key={step.title}
             className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white/80 p-3.5 shadow-2xs sm:p-4"
           >
-            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-blue text-xs font-semibold text-white shadow-2xs">
               {index + 1}
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">
+              <p className="text-sm font-semibold text-slate-900">
                 {step.title}
-              </h2>
+              </p>
               <p className="mt-0.5 text-xs leading-5 text-slate-500">
                 {step.description}
               </p>

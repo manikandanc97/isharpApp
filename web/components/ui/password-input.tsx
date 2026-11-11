@@ -25,8 +25,9 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           disabled={disabled}
           className={cn(
             "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-blue focus:ring-3 focus:ring-brand-blue/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60",
-            hasLeftIcon ? "pl-9 pr-10" : "pr-10",
             className,
+            // Icon padding must come last so it always wins over any px-* in className.
+            hasLeftIcon ? "pl-9 pr-10" : "pr-10",
           )}
         />
         {hasLeftIcon && (

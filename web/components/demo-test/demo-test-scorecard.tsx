@@ -131,9 +131,9 @@ export function DemoTestScorecard({
             </Button>
             <Button
               onClick={onClose}
-              className="flex-1 sm:flex-initial rounded-full bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800"
+              className="flex-1 sm:flex-initial rounded-full bg-brand-blue text-xs font-semibold text-white hover:bg-brand-blue-hover"
             >
-              Back to Login
+              Back to Home
             </Button>
           </div>
         </div>
@@ -392,7 +392,7 @@ export function DemoTestScorecard({
               onClick={() => setFilter("all")}
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                 filter === "all"
-                  ? "bg-slate-900 text-white shadow-xs font-bold"
+                  ? "bg-brand-blue text-white shadow-xs font-bold"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >

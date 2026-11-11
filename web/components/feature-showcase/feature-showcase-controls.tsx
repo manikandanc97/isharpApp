@@ -24,7 +24,7 @@ export function FeatureShowcaseControls({
         </span>
         <span>/</span>
         <span className="font-mono">0{features.length}</span>
-        <span className="mx-2 hidden h-3 w-px bg-black/15 sm:inline-block" />
+        <span className="mx-2 hidden h-3 w-px bg-slate-300 sm:inline-block" />
         <span className="hidden text-xs sm:inline-block font-medium">
           {activeFeature.category}
         </span>
@@ -47,7 +47,7 @@ export function FeatureShowcaseControls({
                   ? activeFeature.accent === "red"
                     ? "w-6 bg-brand-red"
                     : "w-6 bg-brand-blue"
-                  : "w-2 bg-black/15 group-hover:bg-black/30",
+                  : "w-2 bg-slate-200 group-hover:bg-slate-300",
               )}
             />
           </button>

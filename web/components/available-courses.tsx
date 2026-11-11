@@ -1,5 +1,3 @@
-"use client";
-
 import { GraduationCap, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CourseCard } from "@/components/course-card";
@@ -17,7 +15,7 @@ export function AvailableCourses() {
     <ContentSection
       id="courses"
       aria-labelledby="available-courses-title"
-      className="relative overflow-hidden border-b border-slate-200/80 bg-white"
+      className="relative overflow-hidden border-b border-slate-200/90 bg-white"
     >
       <PageContainer className="relative">
         {/* Header Bar */}

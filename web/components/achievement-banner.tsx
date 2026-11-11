@@ -21,7 +21,7 @@ type AchievementItem = {
   label: string;
   detail: string;
   icon: LucideIcon;
-  accent: "amber" | "ruby" | "sapphire" | "emerald";
+  accent: "red" | "blue";
   tag: string;
   trend: string;
 };
@@ -32,7 +32,7 @@ const achievements: readonly AchievementItem[] = [
     label: "Top Rank Selections",
     detail: "Admissions into premier Govt. Medical & Engineering colleges",
     icon: Award,
-    accent: "amber",
+    accent: "red",
     tag: "Verified",
     trend: "+42% YoY",
   },
@@ -41,7 +41,7 @@ const achievements: readonly AchievementItem[] = [
     label: "Active Daily Aspirants",
     detail: "Consistent daily momentum with DPP drills & full test mocks",
     icon: Users,
-    accent: "ruby",
+    accent: "blue",
     tag: "Batch 2026",
     trend: "94% Habit Retention",
   },
@@ -50,7 +50,7 @@ const achievements: readonly AchievementItem[] = [
     label: "Colleges Represented",
     detail: "Alumni network spanning AIIMS, MMC, Stanley, JIPMER & NITs",
     icon: Building2,
-    accent: "sapphire",
+    accent: "blue",
     tag: "Pan-India",
     trend: "12 Premier Universities",
   },
@@ -60,7 +60,7 @@ const achievements: readonly AchievementItem[] = [
     detail:
       "Expanded learning footprint across Tamil Nadu and regional centers",
     icon: Globe2,
-    accent: "emerald",
+    accent: "red",
     tag: "Footprint",
     trend: "100% Bilingual Access",
   },
@@ -86,16 +86,26 @@ export function AchievementBanner() {
     <ContentSection
       id="achievements"
       aria-labelledby="achievement-banner-title"
-      className="relative overflow-hidden border-b border-slate-800 bg-slate-950 text-white"
+      className="relative overflow-hidden border-y border-blue-900/40 bg-gradient-to-br from-[#151d5c] via-[#1a2574] to-[#111749] text-white"
     >
+      {/* Brand Ambient Glows - Royal Blue and Crimson Red only */}
+      <div
+        className="pointer-events-none absolute -top-32 -left-32 size-96 rounded-full bg-brand-blue/30 blur-3xl"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -bottom-32 -right-32 size-96 rounded-full bg-brand-red/20 blur-3xl"
+        aria-hidden="true"
+      />
+
       <PageContainer className="relative">
         <div className="grid gap-10 lg:grid-cols-12 lg:gap-12 items-center">
           {/* Left Column: Prestigious Statement & Verification */}
           <Stack gap="lg" className="lg:col-span-5">
             <Stack gap="sm">
-              {/* Enterprise Obsidian Eyebrow */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-wide uppercase text-amber-300">
-                <Trophy className="size-3 text-amber-400" aria-hidden="true" />
+              {/* Refined Eyebrow */}
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-rose-400/40 bg-rose-500/15 px-3.5 py-1 text-xs font-semibold tracking-wide uppercase text-rose-200 shadow-2xs">
+                <Trophy className="size-3.5 text-rose-300" aria-hidden="true" />
                 <span>Audited Academic Track Record</span>
               </div>
 
@@ -105,12 +115,12 @@ export function AchievementBanner() {
                 className="type-page-title text-white"
               >
                 Learn with purpose.{" "}
-                <span className="block font-semibold text-slate-300">
+                <span className="block font-semibold text-rose-300">
                   Achieve with absolute confidence.
                 </span>
               </h2>
 
-              <p className="text-xs leading-relaxed text-slate-400 sm:text-sm">
+              <p className="text-xs leading-relaxed text-blue-100/80 sm:text-sm">
                 Top percentiles aren’t born from luck. They are engineered
                 through disciplined daily repetition, bilingual conceptual
                 clarity, and relentless exam-condition simulation.
@@ -118,54 +128,69 @@ export function AchievementBanner() {
             </Stack>
 
             {/* Trust Pillars */}
-            <div className="space-y-3.5 border-t border-slate-800 pt-5">
-              {trustPillars.map((pillar) => (
-                <div key={pillar.title} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
-                    <CheckCircle2 className="size-3.5" aria-hidden="true" />
-                  </span>
-                  <div className="grid gap-0.5">
-                    <h3 className="text-xs sm:text-sm font-semibold text-white">
-                      {pillar.title}
-                    </h3>
-                    <p className="text-xs leading-relaxed text-slate-400">
-                      {pillar.desc}
-                    </p>
+            <div className="space-y-3.5 border-t border-white/15 pt-5">
+              {trustPillars.map((pillar, idx) => {
+                const isRed = idx % 2 === 0;
+                return (
+                  <div key={pillar.title} className="flex items-start gap-3">
+                    <span
+                      className={cn(
+                        "mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full border shadow-2xs",
+                        isRed
+                          ? "border-rose-400/40 bg-rose-500/20 text-rose-300"
+                          : "border-blue-300/40 bg-blue-400/20 text-blue-200"
+                      )}
+                    >
+                      <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                    </span>
+                    <div className="grid gap-0.5">
+                      <h3 className="text-xs sm:text-sm font-semibold text-white">
+                        {pillar.title}
+                      </h3>
+                      <p className="text-xs leading-relaxed text-blue-100/75">
+                        {pillar.desc}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Stack>
 
-          {/* Right Column: 2x2 Enterprise Metric Cards */}
+          {/* Right Column: 2x2 Metric Cards (Only Logo Red & Blue) */}
           <div className="lg:col-span-7">
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {achievements.map((item) => {
                 const Icon = item.icon;
-                const isAmber = item.accent === "amber";
-                const isRuby = item.accent === "ruby";
-                const isSapphire = item.accent === "sapphire";
+                const isRed = item.accent === "red";
 
                 return (
                   <div
                     key={item.label}
-                    className="relative flex flex-col justify-between gap-5 rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-xs transition duration-200 hover:border-slate-700 hover:bg-slate-900"
+                    className={cn(
+                      "group relative flex flex-col justify-between gap-5 rounded-2xl border p-5 shadow-lg backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5",
+                      isRed
+                        ? "border-white/15 bg-white/[0.07] hover:border-rose-400/50 hover:bg-white/[0.12]"
+                        : "border-white/15 bg-white/[0.07] hover:border-blue-300/50 hover:bg-white/[0.12]"
+                    )}
                   >
+                    {/* Top highlight bar */}
+                    <div
+                      className={cn(
+                        "pointer-events-none absolute top-0 left-6 right-6 h-0.5 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100",
+                        isRed ? "bg-brand-red" : "bg-blue-300"
+                      )}
+                      aria-hidden="true"
+                    />
+
                     {/* Top Row: Icon & Tag */}
                     <div className="flex items-center justify-between">
                       <div
                         className={cn(
-                          "flex size-10 items-center justify-center rounded-lg border",
-                          isAmber &&
-                            "border-amber-400/30 bg-amber-400/10 text-amber-400",
-                          isRuby &&
-                            "border-rose-500/30 bg-rose-500/10 text-rose-400",
-                          isSapphire &&
-                            "border-blue-400/30 bg-blue-400/10 text-blue-400",
-                          !isAmber &&
-                            !isRuby &&
-                            !isSapphire &&
-                            "border-emerald-400/30 bg-emerald-400/10 text-emerald-400",
+                          "flex size-10 items-center justify-center rounded-xl border shadow-2xs transition-colors",
+                          isRed
+                            ? "border-rose-400/40 bg-rose-500/20 text-rose-300 group-hover:bg-brand-red group-hover:text-white"
+                            : "border-blue-300/40 bg-blue-400/20 text-blue-200 group-hover:bg-brand-blue group-hover:text-white"
                         )}
                       >
                         <Icon
@@ -179,16 +204,9 @@ export function AchievementBanner() {
                         <span
                           className={cn(
                             "rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide",
-                            isAmber &&
-                              "border-amber-400/30 bg-amber-400/10 text-amber-300",
-                            isRuby &&
-                              "border-rose-500/30 bg-rose-500/10 text-rose-300",
-                            isSapphire &&
-                              "border-blue-400/30 bg-blue-400/10 text-blue-300",
-                            !isAmber &&
-                              !isRuby &&
-                              !isSapphire &&
-                              "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+                            isRed
+                              ? "border-rose-400/40 bg-rose-500/20 text-rose-200"
+                              : "border-blue-300/40 bg-blue-400/20 text-blue-200"
                           )}
                         >
                           {item.tag}
@@ -201,20 +219,19 @@ export function AchievementBanner() {
                       <div className="flex items-baseline justify-between">
                         <dd
                           className={cn(
-                            "type-metric font-bold tracking-tight",
-                            isAmber && "text-amber-300",
-                            isRuby && "text-rose-300",
-                            isSapphire && "text-blue-300",
-                            !isAmber &&
-                              !isRuby &&
-                              !isSapphire &&
-                              "text-emerald-300",
+                            "type-metric font-extrabold tracking-tight",
+                            isRed ? "text-rose-300" : "text-white"
                           )}
                         >
                           {item.value}
                         </dd>
-                        <span className="flex items-center gap-1 text-xs font-medium text-slate-400">
-                          <TrendingUp className="size-3.5 text-emerald-400" />
+                        <span
+                          className={cn(
+                            "flex items-center gap-1 text-xs font-semibold",
+                            isRed ? "text-rose-300" : "text-blue-200"
+                          )}
+                        >
+                          <TrendingUp className="size-3.5" />
                           {item.trend}
                         </span>
                       </div>
@@ -223,7 +240,7 @@ export function AchievementBanner() {
                         <dt className="text-sm font-semibold tracking-tight text-white">
                           {item.label}
                         </dt>
-                        <p className="text-xs leading-relaxed text-slate-400">
+                        <p className="text-xs leading-relaxed text-blue-100/70">
                           {item.detail}
                         </p>
                       </div>

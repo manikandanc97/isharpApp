@@ -31,21 +31,25 @@ export default function Home() {
 
       <PageContent className="flex flex-col">
         {/* 02. SECTION 1: ARCHITECTURAL ENTERPRISE HERO (Optimized for 100% Laptop Viewport Fit) */}
-        <section className="relative flex min-h-[calc(100svh-var(--layout-site-header-height))] flex-col justify-center overflow-hidden border-b border-slate-200 bg-slate-50 py-(--space-layout) lg:py-0">
+        <section className="relative flex min-h-[calc(100svh-var(--layout-site-header-height))] flex-col justify-center overflow-hidden border-b border-slate-200/90 bg-gradient-to-b from-blue-50/30 via-slate-50/60 to-white py-(--space-layout) lg:py-0">
+          {/* Subtle Logo Brand Glows */}
+          <div className="pointer-events-none absolute -top-32 right-0 size-96 rounded-full bg-brand-red/5 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute bottom-0 -left-32 size-96 rounded-full bg-brand-blue/5 blur-3xl" aria-hidden="true" />
+
           <PageContainer className="relative grid grid-cols-[minmax(0,1fr)] items-center gap-(--space-layout) lg:grid-cols-12 lg:gap-14">
             {/* Left Column: Authoritative Academic Value Proposition */}
             <Stack gap="lg" className="lg:col-span-7">
-              {/* Luxury Refined Eyebrow Capsule with Shadcn Badge */}
+              {/* Luxury Refined Eyebrow Capsule */}
               <div className="flex items-center">
-                <Badge
-                  variant="outline"
-                  className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-2xl border-rose-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-800 shadow-xs sm:rounded-full"
-                >
-                  <span className="flex size-2 rounded-full bg-brand-red animate-pulse shadow-sm shadow-brand-red/50" />
-                  <span className="tracking-wide">Premier Bilingual NEET &amp; JEE Platform</span>
+                <div className="inline-flex items-center gap-2.5 rounded-full border border-rose-200/90 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs">
+                  <span className="relative flex size-2 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-red opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-brand-red" />
+                  </span>
+                  <span className="tracking-wide text-slate-800">Premier Bilingual NEET &amp; JEE Platform</span>
                   <span className="h-3.5 w-px bg-slate-200" aria-hidden="true" />
-                  <span className="text-brand-red font-semibold">Batch 2026</span>
-                </Badge>
+                  <span className="text-brand-red font-bold">Batch 2026</span>
+                </div>
               </div>
 
               {/* Authoritative Headline */}

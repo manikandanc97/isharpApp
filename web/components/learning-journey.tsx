@@ -3,13 +3,9 @@ import {
   BarChart3,
   BookOpen,
   BrainCircuit,
-  Check,
   CheckCircle2,
-  Clock,
-  Flame,
-  Target,
+  Sparkles,
   Trophy,
-  Volume2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -17,283 +13,247 @@ import { cn } from "@/lib/utils";
 import {
   ContentSection,
   PageContainer,
-  Stack,
 } from "@/components/layout/layout-primitives";
 
 type JourneyStep = {
-  number: string;
-  verb: string;
+  step: string;
+  stage: string;
   title: string;
   description: string;
-  note: string;
+  phase: string;
   icon: LucideIcon;
-  accent: "blue" | "red";
-  metrics: string;
+  featureTitle: string;
+  featureBadge: string;
+  highlights: readonly string[];
+  theme: {
+    badge: string;
+    iconBg: string;
+    iconColor: string;
+    checkColor: string;
+    hoverBorder: string;
+    topStrip: string;
+  };
 };
 
-const journey = [
+const steps: readonly JourneyStep[] = [
   {
-    number: "01",
-    verb: "Learn",
+    step: "01",
+    stage: "Learn",
     title: "Deep Concept Clarity",
     description:
-      "Master foundational principles through bilingual lectures (Tamil + English) and curated formula summaries.",
-    note: "Concept-First Foundation",
+      "Master core principles through bilingual video lessons and curated formula cheat sheets.",
+    phase: "Concept Foundation",
     icon: BookOpen,
-    accent: "red",
-    metrics: "Bilingual Lecture Audio",
+    featureTitle: "Bilingual Lectures",
+    featureBadge: "தமிழ் + English",
+    highlights: ["Formula Cheat Sheets", "Chapter Concept Checks"],
+    theme: {
+      badge: "border-rose-200 bg-rose-50 text-brand-red",
+      iconBg: "bg-rose-50 text-brand-red ring-1 ring-rose-200/60",
+      iconColor: "text-brand-red",
+      checkColor: "text-brand-red",
+      hoverBorder: "hover:border-rose-300",
+      topStrip: "bg-brand-red",
+    },
   },
   {
-    number: "02",
-    verb: "Practice",
+    step: "02",
+    stage: "Practice",
     title: "Daily Reflex Conditioning",
     description:
-      "15 targeted DPPs daily to turn problem-solving from conscious cognitive effort into rapid exam reflex.",
-    note: "Consistent Daily Drills",
+      "Transform problem solving into second-nature reflex with 15 targeted daily practice problems.",
+    phase: "Daily Practice Drills",
     icon: BrainCircuit,
-    accent: "red",
-    metrics: "15 DPPs Daily",
+    featureTitle: "Daily DPP Drills",
+    featureBadge: "15 Qs / Day",
+    highlights: ["Timed Speed Reflex", "Habit Streak Tracking"],
+    theme: {
+      badge: "border-blue-200 bg-blue-50 text-brand-blue",
+      iconBg: "bg-blue-50 text-brand-blue ring-1 ring-blue-200/60",
+      iconColor: "text-brand-blue",
+      checkColor: "text-brand-blue",
+      hoverBorder: "hover:border-blue-300",
+      topStrip: "bg-brand-blue",
+    },
   },
   {
-    number: "03",
-    verb: "Analyse",
+    step: "03",
+    stage: "Analyse",
     title: "Precision Telemetry",
     description:
-      "Instant breakdown of question solve times, accuracy percentiles, and sub-topic negative-mark gap radar.",
-    note: "Targeted Diagnostics",
+      "Pinpoint weak areas and eliminate negative marking with real-time solve-time analytics.",
+    phase: "Targeted Diagnostics",
     icon: BarChart3,
-    accent: "blue",
-    metrics: "Sub-Topic Gap Radar",
+    featureTitle: "Diagnostic Telemetry",
+    featureBadge: "Real-Time Radar",
+    highlights: ["Negative Mark Radar", "Speed vs Accuracy Audit"],
+    theme: {
+      badge: "border-indigo-200 bg-indigo-50 text-indigo-700",
+      iconBg: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200/60",
+      iconColor: "text-indigo-700",
+      checkColor: "text-indigo-600",
+      hoverBorder: "hover:border-indigo-300",
+      topStrip: "bg-indigo-600",
+    },
   },
   {
-    number: "04",
-    verb: "Achieve",
+    step: "04",
+    stage: "Achieve",
     title: "Real Exam Simulation",
     description:
-      "Full-length NTA simulated tests with national percentile calibration and targeted final milestone revision.",
-    note: "Rank-Securing Finish",
+      "Calibrate under true exam conditions with full-length NTA simulated tests and national percentiles.",
+    phase: "Rank-Securing Finish",
     icon: Trophy,
-    accent: "red",
-    metrics: "Calibrated NTA Difficulty",
+    featureTitle: "NTA Pattern Mocks",
+    featureBadge: "AIR Benchmark",
+    highlights: ["Full-Length Simulations", "National Percentile Rank"],
+    theme: {
+      badge: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      iconBg: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60",
+      iconColor: "text-emerald-700",
+      checkColor: "text-emerald-600",
+      hoverBorder: "hover:border-emerald-300",
+      topStrip: "bg-emerald-600",
+    },
   },
-] satisfies readonly JourneyStep[];
-
-function StepPreview({ step }: { step: JourneyStep }) {
-  if (step.number === "01") {
-    return (
-      <div className="grid gap-2.5 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Volume2 className="size-3.5 text-brand-red" />
-            <span className="text-xs font-semibold text-slate-800">Mechanics &amp; Optics</span>
-          </div>
-          <span className="rounded bg-rose-50 px-1.5 py-0.5 text-xs font-semibold text-brand-red">
-            தமிழ் + EN
-          </span>
-        </div>
-        <div className="grid gap-1">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Core Derivations Complete</span>
-            <span className="font-semibold text-slate-700">78%</span>
-          </div>
-          <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-4/5 rounded-full bg-brand-red" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (step.number === "02") {
-    return (
-      <div className="space-y-2 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-600 uppercase tracking-wide">
-          <span className="flex items-center gap-1">
-            <Clock className="size-3.5 text-brand-blue" /> DPP #48 · 15 Qs
-          </span>
-          <span className="text-brand-blue flex items-center gap-1">
-            <Flame className="size-3.5 fill-current" /> 14-Day Streak
-          </span>
-        </div>
-        <div className="flex items-center gap-1 pt-0.5">
-          {[1, 2, 3, 4, 5].map((item) => (
-            <span
-              key={item}
-              className={cn(
-                "grid size-6 flex-1 place-items-center rounded text-xs font-semibold transition",
-                item <= 4
-                  ? "bg-brand-blue text-white"
-                  : "border border-slate-200 text-slate-400 bg-slate-50",
-              )}
-            >
-              {item <= 4 ? <Check className="size-3" strokeWidth={3} /> : item}
-            </span>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (step.number === "03") {
-    return (
-      <div className="grid gap-2 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-slate-800">Speed vs Accuracy</span>
-          <span className="font-mono text-brand-blue font-semibold">96.4% Accuracy</span>
-        </div>
-        <div className="flex h-8 items-end justify-between gap-1.5 px-0.5">
-          {[42, 65, 52, 88, 74, 95].map((height, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center">
-              <span
-                className={cn(
-                  "w-full rounded-t-xs",
-                  index >= 4 ? "bg-brand-blue" : "bg-blue-200",
-                )}
-                style={{ height: `${height}%` }}
-              />
-            </div>
-          ))}
-        </div>
-        <p className="text-center text-xs font-medium text-emerald-700">
-          ✓ -4 Negative Marks Eliminated
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-rose-200/80 bg-rose-50/80 p-3 shadow-2xs">
-      <span className="grid size-9 place-items-center rounded-lg bg-brand-red text-white shadow-2xs">
-        <Trophy className="size-4.5" aria-hidden="true" />
-      </span>
-      <div className="grid min-w-0 flex-1 gap-0.5">
-        <span className="block text-xs font-semibold text-slate-900">NTA Standard Simulated Exam</span>
-        <span className="flex items-center gap-1 text-xs font-semibold text-brand-red">
-          <CheckCircle2 className="size-3.5" /> Projected AIR &lt; 500
-        </span>
-      </div>
-    </div>
-  );
-}
+];
 
 export function LearningJourney() {
   return (
     <ContentSection
       id="journey"
       aria-labelledby="learning-journey-title"
-      className="relative overflow-hidden border-b border-slate-200/80 bg-slate-50"
+      className="relative overflow-hidden border-b border-slate-200/80 bg-[#f8fafc] py-16 sm:py-20 lg:py-24"
     >
       <PageContainer className="relative">
-        <Stack gap="lg">
-        {/* Section Heading & Stage Indicator */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <Stack gap="sm" className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-0.5 text-xs font-semibold tracking-wide text-brand-red uppercase">
-              <Target className="size-3 text-brand-red" aria-hidden="true" />
+        <div className="flex flex-col gap-10 lg:gap-14">
+          {/* Centered, Clean Section Header */}
+          <div className="mx-auto max-w-2xl text-center space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-rose-200/90 bg-rose-50/90 px-3.5 py-1 text-xs font-semibold tracking-wide text-brand-red uppercase shadow-2xs">
+              <Sparkles className="size-3.5 text-brand-red" aria-hidden="true" />
               <span>The 4-Stage Methodology</span>
             </div>
+
             <h2
               id="learning-journey-title"
-              className="type-page-title text-slate-900"
+              className="type-page-title text-slate-900 tracking-tight"
             >
               From First Concept to{" "}
-              <span className="text-brand-red">
-                Exam-Day Mastery.
-              </span>
+              <span className="text-brand-red">Exam-Day Mastery.</span>
             </h2>
-            <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
-              An interconnected enterprise preparation pipeline engineered to cultivate daily discipline and deliver verifiable rank results.
+
+            <p className="text-xs sm:text-sm leading-relaxed text-slate-600 max-w-xl mx-auto">
+              A structured preparation pipeline engineered to cultivate daily discipline, eliminate negative marks, and deliver top rank results.
             </p>
-          </Stack>
-
-          <div className="flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Closed-Loop Mastery Engine</span>
           </div>
-        </div>
 
-        {/* Steps Grid */}
-        <div className="relative">
-          {/* Desktop Connecting Beam */}
-          <div
-            className="pointer-events-none absolute top-10 right-10 left-10 hidden h-0.5 bg-slate-200 lg:block"
-            aria-hidden="true"
-          />
-
+          {/* 4 Cards Grid */}
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {journey.map((step, index) => {
+            {steps.map((step, index) => {
               const Icon = step.icon;
-              const isBlue = step.accent === "blue";
 
               return (
                 <article
-                  key={step.number}
-                  className="group relative flex flex-col justify-between gap-5 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs transition duration-200 hover:border-slate-300 hover:shadow-sm"
+                  key={step.step}
+                  className={cn(
+                    "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 lg:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
+                    step.theme.hoverBorder,
+                  )}
                 >
-                  {/* Top Bar: Stage Number & Icon */}
-                  <Stack>
+                  {/* Top Clean Accent Strip */}
+                  <div
+                    aria-hidden="true"
+                    className={cn(
+                      "absolute inset-x-0 top-0 h-1 transition-opacity",
+                      step.theme.topStrip,
+                    )}
+                  />
+
+                  <div>
+                    {/* Top Row: Step Tag + Icon */}
                     <div className="flex items-center justify-between">
                       <span
                         className={cn(
-                          "grid size-10 place-items-center rounded-xl text-xs font-bold text-white shadow-2xs",
-                          isBlue ? "bg-brand-blue" : "bg-brand-red",
+                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
+                          step.theme.badge,
                         )}
                       >
-                        {step.number}
+                        <span className="size-1.5 rounded-full bg-current" />
+                        Stage {step.step} · {step.stage}
                       </span>
-                      <span
+
+                      <div
                         className={cn(
-                          "grid size-9 place-items-center rounded-lg",
-                          isBlue
-                            ? "bg-blue-50 text-brand-blue"
-                            : "bg-rose-50 text-brand-red",
+                          "flex size-9 items-center justify-center rounded-xl shadow-2xs transition-transform duration-300 group-hover:scale-105",
+                          step.theme.iconBg,
                         )}
                       >
-                        <Icon className="size-4.5" strokeWidth={2} aria-hidden="true" />
-                      </span>
+                        <Icon className="size-4.5" strokeWidth={2.2} aria-hidden="true" />
+                      </div>
                     </div>
 
-                    <Stack gap="xs">
-                      <span
-                        className={cn(
-                          "text-xs font-semibold tracking-wide uppercase",
-                          isBlue ? "text-brand-blue" : "text-brand-red",
-                        )}
-                      >
-                        Stage {step.number} · {step.verb}
-                      </span>
-                      <h3 className="text-sm font-semibold tracking-tight text-slate-900 sm:text-base">
+                    {/* Title & Description */}
+                    <div className="mt-5 space-y-1.5">
+                      <h3 className="text-base font-bold tracking-tight text-slate-900 group-hover:text-slate-950 sm:text-lg">
                         {step.title}
                       </h3>
-                      <p className="text-xs leading-relaxed text-slate-600">
+                      <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
                         {step.description}
                       </p>
-                    </Stack>
+                    </div>
 
-                    <StepPreview step={step} />
-                  </Stack>
+                    {/* Neat Visual Feature Card */}
+                    <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50/80 p-3 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-800">
+                          {step.featureTitle}
+                        </span>
+                        <span className="rounded-md border border-slate-200/90 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-700 shadow-2xs">
+                          {step.featureBadge}
+                        </span>
+                      </div>
 
-                  {/* Card Bottom Meta */}
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-3.5 text-xs font-medium text-slate-500">
-                    <span className="text-xs font-semibold uppercase tracking-wide">{step.note}</span>
-                    {index < journey.length - 1 ? (
-                      <ArrowRight
-                        className={cn(
-                          "size-3.5 transition-transform duration-200 group-hover:translate-x-1",
-                          isBlue ? "text-brand-blue" : "text-brand-red",
-                        )}
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <Trophy className="size-4 text-amber-500" aria-hidden="true" />
-                    )}
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {step.highlights.map((item) => (
+                          <span
+                            key={item}
+                            className="inline-flex items-center gap-1 rounded-md border border-slate-200/60 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                          >
+                            <CheckCircle2
+                              className={cn(
+                                "size-3 shrink-0",
+                                step.theme.checkColor,
+                              )}
+                            />
+                            <span>{item}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Bottom Meta Footer */}
+                  <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-3.5">
+                    <span className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
+                      {step.phase}
+                    </span>
+
+                    <span
+                      className="flex size-7 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-all duration-200 group-hover:bg-slate-900 group-hover:text-white"
+                      aria-hidden="true"
+                    >
+                      {index < steps.length - 1 ? (
+                        <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      ) : (
+                        <Trophy className="size-3.5" />
+                      )}
+                    </span>
                   </div>
                 </article>
               );
             })}
           </div>
         </div>
-        </Stack>
       </PageContainer>
     </ContentSection>
   );
