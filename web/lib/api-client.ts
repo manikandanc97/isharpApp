@@ -28,7 +28,7 @@ export class ApiClientError extends Error {
 
 export function createApiClient({
   baseUrl,
-  defaultTimeoutMs = 8_000,
+  defaultTimeoutMs = 15_000,
   fetchImpl = fetch,
 }: ApiClientOptions) {
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
@@ -65,7 +65,8 @@ export function createApiClient({
       }
 
       try {
-        const response = await fetchImpl(joinUrl(normalizedBaseUrl, path), {
+        const fullUrl = joinUrl(normalizedBaseUrl, path);
+        const response = await fetchImpl(fullUrl, {
           ...requestInit,
           body: body === undefined ? undefined : JSON.stringify(body),
           headers,
@@ -116,7 +117,7 @@ function getErrorMessage(payload: unknown, status: number): string {
   return `API request failed with status ${status}`;
 }
 
-function normalizeBaseUrl(baseUrl: string): string {
+export function normalizeBaseUrl(baseUrl: string): string {
   const trimmed = baseUrl.trim();
   if (!trimmed) return '';
   let url: URL;
@@ -131,7 +132,48 @@ function normalizeBaseUrl(baseUrl: string): string {
   return trimmed.replace(/\/+$/, '');
 }
 
-function joinUrl(baseUrl: string, path: string): string {
-  const normalizedPath = `/${path.replace(/^\/+/, '')}`;
-  return `${baseUrl}${normalizedPath}`;
+/**
+ * Joins a base URL and an endpoint path while preventing duplicated `/api` segments
+ * (e.g. `https://domain.com/api` + `/api/health` -> `https://domain.com/api/health`).
+ */
+export function joinUrl(baseUrl: string, path: string): string {
+  const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+  let cleanPath = path.trim().replace(/^\/+/, '');
+
+  if (!cleanBase) {
+    return `/${cleanPath}`;
+  }
+
+  // Deduplicate /api prefix if baseUrl ends with /api and path starts with api/
+  if (cleanBase.endsWith('/api') && (cleanPath === 'api' || cleanPath.startsWith('api/'))) {
+    cleanPath = cleanPath.slice(3).replace(/^\/+/, '');
+  }
+
+  return cleanPath ? `${cleanBase}/${cleanPath}` : cleanBase;
 }
+
+/**
+ * Returns the public browser-accessible API base URL (NEXT_PUBLIC_API_URL),
+ * or empty string if not configured (allowing relative path fallback to Next.js BFF routes).
+ */
+export function getBrowserApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/+$/, '') ?? '';
+}
+
+/**
+ * Centralized API client instance configured for general application use.
+ * Automatically resolves the appropriate base URL across browser and server contexts.
+ */
+export const apiClient = createApiClient({
+  get baseUrl() {
+    if (typeof window !== 'undefined') {
+      return process.env.NEXT_PUBLIC_API_URL?.trim() ?? '';
+    }
+    return (
+      process.env.API_BASE_URL?.trim() ||
+      process.env.NEXT_PUBLIC_API_URL?.trim() ||
+      ''
+    );
+  },
+  defaultTimeoutMs: 15_000,
+});

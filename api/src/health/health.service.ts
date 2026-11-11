@@ -8,8 +8,8 @@ export class HealthService {
   async checkDatabase(): Promise<void> {
     const timeout = new Promise<never>((_, reject) => {
       const timer = setTimeout(
-        () => reject(new Error('Database health check timed out after 3000ms')),
-        3000,
+        () => reject(new Error('Database health check timed out after 8000ms')),
+        8000,
       );
       timer.unref?.();
     });

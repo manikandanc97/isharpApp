@@ -19,9 +19,9 @@ describe("signup error messages", () => {
     ).toContain("temporarily busy");
   });
 
-  it("keeps unknown provider errors intact", () => {
+  it("sanitizes unknown provider errors with a safe user-facing message", () => {
     expect(getSignupErrorMessage({ message: "Unexpected provider error" })).toBe(
-      "Unexpected provider error",
+      "Something went wrong. Please try again or contact I-Sharp support.",
     );
   });
 });

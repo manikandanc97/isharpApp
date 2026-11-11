@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { ApiClientError, createApiClient } from './api-client';
+import { ApiClientError, createApiClient, joinUrl, normalizeBaseUrl } from './api-client';
 
 describe('API client', () => {
   it('normalizes the base URL and parses JSON responses', async () => {
@@ -92,5 +92,29 @@ describe('API client', () => {
     await expect(client.request('/api/health')).rejects.toEqual(
       expect.objectContaining({ message: 'API request timed out', status: 408 }),
     );
+  });
+
+  describe('joinUrl & deduplication', () => {
+    it('prevents duplicated /api/api/... paths', () => {
+      expect(joinUrl('https://isharpapp.onrender.com/api', '/api/health')).toBe(
+        'https://isharpapp.onrender.com/api/health',
+      );
+      expect(joinUrl('https://isharpapp.onrender.com/api/', 'api/student/dashboard')).toBe(
+        'https://isharpapp.onrender.com/api/student/dashboard',
+      );
+    });
+
+    it('joins standard paths without duplication', () => {
+      expect(joinUrl('https://isharpapp.onrender.com', '/api/health')).toBe(
+        'https://isharpapp.onrender.com/api/health',
+      );
+      expect(joinUrl('', '/api/session')).toBe('/api/session');
+    });
+
+    it('normalizes base URLs correctly', () => {
+      expect(normalizeBaseUrl('https://isharpapp.onrender.com///')).toBe(
+        'https://isharpapp.onrender.com',
+      );
+    });
   });
 });
