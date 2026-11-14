@@ -10,9 +10,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-poppins), "Segoe UI", "Noto Sans Tamil", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --font-sans: var(--font-poppins), var(--font-noto-sans-tamil), "Noto Sans Tamil", "Nirmala UI", "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --font-heading: var(--font-poppins), "Segoe UI", "Noto Sans Tamil", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --font-heading: var(--font-poppins), var(--font-noto-sans-tamil), "Noto Sans Tamil", "Nirmala UI", "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   --breakpoint-xs: 22.5rem;
   --text-3xs: 0.6875rem;
   --text-3xs--line-height: 1rem;

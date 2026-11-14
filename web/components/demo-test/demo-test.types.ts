@@ -98,3 +98,20 @@ export interface ScorecardReport {
   timeAnalytics?: TimeAnalytics;
 }
 
+/**
+ * In official NTA NEET examinations, multiple-choice question options are
+ * strictly numbered as 1, 2, 3, 4 (or (1), (2), (3), (4)) instead of letters A, B, C, D.
+ */
+export function getNeetOptionLabel(label?: string | number | null, index?: number): string {
+  if (label !== undefined && label !== null) {
+    const trimmed = String(label).trim().toUpperCase();
+    if (trimmed === "A" || trimmed === "1") return "1";
+    if (trimmed === "B" || trimmed === "2") return "2";
+    if (trimmed === "C" || trimmed === "3") return "3";
+    if (trimmed === "D" || trimmed === "4") return "4";
+    if (/^[0-9]+$/.test(trimmed)) return trimmed;
+  }
+  return typeof index === "number" ? String(index + 1) : "1";
+}
+
+

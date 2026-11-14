@@ -1,0 +1,11 @@
+npm notice run web@0.1.0 dev
+npm notice run next dev
+▲ Next.js 16.4.3 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.12:3000
+- Environments: .env.local, .env
+✓ Ready in 1474ms
+✓ Running next.config.ts took 77ms
+- Cache Components enabled
+- Partial Prefetching enabled
+

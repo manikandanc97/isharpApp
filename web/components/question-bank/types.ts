@@ -97,12 +97,12 @@ export const emptyDraft = (): Draft => ({
   solutionImageUrl: "",
   numericalAnswer: "",
   source: "",
-  options: ["A", "B", "C", "D"].map((label) => ({
+  options: ["1", "2", "3", "4"].map((label) => ({
     label,
     textEn: "",
     textTa: "",
     imageUrl: "",
-    isCorrect: label === "A",
+    isCorrect: label === "1",
   })),
 });
 

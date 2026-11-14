@@ -28,12 +28,12 @@ export const sampleDPPQuestions: SampleQuestion[] = [
     questionTa:
       "M நிறையும் R ஆரமும் கொண்ட ஒரு திண்மக் கோளம் θ சாய்வு கொண்ட சாய்தளத்தில் நழுவாமல் உருளுகிறது. அக்கோளத்தின் முடுக்கம் என்ன?",
     options: [
-      { label: "A", textEn: "g sin θ", textTa: "g sin θ" },
-      { label: "B", textEn: "(5/7) g sin θ", textTa: "(5/7) g sin θ" },
-      { label: "C", textEn: "(2/3) g sin θ", textTa: "(2/3) g sin θ" },
-      { label: "D", textEn: "(7/5) g sin θ", textTa: "(7/5) g sin θ" },
+      { label: "1", textEn: "g sin θ", textTa: "g sin θ" },
+      { label: "2", textEn: "(5/7) g sin θ", textTa: "(5/7) g sin θ" },
+      { label: "3", textEn: "(2/3) g sin θ", textTa: "(2/3) g sin θ" },
+      { label: "4", textEn: "(7/5) g sin θ", textTa: "(7/5) g sin θ" },
     ],
-    correctOption: "B",
+    correctOption: "2",
     explanationEn:
       "For a rolling solid sphere, moment of inertia I = (2/5)MR². Acceleration a = (g sin θ) / (1 + I/MR²) = (g sin θ) / (1 + 2/5) = (5/7) g sin θ.",
     explanationTa:
@@ -49,12 +49,12 @@ export const sampleDPPQuestions: SampleQuestion[] = [
     questionTa:
       "குன்றல் பிரிவின் முதல் முன்நிலையின் (Prophase-I) எந்த துணை நிலையில் குறுக்கே கலத்தல் (Crossing over) நடைபெறுகிறது?",
     options: [
-      { label: "A", textEn: "Leptotene", textTa: "லெப்டோடீன்" },
-      { label: "B", textEn: "Zygotene", textTa: "சைகோடீன்" },
-      { label: "C", textEn: "Pachytene", textTa: "பேக்கிட்டீன்" },
-      { label: "D", textEn: "Diplotene", textTa: "டிப்ளோட்டீன்" },
+      { label: "1", textEn: "Leptotene", textTa: "லெப்டோடீன்" },
+      { label: "2", textEn: "Zygotene", textTa: "சைகோடீன்" },
+      { label: "3", textEn: "Pachytene", textTa: "பேக்கிட்டீன்" },
+      { label: "4", textEn: "Diplotene", textTa: "டிப்ளோட்டீன்" },
     ],
-    correctOption: "C",
+    correctOption: "3",
     explanationEn:
       "Crossing over is an enzyme-mediated process (recombinase) occurring between non-sister chromatids of homologous chromosomes during the Pachytene stage.",
     explanationTa:

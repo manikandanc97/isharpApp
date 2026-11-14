@@ -214,14 +214,6 @@ export function DemoTestScreen({
                   <div className="grid grid-cols-2 gap-2.5">
                     {[
                       {
-                        id: "ALL" as SubjectMode,
-                        title: "All 3 Subjects",
-                        desc: "Phy + Chem + Bio",
-                        icon: Layers,
-                        badge: "NEET Mock",
-                        color: "text-brand-red",
-                      },
-                      {
                         id: "PHYSICS" as SubjectMode,
                         title: "Physics Only",
                         desc: "இயற்பியல்",
@@ -244,6 +236,14 @@ export function DemoTestScreen({
                         icon: Dna,
                         badge: "Subject Drill",
                         color: "text-purple-600",
+                      },
+                      {
+                        id: "ALL" as SubjectMode,
+                        title: "All 3 Subjects",
+                        desc: "Phy + Chem + Bio",
+                        icon: Layers,
+                        badge: "NEET Mock",
+                        color: "text-brand-red",
                       },
                     ].map((item) => {
                       const isSelected = subjectMode === item.id;

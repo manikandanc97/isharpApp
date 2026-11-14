@@ -47,21 +47,29 @@ export function QuestionCard({
         />
       )}
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        {question.options.map((option) => (
-          <div
-            key={option.label}
-            className={`rounded-xl border px-3 py-2.5 text-xs ${option.isCorrect ? "border-emerald-200 bg-emerald-50 font-semibold text-emerald-800" : "border-slate-100 bg-slate-50 text-slate-600"}`}
-          >
-            {option.label}. {option.textEn || option.textTa || "Image option"}
-            {option.imageUrl && (
-              <img
-                src={option.imageUrl}
-                alt={`Option ${option.label}`}
-                className="mt-2 max-h-20 object-contain"
-              />
-            )}
-          </div>
-        ))}
+        {question.options.map((option, optIdx) => {
+          const legacy = ["A", "B", "C", "D"];
+          const legacyIdx = legacy.indexOf(option.label?.toUpperCase());
+          const displayLabel =
+            legacyIdx !== -1
+              ? String(legacyIdx + 1)
+              : option.label || String(optIdx + 1);
+          return (
+            <div
+              key={option.label || optIdx}
+              className={`rounded-xl border px-3 py-2.5 text-xs ${option.isCorrect ? "border-emerald-200 bg-emerald-50 font-semibold text-emerald-800" : "border-slate-100 bg-slate-50 text-slate-600"}`}
+            >
+              ({displayLabel}) {option.textEn || option.textTa || "Image option"}
+              {option.imageUrl && (
+                <img
+                  src={option.imageUrl}
+                  alt={`Option ${displayLabel}`}
+                  className="mt-2 max-h-20 object-contain"
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
       <div className="mt-4 grid gap-2">
         <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">

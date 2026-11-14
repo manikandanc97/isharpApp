@@ -25,7 +25,7 @@
       {
         "id": "2ab4b059-b6f0-4e7e-b2aa-c018b7e9f246",
         "questionId": "7e217747-f590-41f7-8ff6-d188a3c7fb97",
-        "label": "A",
+        "label": "1",
         "textEn": "Joule",
         "textTa": "ஜூல்",
         "imageUrl": null,
@@ -37,7 +37,7 @@
       {
         "id": "7a25dc31-7c0d-41c4-aecf-7a6bd72ea7d5",
         "questionId": "7e217747-f590-41f7-8ff6-d188a3c7fb97",
-        "label": "B",
+        "label": "2",
         "textEn": "Newton",
         "textTa": "நியூட்டன்",
         "imageUrl": null,
@@ -49,7 +49,7 @@
       {
         "id": "0c409b4e-6328-4831-98e6-b898291dae4f",
         "questionId": "7e217747-f590-41f7-8ff6-d188a3c7fb97",
-        "label": "C",
+        "label": "3",
         "textEn": "Power",
         "textTa": "திறன்",
         "imageUrl": null,
@@ -61,7 +61,7 @@
       {
         "id": "9a09ad40-c8b0-4a88-b242-edf7b6033832",
         "questionId": "7e217747-f590-41f7-8ff6-d188a3c7fb97",
-        "label": "D",
+        "label": "4",
         "textEn": "Pressure",
         "textTa": "அழுத்தம்",
         "imageUrl": null,
@@ -126,7 +126,7 @@
       {
         "id": "1b13687e-cf57-4a8e-9639-3d138fd4f10c",
         "questionId": "d1855cc8-5249-46a7-93b6-5973eb056e99",
-        "label": "A",
+        "label": "1",
         "textEn": "H₂O",
         "textTa": "H₂O",
         "imageUrl": null,
@@ -138,7 +138,7 @@
       {
         "id": "415ac0ef-c244-4733-b8d1-a5bcdb4841be",
         "questionId": "d1855cc8-5249-46a7-93b6-5973eb056e99",
-        "label": "B",
+        "label": "2",
         "textEn": "CO₂",
         "textTa": "CO₂",
         "imageUrl": null,
@@ -150,7 +150,7 @@
       {
         "id": "c4350f84-0b91-44f5-afca-55bcf2167318",
         "questionId": "d1855cc8-5249-46a7-93b6-5973eb056e99",
-        "label": "C",
+        "label": "3",
         "textEn": "NH₃",
         "textTa": "NH₃",
         "imageUrl": null,
@@ -162,7 +162,7 @@
       {
         "id": "29dca445-18bd-47b2-80c7-cc7be05cd140",
         "questionId": "d1855cc8-5249-46a7-93b6-5973eb056e99",
-        "label": "D",
+        "label": "4",
         "textEn": "SO₂",
         "textTa": "SO₂",
         "imageUrl": null,
@@ -227,7 +227,7 @@
       {
         "id": "35657bf3-b801-45d1-9905-836eafd49b83",
         "questionId": "34454399-cb73-4e48-8d85-5e5bf5d4027f",
-        "label": "A",
+        "label": "1",
         "textEn": "Ribosome",
         "textTa": "ரைபோசோம்",
         "imageUrl": null,
@@ -239,7 +239,7 @@
       {
         "id": "afb12139-94cd-4eb0-b2a0-05ec6a0f24b2",
         "questionId": "34454399-cb73-4e48-8d85-5e5bf5d4027f",
-        "label": "B",
+        "label": "2",
         "textEn": "Lysosome",
         "textTa": "லைசோசோம்",
         "imageUrl": null,
@@ -251,7 +251,7 @@
       {
         "id": "9cea5e93-708e-442f-8589-f7993f628d8c",
         "questionId": "34454399-cb73-4e48-8d85-5e5bf5d4027f",
-        "label": "C",
+        "label": "3",
         "textEn": "Mitochondrion",
         "textTa": "மைட்டோகாண்ட்ரியா",
         "imageUrl": null,
@@ -263,7 +263,7 @@
       {
         "id": "131a9fa4-475f-43f1-a235-166712ee6bbd",
         "questionId": "34454399-cb73-4e48-8d85-5e5bf5d4027f",
-        "label": "D",
+        "label": "4",
         "textEn": "Golgi apparatus",
         "textTa": "கோல்ஜி உடல்",
         "imageUrl": null,
@@ -328,7 +328,7 @@
       {
         "id": "cdeeb59a-4b92-4db0-ad52-e58fbe6662b3",
         "questionId": "6b21f9e9-4d31-4109-b3da-c3f26844e4e7",
-        "label": "A",
+        "label": "1",
         "textEn": "2 N",
         "textTa": "2 N",
         "imageUrl": null,
@@ -340,7 +340,7 @@
       {
         "id": "6c36de67-78c2-4d79-b359-197178df6db1",
         "questionId": "6b21f9e9-4d31-4109-b3da-c3f26844e4e7",
-        "label": "B",
+        "label": "2",
         "textEn": "5 N",
         "textTa": "5 N",
         "imageUrl": null,
@@ -352,7 +352,7 @@
       {
         "id": "7523e6c5-ca01-4e00-9d23-34e4cd9c159c",
         "questionId": "6b21f9e9-4d31-4109-b3da-c3f26844e4e7",
-        "label": "C",
+        "label": "3",
         "textEn": "6 N",
         "textTa": "6 N",
         "imageUrl": null,
@@ -364,7 +364,7 @@
       {
         "id": "5008a69b-e10d-4890-a44e-c56ae8cb567b",
         "questionId": "6b21f9e9-4d31-4109-b3da-c3f26844e4e7",
-        "label": "D",
+        "label": "4",
         "textEn": "9 N",
         "textTa": "9 N",
         "imageUrl": null,
@@ -429,7 +429,7 @@
       {
         "id": "808f0e29-90a5-41cb-9685-e73be451b6a4",
         "questionId": "99345481-2f58-4b4a-a96f-4829fcbfefe9",
-        "label": "A",
+        "label": "1",
         "textEn": "8",
         "textTa": "8",
         "imageUrl": null,
@@ -441,7 +441,7 @@
       {
         "id": "861ab445-8769-4f5e-8ef8-90ef46e148cf",
         "questionId": "99345481-2f58-4b4a-a96f-4829fcbfefe9",
-        "label": "B",
+        "label": "2",
         "textEn": "18",
         "textTa": "18",
         "imageUrl": null,
@@ -453,7 +453,7 @@
       {
         "id": "2973d4fc-c860-4efd-a5d7-3f8e936def13",
         "questionId": "99345481-2f58-4b4a-a96f-4829fcbfefe9",
-        "label": "C",
+        "label": "3",
         "textEn": "32",
         "textTa": "32",
         "imageUrl": null,
@@ -465,7 +465,7 @@
       {
         "id": "215f5a38-0eaa-4fcc-912d-bf7b20af00ed",
         "questionId": "99345481-2f58-4b4a-a96f-4829fcbfefe9",
-        "label": "D",
+        "label": "4",
         "textEn": "9",
         "textTa": "9",
         "imageUrl": null,
@@ -530,7 +530,7 @@
       {
         "id": "1000412e-9e66-4817-acfa-bacd23183b79",
         "questionId": "03421db2-3ddc-4d1b-9f71-7d63fca7eec1",
-        "label": "A",
+        "label": "1",
         "textEn": "Red blood cells",
         "textTa": "சிவப்பு இரத்த அணுக்கள்",
         "imageUrl": null,
@@ -542,7 +542,7 @@
       {
         "id": "6b43af61-5007-4c55-b147-d45d5d8376ee",
         "questionId": "03421db2-3ddc-4d1b-9f71-7d63fca7eec1",
-        "label": "B",
+        "label": "2",
         "textEn": "Platelets",
         "textTa": "இரத்தத் தட்டுகள்",
         "imageUrl": null,
@@ -554,7 +554,7 @@
       {
         "id": "b2f54d97-be2d-453a-940b-adfc7473b18f",
         "questionId": "03421db2-3ddc-4d1b-9f71-7d63fca7eec1",
-        "label": "C",
+        "label": "3",
         "textEn": "Plasma water",
         "textTa": "பிளாஸ்மா நீர்",
         "imageUrl": null,
@@ -566,7 +566,7 @@
       {
         "id": "3c019e78-5625-4d62-9038-4da079ef2e3a",
         "questionId": "03421db2-3ddc-4d1b-9f71-7d63fca7eec1",
-        "label": "D",
+        "label": "4",
         "textEn": "Lymphocytes",
         "textTa": "லிம்போசைட்டுகள்",
         "imageUrl": null,
@@ -631,7 +631,7 @@
       {
         "id": "3b40d7ab-4fea-4945-b608-13f076fcfda9",
         "questionId": "e5f3f5e8-1b1d-44b2-ac2b-236e5a4ecffc",
-        "label": "A",
+        "label": "1",
         "textEn": "0",
         "textTa": "0",
         "imageUrl": null,
@@ -643,7 +643,7 @@
       {
         "id": "8a74c220-7f7e-4de3-9584-60ff2886475e",
         "questionId": "e5f3f5e8-1b1d-44b2-ac2b-236e5a4ecffc",
-        "label": "B",
+        "label": "2",
         "textEn": "7",
         "textTa": "7",
         "imageUrl": null,
@@ -655,7 +655,7 @@
       {
         "id": "65cbb7a8-dfe6-4507-b774-766d1c8d7d37",
         "questionId": "e5f3f5e8-1b1d-44b2-ac2b-236e5a4ecffc",
-        "label": "C",
+        "label": "3",
         "textEn": "10",
         "textTa": "10",
         "imageUrl": null,
@@ -667,7 +667,7 @@
       {
         "id": "e8ccc7dc-b1bf-4fc4-a3f1-90b5a4de5078",
         "questionId": "e5f3f5e8-1b1d-44b2-ac2b-236e5a4ecffc",
-        "label": "D",
+        "label": "4",
         "textEn": "14",
         "textTa": "14",
         "imageUrl": null,
@@ -732,7 +732,7 @@
       {
         "id": "bc1f819d-3254-4978-8a79-e0ad1a0a568e",
         "questionId": "3f1bc21e-041d-4fba-9e83-c0f4b42b04b2",
-        "label": "A",
+        "label": "1",
         "textEn": "1:1",
         "textTa": "1:1",
         "imageUrl": null,
@@ -744,7 +744,7 @@
       {
         "id": "1bc9b8ac-1400-494b-8ed4-ec9618816ade",
         "questionId": "3f1bc21e-041d-4fba-9e83-c0f4b42b04b2",
-        "label": "B",
+        "label": "2",
         "textEn": "1:2:1",
         "textTa": "1:2:1",
         "imageUrl": null,
@@ -756,7 +756,7 @@
       {
         "id": "9dca5e36-297f-4601-8a99-c58fa3e546e5",
         "questionId": "3f1bc21e-041d-4fba-9e83-c0f4b42b04b2",
-        "label": "C",
+        "label": "3",
         "textEn": "3:1",
         "textTa": "3:1",
         "imageUrl": null,
@@ -768,7 +768,7 @@
       {
         "id": "10a3df65-f1c0-4dc0-b121-2befbae4b4e0",
         "questionId": "3f1bc21e-041d-4fba-9e83-c0f4b42b04b2",
-        "label": "D",
+        "label": "4",
         "textEn": "9:3:3:1",
         "textTa": "9:3:3:1",
         "imageUrl": null,
@@ -833,7 +833,7 @@
       {
         "id": "90b897ed-4a5f-4f3f-84e4-017315ab8b2b",
         "questionId": "75808c25-5865-40bc-a75b-51c8091c35d8",
-        "label": "A",
+        "label": "1",
         "textEn": "2 Ω",
         "textTa": "2 Ω",
         "imageUrl": null,
@@ -845,7 +845,7 @@
       {
         "id": "6724392b-16e7-4f71-ae01-43a3fe9f0c53",
         "questionId": "75808c25-5865-40bc-a75b-51c8091c35d8",
-        "label": "B",
+        "label": "2",
         "textEn": "3 Ω",
         "textTa": "3 Ω",
         "imageUrl": null,
@@ -857,7 +857,7 @@
       {
         "id": "542dcc09-8dfb-4c36-b76f-96a325255037",
         "questionId": "75808c25-5865-40bc-a75b-51c8091c35d8",
-        "label": "C",
+        "label": "3",
         "textEn": "6 Ω",
         "textTa": "6 Ω",
         "imageUrl": null,
@@ -869,7 +869,7 @@
       {
         "id": "baa18966-4771-4aa6-9b28-8c6bf925af7d",
         "questionId": "75808c25-5865-40bc-a75b-51c8091c35d8",
-        "label": "D",
+        "label": "4",
         "textEn": "8 Ω",
         "textTa": "8 Ω",
         "imageUrl": null,
@@ -934,7 +934,7 @@
       {
         "id": "2aa05f8b-51f3-4db5-bc8c-89dab88945d7",
         "questionId": "11e32d35-6013-4173-b009-a6a1c6992729",
-        "label": "A",
+        "label": "1",
         "textEn": "Aldehyde (–CHO)",
         "textTa": "ஆல்டிஹைடு (–CHO)",
         "imageUrl": null,
@@ -946,7 +946,7 @@
       {
         "id": "432b4094-6451-4947-b001-2953548026c8",
         "questionId": "11e32d35-6013-4173-b009-a6a1c6992729",
-        "label": "B",
+        "label": "2",
         "textEn": "Carboxyl (–COOH)",
         "textTa": "கார்பாக்சில் (–COOH)",
         "imageUrl": null,
@@ -958,7 +958,7 @@
       {
         "id": "204e99b0-eb29-4613-80ab-3991173e892d",
         "questionId": "11e32d35-6013-4173-b009-a6a1c6992729",
-        "label": "C",
+        "label": "3",
         "textEn": "Hydroxyl (–OH)",
         "textTa": "ஹைட்ராக்சில் (–OH)",
         "imageUrl": null,
@@ -970,7 +970,7 @@
       {
         "id": "667462e5-dd42-4144-b05a-cf8efd135d50",
         "questionId": "11e32d35-6013-4173-b009-a6a1c6992729",
-        "label": "D",
+        "label": "4",
         "textEn": "Amine (–NH₂)",
         "textTa": "அமைன் (–NH₂)",
         "imageUrl": null,
@@ -1035,7 +1035,7 @@
       {
         "id": "778d6a7d-783f-4cde-a2e1-b888f4004995",
         "questionId": "3c0ecfe1-ceee-46d8-8be5-6c9f807d63e9",
-        "label": "A",
+        "label": "1",
         "textEn": "Chlorophyll a",
         "textTa": "குளோரோஃபில் a",
         "imageUrl": null,
@@ -1047,7 +1047,7 @@
       {
         "id": "d9482b47-0835-417e-9693-36991273d68d",
         "questionId": "3c0ecfe1-ceee-46d8-8be5-6c9f807d63e9",
-        "label": "B",
+        "label": "2",
         "textEn": "Chlorophyll b",
         "textTa": "குளோரோஃபில் b",
         "imageUrl": null,
@@ -1059,7 +1059,7 @@
       {
         "id": "9528c4ed-b690-4b19-ba4e-6330a4914cc9",
         "questionId": "3c0ecfe1-ceee-46d8-8be5-6c9f807d63e9",
-        "label": "C",
+        "label": "3",
         "textEn": "Xanthophyll",
         "textTa": "சாந்தோஃபில்",
         "imageUrl": null,
@@ -1071,7 +1071,7 @@
       {
         "id": "bfb51953-fac0-4176-8812-517cc037cafd",
         "questionId": "3c0ecfe1-ceee-46d8-8be5-6c9f807d63e9",
-        "label": "D",
+        "label": "4",
         "textEn": "Carotene",
         "textTa": "கரோட்டீன்",
         "imageUrl": null,
@@ -1136,7 +1136,7 @@
       {
         "id": "e2483b68-4b68-4933-a805-39867e4d9fea",
         "questionId": "5335fb25-8336-48e9-83f3-eadc5c109358",
-        "label": "A",
+        "label": "1",
         "textEn": "Twice as large",
         "textTa": "இரு மடங்கு",
         "imageUrl": null,
@@ -1148,7 +1148,7 @@
       {
         "id": "ce42aacd-0302-4725-a7a7-f4b4d0774045",
         "questionId": "5335fb25-8336-48e9-83f3-eadc5c109358",
-        "label": "B",
+        "label": "2",
         "textEn": "Half as large",
         "textTa": "பாதி",
         "imageUrl": null,
@@ -1160,7 +1160,7 @@
       {
         "id": "094621ed-56ca-47cb-900e-9fa5823c5704",
         "questionId": "5335fb25-8336-48e9-83f3-eadc5c109358",
-        "label": "C",
+        "label": "3",
         "textEn": "One-fourth as large",
         "textTa": "நான்கில் ஒரு பங்கு",
         "imageUrl": null,
@@ -1172,7 +1172,7 @@
       {
         "id": "d5c872bd-392b-4cc1-8a8c-34913ee77cba",
         "questionId": "5335fb25-8336-48e9-83f3-eadc5c109358",
-        "label": "D",
+        "label": "4",
         "textEn": "Four times as large",
         "textTa": "நான்கு மடங்கு",
         "imageUrl": null,
@@ -1237,7 +1237,7 @@
       {
         "id": "77c20634-ea1a-41ac-9727-e2cf9be2af5a",
         "questionId": "469c65fb-fbd9-4103-8a23-f69d4094b299",
-        "label": "A",
+        "label": "1",
         "textEn": "mol L⁻¹ s⁻¹",
         "textTa": "mol L⁻¹ s⁻¹",
         "imageUrl": null,
@@ -1249,7 +1249,7 @@
       {
         "id": "8bb58506-129c-42ea-b623-8f69549262ec",
         "questionId": "469c65fb-fbd9-4103-8a23-f69d4094b299",
-        "label": "B",
+        "label": "2",
         "textEn": "s⁻¹",
         "textTa": "s⁻¹",
         "imageUrl": null,
@@ -1261,7 +1261,7 @@
       {
         "id": "8eb69383-bf85-47d7-9e1e-942e08f12042",
         "questionId": "469c65fb-fbd9-4103-8a23-f69d4094b299",
-        "label": "C",
+        "label": "3",
         "textEn": "L mol⁻¹ s⁻¹",
         "textTa": "L mol⁻¹ s⁻¹",
         "imageUrl": null,
@@ -1273,7 +1273,7 @@
       {
         "id": "528c4d6b-bfea-425f-afa3-5c33a9a08159",
         "questionId": "469c65fb-fbd9-4103-8a23-f69d4094b299",
-        "label": "D",
+        "label": "4",
         "textEn": "mol² L⁻² s⁻¹",
         "textTa": "mol² L⁻² s⁻¹",
         "imageUrl": null,
@@ -1338,7 +1338,7 @@
       {
         "id": "5c374909-5991-439d-8c20-432e4008122b",
         "questionId": "58c36340-4e79-4552-b33e-d9c41d416e38",
-        "label": "A",
+        "label": "1",
         "textEn": "Wind",
         "textTa": "காற்று",
         "imageUrl": null,
@@ -1350,7 +1350,7 @@
       {
         "id": "5530b283-086a-4611-b422-9a03a91b0f61",
         "questionId": "58c36340-4e79-4552-b33e-d9c41d416e38",
-        "label": "B",
+        "label": "2",
         "textEn": "Sunlight",
         "textTa": "சூரிய ஒளி",
         "imageUrl": null,
@@ -1362,7 +1362,7 @@
       {
         "id": "a514633b-ec64-47e6-a505-09b050a3a885",
         "questionId": "58c36340-4e79-4552-b33e-d9c41d416e38",
-        "label": "C",
+        "label": "3",
         "textEn": "Soil minerals",
         "textTa": "மண் தாதுக்கள்",
         "imageUrl": null,
@@ -1374,7 +1374,7 @@
       {
         "id": "cb6e3ad6-bdad-4199-a763-294b9ea998ef",
         "questionId": "58c36340-4e79-4552-b33e-d9c41d416e38",
-        "label": "D",
+        "label": "4",
         "textEn": "Decomposers",
         "textTa": "சிதைப்பவை",
         "imageUrl": null,
@@ -1439,7 +1439,7 @@
       {
         "id": "b96bb311-339b-4753-b364-336b119a3e1b",
         "questionId": "125cc241-eb80-4a4c-a095-d43e2e2cd97a",
-        "label": "A",
+        "label": "1",
         "textEn": "Metre",
         "textTa": "மீட்டர்",
         "imageUrl": null,
@@ -1451,7 +1451,7 @@
       {
         "id": "36613047-15d9-4138-b783-b22fb659bd99",
         "questionId": "125cc241-eb80-4a4c-a095-d43e2e2cd97a",
-        "label": "B",
+        "label": "2",
         "textEn": "Second",
         "textTa": "வினாடி",
         "imageUrl": null,
@@ -1463,7 +1463,7 @@
       {
         "id": "c53356e1-a496-4a79-b7dd-3ad5e96cc40f",
         "questionId": "125cc241-eb80-4a4c-a095-d43e2e2cd97a",
-        "label": "C",
+        "label": "3",
         "textEn": "Hertz",
         "textTa": "ஹெர்ட்ஸ்",
         "imageUrl": null,
@@ -1475,7 +1475,7 @@
       {
         "id": "9d9c3467-702a-498a-a079-4909e3edf816",
         "questionId": "125cc241-eb80-4a4c-a095-d43e2e2cd97a",
-        "label": "D",
+        "label": "4",
         "textEn": "Watt",
         "textTa": "வாட்",
         "imageUrl": null,
@@ -1540,7 +1540,7 @@
       {
         "id": "6e67664b-9567-4cae-97cb-3ffaf2612ed8",
         "questionId": "fd7bcf88-e53d-4f2b-8ce4-b52a622f6385",
-        "label": "A",
+        "label": "1",
         "textEn": "Oxygen",
         "textTa": "ஆக்சிஜன்",
         "imageUrl": null,
@@ -1552,7 +1552,7 @@
       {
         "id": "c16def7a-9898-4421-82db-0909513feebb",
         "questionId": "fd7bcf88-e53d-4f2b-8ce4-b52a622f6385",
-        "label": "B",
+        "label": "2",
         "textEn": "Fluorine",
         "textTa": "ஃபுளோரின்",
         "imageUrl": null,
@@ -1564,7 +1564,7 @@
       {
         "id": "ccba86c1-f3f4-4a9e-aa64-76f2a39181e6",
         "questionId": "fd7bcf88-e53d-4f2b-8ce4-b52a622f6385",
-        "label": "C",
+        "label": "3",
         "textEn": "Chlorine",
         "textTa": "குளோரின்",
         "imageUrl": null,
@@ -1576,7 +1576,7 @@
       {
         "id": "d74e55c4-de41-4412-b775-2bfc1ccc4398",
         "questionId": "fd7bcf88-e53d-4f2b-8ce4-b52a622f6385",
-        "label": "D",
+        "label": "4",
         "textEn": "Nitrogen",
         "textTa": "நைட்ரஜன்",
         "imageUrl": null,
@@ -1641,7 +1641,7 @@
       {
         "id": "f38adb03-411d-4e72-905a-b0afa1c6a7b3",
         "questionId": "1a163193-a823-4528-a9ad-3f99ff2bbf22",
-        "label": "A",
+        "label": "1",
         "textEn": "DNA ligase",
         "textTa": "DNA லைகேஸ்",
         "imageUrl": null,
@@ -1653,7 +1653,7 @@
       {
         "id": "ea6fd63e-3267-4339-a86d-125aa68b305e",
         "questionId": "1a163193-a823-4528-a9ad-3f99ff2bbf22",
-        "label": "B",
+        "label": "2",
         "textEn": "RNA polymerase",
         "textTa": "RNA பாலிமரேஸ்",
         "imageUrl": null,
@@ -1665,7 +1665,7 @@
       {
         "id": "2ec85d76-df02-47a1-bd6b-c7a5624e9195",
         "questionId": "1a163193-a823-4528-a9ad-3f99ff2bbf22",
-        "label": "C",
+        "label": "3",
         "textEn": "DNA polymerase",
         "textTa": "DNA பாலிமரேஸ்",
         "imageUrl": null,
@@ -1677,7 +1677,7 @@
       {
         "id": "3e4e5297-032e-433f-8a87-0455cae7641b",
         "questionId": "1a163193-a823-4528-a9ad-3f99ff2bbf22",
-        "label": "D",
+        "label": "4",
         "textEn": "Amylase",
         "textTa": "அமைலேஸ்",
         "imageUrl": null,
@@ -1742,7 +1742,7 @@
       {
         "id": "a78ed91c-1db6-44c4-a00d-872e7584d5fa",
         "questionId": "3085babf-dfcf-492d-ae98-b29f9793897b",
-        "label": "A",
+        "label": "1",
         "textEn": "Optical centre",
         "textTa": "ஒளி மையம்",
         "imageUrl": null,
@@ -1754,7 +1754,7 @@
       {
         "id": "dfe839bb-8d1d-47ea-aa98-26f50bcaf21e",
         "questionId": "3085babf-dfcf-492d-ae98-b29f9793897b",
-        "label": "B",
+        "label": "2",
         "textEn": "Principal focus",
         "textTa": "முதன்மைக் குவியம்",
         "imageUrl": null,
@@ -1766,7 +1766,7 @@
       {
         "id": "2a0b96de-c965-452a-9d22-36cb0d3b8fe2",
         "questionId": "3085babf-dfcf-492d-ae98-b29f9793897b",
-        "label": "C",
+        "label": "3",
         "textEn": "Centre of curvature only",
         "textTa": "வளைவு மையம் மட்டுமே",
         "imageUrl": null,
@@ -1778,7 +1778,7 @@
       {
         "id": "c6598645-2193-4335-b140-4a19bafbf571",
         "questionId": "3085babf-dfcf-492d-ae98-b29f9793897b",
-        "label": "D",
+        "label": "4",
         "textEn": "A point at infinity",
         "textTa": "முடிவிலியில் உள்ள புள்ளி",
         "imageUrl": null,
@@ -1843,7 +1843,7 @@
       {
         "id": "ccc37cb8-1bf6-403f-8a2b-8779354ec4bb",
         "questionId": "fe6c1eb5-a392-4606-a1f8-1ab701272240",
-        "label": "A",
+        "label": "1",
         "textEn": "0.25 M",
         "textTa": "0.25 M",
         "imageUrl": null,
@@ -1855,7 +1855,7 @@
       {
         "id": "661be26e-d3e1-4082-a2a0-433c8046a033",
         "questionId": "fe6c1eb5-a392-4606-a1f8-1ab701272240",
-        "label": "B",
+        "label": "2",
         "textEn": "1.0 M",
         "textTa": "1.0 M",
         "imageUrl": null,
@@ -1867,7 +1867,7 @@
       {
         "id": "63739d1f-17cf-4fac-9e97-dd37c85c6833",
         "questionId": "fe6c1eb5-a392-4606-a1f8-1ab701272240",
-        "label": "C",
+        "label": "3",
         "textEn": "2.5 M",
         "textTa": "2.5 M",
         "imageUrl": null,
@@ -1879,7 +1879,7 @@
       {
         "id": "6f10a3dc-05c2-46cc-9db5-f6a475061c71",
         "questionId": "fe6c1eb5-a392-4606-a1f8-1ab701272240",
-        "label": "D",
+        "label": "4",
         "textEn": "4.0 M",
         "textTa": "4.0 M",
         "imageUrl": null,
@@ -1944,7 +1944,7 @@
       {
         "id": "5c8ad4cd-70a2-42e0-854c-3e47f542af04",
         "questionId": "bc66fff4-bc72-4715-b036-f7ff7a05727d",
-        "label": "A",
+        "label": "1",
         "textEn": "Uterus",
         "textTa": "கருப்பை",
         "imageUrl": null,
@@ -1956,7 +1956,7 @@
       {
         "id": "d7cc1f01-2382-4a01-969c-94b7eca42e3a",
         "questionId": "bc66fff4-bc72-4715-b036-f7ff7a05727d",
-        "label": "B",
+        "label": "2",
         "textEn": "Cervix",
         "textTa": "கருப்பைக் கழுத்து",
         "imageUrl": null,
@@ -1968,7 +1968,7 @@
       {
         "id": "c00fb87b-9ef8-485d-8d0e-3e21f212a50d",
         "questionId": "bc66fff4-bc72-4715-b036-f7ff7a05727d",
-        "label": "C",
+        "label": "3",
         "textEn": "Ampullary-isthmic junction of the fallopian tube",
         "textTa": "கருக்குழாயின் ஆம்புல்லா-இஸ்த்மஸ் சந்திப்பு",
         "imageUrl": null,
@@ -1980,7 +1980,7 @@
       {
         "id": "381795d5-656f-4482-9b06-ccb9f2c4d215",
         "questionId": "bc66fff4-bc72-4715-b036-f7ff7a05727d",
-        "label": "D",
+        "label": "4",
         "textEn": "Vagina",
         "textTa": "யோனி",
         "imageUrl": null,
@@ -2045,7 +2045,7 @@
       {
         "id": "d830ebed-f94c-408d-b0ed-43c76d12771a",
         "questionId": "0c9eacc9-f2e2-4bb7-94e3-208b649b475a",
-        "label": "A",
+        "label": "1",
         "textEn": "Positive",
         "textTa": "நேர்மறை",
         "imageUrl": null,
@@ -2057,7 +2057,7 @@
       {
         "id": "49373055-9eb8-41ab-b1c8-5d84913e74d3",
         "questionId": "0c9eacc9-f2e2-4bb7-94e3-208b649b475a",
-        "label": "B",
+        "label": "2",
         "textEn": "Negative",
         "textTa": "எதிர்மறை",
         "imageUrl": null,
@@ -2069,7 +2069,7 @@
       {
         "id": "4cf13845-0282-4626-90d3-0f7b25191946",
         "questionId": "0c9eacc9-f2e2-4bb7-94e3-208b649b475a",
-        "label": "C",
+        "label": "3",
         "textEn": "Zero",
         "textTa": "பூஜ்ஜியம்",
         "imageUrl": null,
@@ -2081,7 +2081,7 @@
       {
         "id": "04d7009d-bc2d-4721-b60b-7ba0e52b5b2e",
         "questionId": "0c9eacc9-f2e2-4bb7-94e3-208b649b475a",
-        "label": "D",
+        "label": "4",
         "textEn": "Always infinite",
         "textTa": "எப்போதும் முடிவிலி",
         "imageUrl": null,
@@ -2146,7 +2146,7 @@
       {
         "id": "38d6330d-dc60-4f26-bf16-1bc0056d85ec",
         "questionId": "7ca5437c-fe8b-4a56-8c5b-2ca70f5681a3",
-        "label": "A",
+        "label": "1",
         "textEn": "+2",
         "textTa": "+2",
         "imageUrl": null,
@@ -2158,7 +2158,7 @@
       {
         "id": "708109a5-9e91-484f-b949-20ea527780fe",
         "questionId": "7ca5437c-fe8b-4a56-8c5b-2ca70f5681a3",
-        "label": "B",
+        "label": "2",
         "textEn": "+4",
         "textTa": "+4",
         "imageUrl": null,
@@ -2170,7 +2170,7 @@
       {
         "id": "48701fff-fa18-4518-b861-957937c6778b",
         "questionId": "7ca5437c-fe8b-4a56-8c5b-2ca70f5681a3",
-        "label": "C",
+        "label": "3",
         "textEn": "+6",
         "textTa": "+6",
         "imageUrl": null,
@@ -2182,7 +2182,7 @@
       {
         "id": "1e7cd64e-c860-447d-842e-8cf8606a45e8",
         "questionId": "7ca5437c-fe8b-4a56-8c5b-2ca70f5681a3",
-        "label": "D",
+        "label": "4",
         "textEn": "−2",
         "textTa": "−2",
         "imageUrl": null,
@@ -2247,7 +2247,7 @@
       {
         "id": "7c8fb8af-45d4-4c26-9c01-a7c2ebd2ea0f",
         "questionId": "3bcddabf-a123-46b2-a99b-46d1b367467d",
-        "label": "A",
+        "label": "1",
         "textEn": "DNA polymerase",
         "textTa": "DNA பாலிமரேஸ்",
         "imageUrl": null,
@@ -2259,7 +2259,7 @@
       {
         "id": "8397a9b4-a98e-4991-ad52-bbfd44b5bbd8",
         "questionId": "3bcddabf-a123-46b2-a99b-46d1b367467d",
-        "label": "B",
+        "label": "2",
         "textEn": "Restriction endonuclease",
         "textTa": "ரெஸ்ட்ரிக்ஷன் எண்டோநியூக்ளியேஸ்",
         "imageUrl": null,
@@ -2271,7 +2271,7 @@
       {
         "id": "6f6f13cc-221b-4afe-90c3-05d5135dd605",
         "questionId": "3bcddabf-a123-46b2-a99b-46d1b367467d",
-        "label": "C",
+        "label": "3",
         "textEn": "DNA ligase",
         "textTa": "DNA லைகேஸ்",
         "imageUrl": null,
@@ -2283,7 +2283,7 @@
       {
         "id": "1b00bdcb-d5d5-48b4-b9a7-131dba817f8f",
         "questionId": "3bcddabf-a123-46b2-a99b-46d1b367467d",
-        "label": "D",
+        "label": "4",
         "textEn": "Reverse transcriptase",
         "textTa": "ரிவர்ஸ் டிரான்ஸ்கிரிப்டேஸ்",
         "imageUrl": null,
@@ -2348,7 +2348,7 @@
       {
         "id": "80d4d3e9-0051-4504-8128-fa6f45b49d82",
         "questionId": "f95680df-3ea9-4daa-ad14-dd480293e112",
-        "label": "A",
+        "label": "1",
         "textEn": "2.5 J",
         "textTa": "2.5 J",
         "imageUrl": null,
@@ -2360,7 +2360,7 @@
       {
         "id": "9441b3c0-14c0-445f-9324-3c0fc525b85e",
         "questionId": "f95680df-3ea9-4daa-ad14-dd480293e112",
-        "label": "B",
+        "label": "2",
         "textEn": "14 J",
         "textTa": "14 J",
         "imageUrl": null,
@@ -2372,7 +2372,7 @@
       {
         "id": "476babb8-658b-4ebd-b354-bdbe2dd9bc6d",
         "questionId": "f95680df-3ea9-4daa-ad14-dd480293e112",
-        "label": "C",
+        "label": "3",
         "textEn": "40 J",
         "textTa": "40 J",
         "imageUrl": null,
@@ -2384,7 +2384,7 @@
       {
         "id": "c5a37d09-fd3b-41c7-9eb5-f94632642836",
         "questionId": "f95680df-3ea9-4daa-ad14-dd480293e112",
-        "label": "D",
+        "label": "4",
         "textEn": "0 J",
         "textTa": "0 J",
         "imageUrl": null,

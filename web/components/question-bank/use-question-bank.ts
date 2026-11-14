@@ -175,8 +175,11 @@ export function useQuestionBank() {
   };
 
   const editQuestion = (question: Question) => {
-    const options = ["A", "B", "C", "D"].map((label) => {
-      const existing = question.options.find((item) => item.label === label);
+    const legacy = ["A", "B", "C", "D"];
+    const options = ["1", "2", "3", "4"].map((label, idx) => {
+      const existing = question.options.find(
+        (item) => item.label === label || item.label === legacy[idx] || (item as unknown as { position?: number }).position === idx + 1,
+      );
       return {
         label,
         textEn: existing?.textEn ?? "",
@@ -242,8 +245,11 @@ export function useQuestionBank() {
       solutionImageUrl: question.solutionImageUrl ?? "",
       numericalAnswer: question.numericalAnswer ?? "",
       source: question.source ?? "",
-      options: ["A", "B", "C", "D"].map((label) => {
-        const option = question.options.find((item) => item.label === label);
+      options: ["1", "2", "3", "4"].map((label, idx) => {
+        const legacy = ["A", "B", "C", "D"];
+        const option = question.options.find(
+          (item) => item.label === label || item.label === legacy[idx] || (item as unknown as { position?: number }).position === idx + 1,
+        );
         return {
           label,
           textEn: option?.textEn ?? "",

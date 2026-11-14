@@ -29,7 +29,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatSecondsOrMinutes, formatTime } from "./demo-test-calculator";
-import type { DemoQuestion, ScorecardReport, UserAnswerRecord } from "./demo-test.types";
+import {
+  getNeetOptionLabel,
+  type DemoQuestion,
+  type ScorecardReport,
+  type UserAnswerRecord,
+} from "./demo-test.types";
 
 interface DemoTestScorecardProps {
   report: ScorecardReport;
@@ -594,7 +599,7 @@ export function DemoTestScorecard({
 
                 {/* Options List */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  {q.options.map((opt) => {
+                  {q.options.map((opt, optIdx) => {
                     const isCandidateChoice = opt.id === chosenId;
                     const isTheCorrectOne = opt.isCorrect;
 
@@ -617,7 +622,7 @@ export function DemoTestScorecard({
                               ? "bg-rose-600 text-white"
                               : "bg-slate-200 text-slate-700"
                         }`}>
-                          {opt.label}
+                          {getNeetOptionLabel(opt.label, optIdx)}
                         </span>
                         <div className="min-w-0 flex-1 space-y-0.5">
                           {langTab === "en" ? (

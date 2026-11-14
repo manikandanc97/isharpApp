@@ -117,6 +117,7 @@ export function DemoTestDialog({
     onOpenChange(false);
     setTimeout(() => {
       setPhase("lobby");
+      setSubjectMode("ALL");
       setReport(null);
       setTestPackage(null);
     }, 200);
@@ -233,14 +234,6 @@ export function DemoTestDialog({
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       {
-                        id: "ALL" as SubjectMode,
-                        title: "All 3 Subjects",
-                        desc: "Phy + Chem + Bio",
-                        icon: Layers,
-                        badge: "NEET Mock",
-                        color: "text-brand-red",
-                      },
-                      {
                         id: "PHYSICS" as SubjectMode,
                         title: "Physics Only",
                         desc: "இயற்பியல்",
@@ -263,6 +256,14 @@ export function DemoTestDialog({
                         icon: Dna,
                         badge: "Subject Drill",
                         color: "text-purple-600",
+                      },
+                      {
+                        id: "ALL" as SubjectMode,
+                        title: "All 3 Subjects",
+                        desc: "Phy + Chem + Bio",
+                        icon: Layers,
+                        badge: "NEET Mock",
+                        color: "text-brand-red",
                       },
                     ].map((item) => {
                       const isSelected = subjectMode === item.id;

@@ -20,7 +20,7 @@ export const demoQuestions: Question[] = [
     correctMarks: 4,
     negativeMarks: 1,
     options: ["2 N", "3 N", "6 N", "9 N"].map((text, index) => ({
-      label: ["A", "B", "C", "D"][index],
+      label: ["1", "2", "3", "4"][index],
       textEn: text,
       textTa: null,
       imageUrl: null,
@@ -55,7 +55,7 @@ export const demoQuestions: Question[] = [
       "Cylindrical lens",
       "Bifocal lens",
     ].map((text, index) => ({
-      label: ["A", "B", "C", "D"][index],
+      label: ["1", "2", "3", "4"][index],
       textEn: text,
       textTa: null,
       imageUrl: null,
@@ -84,7 +84,7 @@ export const demoQuestions: Question[] = [
     correctMarks: 4,
     negativeMarks: 1,
     options: ["1", "2", "3", "11"].map((text, index) => ({
-      label: ["A", "B", "C", "D"][index],
+      label: ["1", "2", "3", "4"][index],
       textEn: text,
       textTa: null,
       imageUrl: null,
@@ -116,7 +116,7 @@ export const demoQuestions: Question[] = [
     negativeMarks: 1,
     options: ["Ribosome", "Golgi apparatus", "Mitochondrion", "Lysosome"].map(
       (text, index) => ({
-        label: ["A", "B", "C", "D"][index],
+        label: ["1", "2", "3", "4"][index],
         textEn: text,
         textTa: null,
         imageUrl: null,

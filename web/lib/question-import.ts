@@ -13,9 +13,11 @@ const imageValue = (row: CellMap, key: string) => value(row, `${key}_image`) || 
 
 export function mapQuestionRow(row: CellMap) {
   const correct = new Set(value(row, 'correct_options').toUpperCase().split(',').map((item) => item.trim()).filter(Boolean));
-  const options = ['A', 'B', 'C', 'D'].map((label) => {
+  const options = ['A', 'B', 'C', 'D'].map((label, idx) => {
     const key = label.toLowerCase();
-    return { label, textEn: value(row, `option_${key}_en`), textTa: value(row, `option_${key}_ta`), imageUrl: imageValue(row, `option_${key}`), isCorrect: correct.has(label) };
+    const numLabel = String(idx + 1);
+    const isCorrect = correct.has(label) || correct.has(numLabel);
+    return { label: numLabel, textEn: value(row, `option_${key}_en`), textTa: value(row, `option_${key}_ta`), imageUrl: imageValue(row, `option_${key}`), isCorrect };
   }).filter((option) => option.textEn || option.textTa || option.imageUrl);
   return {
     externalId: value(row, 'external_id'), courseCode: value(row, 'course_code'), subjectCode: value(row, 'subject_code'), chapterTitle: value(row, 'chapter_title'),

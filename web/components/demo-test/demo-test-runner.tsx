@@ -25,11 +25,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatTime } from "./demo-test-calculator";
-import type {
-  DemoQuestion,
-  DemoTestPackage,
-  QuestionStatus,
-  UserAnswerRecord,
+import {
+  getNeetOptionLabel,
+  type DemoQuestion,
+  type DemoTestPackage,
+  type QuestionStatus,
+  type UserAnswerRecord,
 } from "./demo-test.types";
 
 interface DemoTestRunnerProps {
@@ -609,7 +610,7 @@ export function DemoTestRunner({
                             : "bg-white text-slate-700 border border-slate-300"
                         }`}
                       >
-                        {opt.label}
+                        {getNeetOptionLabel(opt.label, optIdx)}
                       </span>
                     </div>
 
@@ -696,7 +697,7 @@ export function DemoTestRunner({
         </main>
 
         {/* Right: NTA-Standard Question Palette */}
-        <aside className="hidden lg:flex w-80 shrink-0 flex-col border-l border-slate-200 bg-slate-50/60 justify-between overflow-hidden">
+        <aside className="hidden lg:flex w-[360px] shrink-0 flex-col border-l border-slate-200 bg-slate-50/60 justify-between overflow-hidden">
           {/* Scrollable Upper Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
             {renderPaletteContent(false)}

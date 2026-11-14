@@ -206,15 +206,29 @@ export class DemoTestService {
       solutionTa: q.solutionTa,
       correctMarks: q.correctMarks ?? 4,
       negativeMarks: q.negativeMarks ?? 1,
-      options: q.options.map((opt) => ({
-        id: opt.id,
-        label: opt.label,
-        textEn: opt.textEn ?? '',
-        textTa: opt.textTa,
-        imageUrl: opt.imageUrl,
-        isCorrect: opt.isCorrect,
-        position: opt.position,
-      })),
+      options: q.options.map((opt, optIdx) => {
+        const neetLabel =
+          opt.position != null
+            ? String(opt.position)
+            : opt.label === 'A'
+              ? '1'
+              : opt.label === 'B'
+                ? '2'
+                : opt.label === 'C'
+                  ? '3'
+                  : opt.label === 'D'
+                    ? '4'
+                    : opt.label || String(optIdx + 1);
+        return {
+          id: opt.id,
+          label: neetLabel,
+          textEn: opt.textEn ?? '',
+          textTa: opt.textTa,
+          imageUrl: opt.imageUrl,
+          isCorrect: opt.isCorrect,
+          position: opt.position ?? optIdx + 1,
+        };
+      }),
     }));
 
     const durationMinutes = Math.max(8, Math.ceil(questions.length * 1.5));
