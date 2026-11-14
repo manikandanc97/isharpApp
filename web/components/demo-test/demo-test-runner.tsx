@@ -632,10 +632,6 @@ export function DemoTestRunner({
                         </div>
                       )}
                     </div>
-
-                    <span className="hidden sm:inline-block text-2xs font-mono text-slate-400 self-center">
-                      [Key {optIdx + 1}]
-                    </span>
                   </label>
                 );
               })}
