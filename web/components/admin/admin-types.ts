@@ -1,13 +1,60 @@
-import { BookOpen, LayoutDashboard, Users } from "lucide-react";
+import {
+  Award,
+  BarChart3,
+  BookOpen,
+  CalendarCheck,
+  HelpCircle,
+  History,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
-export type AdminDashboardSection = "overview" | "students" | "courses";
+export type AdminDashboardSection =
+  | "overview"
+  | "students"
+  | "courses"
+  | "questions"
+  | "test-series"
+  | "tests"
+  | "exams"
+  | "results"
+  | "roles"
+  | "settings"
+  | "audit-logs";
+
 export type Section = AdminDashboardSection;
 
 export const sectionPaths: Record<Section, string> = {
   overview: "/admin",
   students: "/admin/students",
   courses: "/admin/courses",
+  questions: "/admin/question-bank",
+  "test-series": "/admin/test-series",
+  tests: "/admin/test-series",
+  exams: "/admin/exams",
+  results: "/admin/results",
+  roles: "/admin/roles",
+  settings: "/admin/settings",
+  "audit-logs": "/admin/audit-logs",
 };
+
+export const platformOperationSections: Section[] = [
+  "overview",
+  "students",
+  "courses",
+  "questions",
+  "test-series",
+  "exams",
+  "results",
+];
+
+export const systemConfigurationSections: Section[] = [
+  "roles",
+  "settings",
+  "audit-logs",
+];
 
 export type Metrics = {
   users: number;
@@ -91,18 +138,31 @@ export type StudentDirectoryEntry =
       student: InternalStudent;
     };
 
+export type CourseChapter = {
+  id: string;
+  title: string;
+  description?: string | null;
+  position?: number;
+  isActive?: boolean;
+};
+
+export type CourseSubject = {
+  id: string;
+  subject: { id: string; code: string; name: string; description?: string | null };
+  chapters?: CourseChapter[];
+  _count: { chapters: number };
+};
+
 export type Course = {
   id: string;
   code: string;
   title: string;
   description: string | null;
   isActive: boolean;
+  academicYear?: string;
+  syllabusCoverage?: number;
   updatedAt: string;
-  courseSubjects: {
-    id: string;
-    subject: { id: string; code: string; name: string };
-    _count: { chapters: number };
-  }[];
+  courseSubjects: CourseSubject[];
 };
 
 export function isStudentAccount(user: User) {
@@ -117,18 +177,74 @@ export const sectionMeta = {
     label: "Overview",
     icon: LayoutDashboard,
     description: "Executive Dashboard & Metrics",
+    group: "operations",
   },
   students: {
     label: "Students",
     icon: Users,
     description: "Directory & Account Permissions",
+    group: "operations",
   },
   courses: {
     label: "Courses",
     icon: BookOpen,
-    description: "Academic Catalog Management",
+    description: "Curriculum & Syllabus Coverage",
+    group: "operations",
+  },
+  questions: {
+    label: "Question Bank",
+    icon: HelpCircle,
+    description: "NEET Question Library & Asset Pool",
+    group: "operations",
+  },
+  "test-series": {
+    label: "Test Series",
+    icon: Award,
+    description: "Categorized Mock & Practice Series",
+    group: "operations",
+  },
+  tests: {
+    label: "Test Series",
+    icon: Award,
+    description: "Assessment & Test Series Control",
+    group: "operations",
+  },
+  exams: {
+    label: "Exam Management",
+    icon: CalendarCheck,
+    description: "Scheduling, Monitoring & Proctoring",
+    group: "operations",
+  },
+  results: {
+    label: "Results & Analytics",
+    icon: BarChart3,
+    description: "Scorecards, Percentiles & Rankings",
+    group: "operations",
+  },
+  roles: {
+    label: "Roles & Permissions",
+    icon: ShieldCheck,
+    description: "RBAC & Staff Access Levels",
+    group: "configuration",
+  },
+  settings: {
+    label: "Settings",
+    icon: Settings,
+    description: "Academy Branding & Test Defaults",
+    group: "configuration",
+  },
+  "audit-logs": {
+    label: "Audit Logs",
+    icon: History,
+    description: "Security Events & Activity Trail",
+    group: "configuration",
   },
 } satisfies Record<
   Section,
-  { label: string; icon: typeof LayoutDashboard; description: string }
+  {
+    label: string;
+    icon: typeof LayoutDashboard;
+    description: string;
+    group: "operations" | "configuration";
+  }
 >;

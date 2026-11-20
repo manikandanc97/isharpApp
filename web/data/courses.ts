@@ -110,7 +110,7 @@ export const courses: readonly Course[] = [
         ],
       },
       {
-        title: "Biology (Botany & Zoology)",
+        title: "Biology",
         topics: [
           "Plant Physiology & Genetics",
           "Human Physiology & Endocrine Systems",

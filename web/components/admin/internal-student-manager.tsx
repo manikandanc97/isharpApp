@@ -15,8 +15,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "./admin-api";
 import type { InternalStudent } from "./admin-types";
 
@@ -148,54 +152,43 @@ export function InternalStudentManager({
           if (!open && !saving) closeEditor();
         }}
       >
-        <DialogContent
-          showCloseButton={false}
-          className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:max-w-lg"
-        >
+        <DialogContent className="max-w-lg p-6">
           {editing && (
             <form
               onSubmit={(event) => {
                 event.preventDefault();
                 void saveStudent();
               }}
+              className="space-y-4"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-red">
-                    Internal student
-                  </p>
-                  <DialogTitle className="mt-1 type-section-title text-slate-900">
-                    {editing === "edit"
-                      ? "Edit internal student"
-                      : "Add internal student"}
-                  </DialogTitle>
-                  <DialogDescription className="mt-1 text-xs leading-5 text-slate-500">
-                    Enter the exact email the student will use to register. A
-                    matching email receives free access automatically; all other
-                    student accounts require a paid plan.
-                  </DialogDescription>
-                </div>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={closeEditor}
-                  className="grid size-9 place-items-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
-                  aria-label="Close student form"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
+              <DialogHeader>
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-red">
+                  Internal student
+                </p>
+                <DialogTitle className="text-base sm:text-lg font-bold text-slate-900">
+                  {editing === "edit"
+                    ? "Edit internal student"
+                    : "Add internal student"}
+                </DialogTitle>
+                <DialogDescription className="text-xs leading-5 text-slate-500">
+                  Enter the exact email the student will use to register. A
+                  matching email receives free access automatically; all other
+                  student accounts require a paid plan.
+                </DialogDescription>
+              </DialogHeader>
 
-              <div className="mt-6 space-y-4">
-                <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
-                  Student name
-                  <input
+              <div className="space-y-3.5 pt-1">
+                <div className="space-y-1.5">
+                  <Label htmlFor="student-name" className="text-xs font-semibold text-slate-700">
+                    Student name *
+                  </Label>
+                  <Input
+                    id="student-name"
                     autoFocus
                     required
                     minLength={2}
                     maxLength={150}
                     autoComplete="name"
-                    className="h-11 rounded-xl border border-slate-300 px-3.5 font-medium outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
                     value={form.fullName}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -203,16 +196,19 @@ export function InternalStudentManager({
                         fullName: event.target.value,
                       }))
                     }
-                    placeholder="Student name"
+                    placeholder="Student full name"
+                    className="text-xs"
                   />
-                </label>
-                <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
-                  Login email
-                  <input
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="student-email" className="text-xs font-semibold text-slate-700">
+                    Login email *
+                  </Label>
+                  <Input
+                    id="student-email"
                     required
                     maxLength={320}
                     autoComplete="email"
-                    className="h-11 rounded-xl border border-slate-300 px-3.5 font-medium outline-none transition focus:border-brand-blue focus:ring-3 focus:ring-blue-100"
                     type="email"
                     value={form.email}
                     onChange={(event) =>
@@ -222,38 +218,40 @@ export function InternalStudentManager({
                       }))
                     }
                     placeholder="student@example.com"
+                    className="text-xs"
                   />
-                </label>
+                </div>
               </div>
 
               {formError && (
                 <div
                   role="alert"
-                  className="mt-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-700"
+                  className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-700"
                 >
                   <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />
                   <span>{formError}</span>
                 </div>
               )}
 
-              <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
+              <DialogFooter className="pt-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={closeEditor}
                   disabled={saving}
+                  className="text-xs font-medium"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={saving || !form.fullName.trim() || !form.email.trim()}
-                  className="bg-brand-red text-white hover:bg-brand-red-hover"
+                  className="bg-brand-red text-xs font-semibold text-white shadow-primary hover:bg-brand-red-hover"
                 >
                   {saving ? (
-                    <LoaderCircle className="mr-2 size-4 animate-spin" />
+                    <LoaderCircle className="mr-1.5 size-4 animate-spin" />
                   ) : (
-                    <Check className="mr-2 size-4" />
+                    <Check className="mr-1.5 size-4" />
                   )}
                   {saving
                     ? "Saving…"
@@ -261,7 +259,7 @@ export function InternalStudentManager({
                       ? "Update student"
                       : "Save student"}
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
           )}
         </DialogContent>

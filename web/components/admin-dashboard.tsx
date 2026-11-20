@@ -5,7 +5,13 @@ import { PageContainer } from "@/components/layout/layout-primitives";
 import { CoursesSection } from "@/components/admin/courses-section";
 import { OverviewSection } from "@/components/admin/overview-section";
 import { StudentsSection } from "@/components/admin/students-section";
+import { TestSeriesSection } from "@/components/admin/test-series/test-series-section";
 import { QuestionBankManager } from "@/components/question-bank-manager";
+import { ExamManagementSection } from "@/components/admin/exams/exam-management-section";
+import { ResultsSection } from "@/components/admin/results/results-section";
+import { RolesSection } from "@/components/admin/roles/roles-section";
+import { SettingsSection } from "@/components/admin/settings/settings-section";
+import { AuditLogsSection } from "@/components/admin/audit-logs/audit-logs-section";
 import { LogoutConfirmationDialog } from "@/components/logout-confirmation-dialog";
 import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 import type { AdminDashboardSection } from "@/components/admin/admin-types";
@@ -53,7 +59,7 @@ export function AdminDashboard({
 
   return (
     <div className="relative min-h-svh overflow-x-clip bg-slate-50 font-sans text-slate-900 antialiased selection:bg-brand-red selection:text-white">
-      {/* MODERN LUXURY SOLID SIDEBAR */}
+      {/* SOLID SIDEBAR */}
       <AdminSidebar
         sidebarOpen={sidebarOpen}
         onCloseSidebar={() => setSidebarOpen(false)}
@@ -85,7 +91,7 @@ export function AdminDashboard({
 
         {/* Workspace Body */}
         <main>
-          <PageContainer size="workspace" className="py-(--space-layout)">
+          <PageContainer size="workspace" className="pt-4 pb-8 sm:pt-5 sm:pb-10">
             {/* Alert Notice Banner */}
             {notice && (
               <div className="mb-6 flex items-center justify-between rounded-xl border border-emerald-200/90 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 shadow-2xs">
@@ -123,6 +129,7 @@ export function AdminDashboard({
               <AdminWorkspaceContentSkeleton section={section} />
             ) : (
               <>
+                {/* 1. Overview */}
                 {section === "overview" && overview && (
                   <OverviewSection
                     overview={overview}
@@ -131,6 +138,8 @@ export function AdminDashboard({
                     onNavigate={navigateToSection}
                   />
                 )}
+
+                {/* 2. Students */}
                 {section === "students" && (
                   <div className="space-y-6">
                     <StudentsSection
@@ -161,15 +170,67 @@ export function AdminDashboard({
                     />
                   </div>
                 )}
+
+                {/* 3. Courses (Curriculum Management ONLY) */}
                 {section === "courses" && (
-                  <div className="space-y-8">
-                    <CoursesSection
-                      courses={courses}
-                      onCreate={createCourse}
-                      onToggle={toggleCourse}
-                    />
-                    <QuestionBankManager />
-                  </div>
+                  <CoursesSection
+                    courses={courses}
+                    onCreate={createCourse}
+                    onToggle={toggleCourse}
+                  />
+                )}
+
+                {/* 4. Question Bank (Dedicated Module) */}
+                {section === "questions" && (
+                  <QuestionBankManager />
+                )}
+
+                {/* 5. Test Series */}
+                {(section === "test-series" || section === "tests") && (
+                  <TestSeriesSection
+                    onNotice={showNotice}
+                    onError={setError}
+                  />
+                )}
+
+                {/* 6. Exam Management */}
+                {section === "exams" && (
+                  <ExamManagementSection
+                    onNotice={showNotice}
+                    onError={setError}
+                  />
+                )}
+
+                {/* 7. Results & Analytics */}
+                {section === "results" && (
+                  <ResultsSection
+                    onNotice={showNotice}
+                    onError={setError}
+                  />
+                )}
+
+                {/* 8. Roles & Permissions */}
+                {section === "roles" && (
+                  <RolesSection
+                    onNotice={showNotice}
+                    onError={setError}
+                  />
+                )}
+
+                {/* 9. Settings */}
+                {section === "settings" && (
+                  <SettingsSection
+                    onNotice={showNotice}
+                    onError={setError}
+                  />
+                )}
+
+                {/* 10. Audit Logs */}
+                {section === "audit-logs" && (
+                  <AuditLogsSection
+                    onNotice={showNotice}
+                    onError={setError}
+                  />
                 )}
               </>
             )}
@@ -184,7 +245,7 @@ export function AdminDashboard({
         onConfirm={signOut}
         isLoading={signingOut}
         title="Sign out of Admin Console?"
-        description="Are you sure you want to log out? Unsaved course updates or question bank edits will be discarded."
+        description="Are you sure you want to log out? Unsaved changes will be discarded."
       />
     </div>
   );

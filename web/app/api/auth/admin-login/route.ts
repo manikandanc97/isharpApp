@@ -31,14 +31,42 @@ export async function POST(request: Request) {
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: body.email.trim().toLowerCase(),
+    const cleanEmail = body.email.trim().toLowerCase();
+    let { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
       password: body.password,
     });
+
+    // Fallback: If failed and password had accidental whitespace (e.g., from copy-paste or autocorrect)
+    if (error && body.password.trim() !== body.password) {
+      const retryResult = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: body.password.trim(),
+      });
+      if (!retryResult.error && retryResult.data.session) {
+        data = retryResult.data;
+        error = null;
+      }
+    }
+
     if (error || !data.session?.access_token || !data.user) {
+      console.warn(`[AdminLogin] Auth failed for ${cleanEmail}:`, error?.message, error?.status);
+
+      const isRateLimited =
+        error?.status === 429 ||
+        error?.message?.toLowerCase().includes('rate limit') ||
+        error?.message?.toLowerCase().includes('too many requests');
+
+      const message = isRateLimited
+        ? 'Too many sign-in attempts. Please wait a minute and try again.'
+        : 'Invalid email or password.';
+
       return Response.json(
-        { message: 'Invalid email or password.' },
-        { status: 401, headers: { 'Cache-Control': 'no-store, private' } },
+        { message },
+        {
+          status: isRateLimited ? 429 : 401,
+          headers: { 'Cache-Control': 'no-store, private' },
+        },
       );
     }
 

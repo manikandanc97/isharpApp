@@ -64,13 +64,32 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
 
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
+      let { data, error } = await supabase.auth.signInWithPassword({
         email: cleanedIdentifier,
         password,
       });
 
+      if (error && password.trim() !== password) {
+        const retry = await supabase.auth.signInWithPassword({
+          email: cleanedIdentifier,
+          password: password.trim(),
+        });
+        if (!retry.error && retry.data.session) {
+          data = retry.data;
+          error = null;
+        }
+      }
+
       if (error) {
-        setAuthError("Invalid email or password.");
+        const isRateLimited =
+          error.status === 429 ||
+          error.message?.toLowerCase().includes("rate limit") ||
+          error.message?.toLowerCase().includes("too many requests");
+        setAuthError(
+          isRateLimited
+            ? "Too many sign-in attempts. Please wait a minute and try again."
+            : "Invalid email or password."
+        );
         return;
       }
 

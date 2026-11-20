@@ -34,8 +34,8 @@ export function LogoutConfirmationDialog({
 }: LogoutConfirmationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm sm:max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-200">
-        <DialogHeader className="flex flex-col items-center sm:items-start text-center sm:text-left gap-3">
+      <DialogContent className="max-w-sm sm:max-w-md p-6 sm:p-7">
+        <DialogHeader className="flex flex-col items-center sm:items-start text-center sm:text-left gap-3 pr-8">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-brand-red border border-rose-100 shadow-xs">
             <LogOut className="size-5 text-brand-red" strokeWidth={2.2} />
           </div>

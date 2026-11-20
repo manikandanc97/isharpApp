@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   Award,
   Calendar,
   CheckCircle2,
   Clock,
   FileQuestion,
+  Loader2,
+  Play,
   ShieldAlert,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -33,14 +37,45 @@ export function MockInstructionsDialog({
   open,
   onOpenChange,
 }: MockInstructionsDialogProps) {
+  const router = useRouter();
   const [langTab, setLangTab] = useState<"en" | "ta">("en");
+  const [isStarting, setIsStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!mock) return null;
 
+  const handleStartExam = async () => {
+    if (mock.activeAttemptId) {
+      onOpenChange(false);
+      router.push(`/exam/${mock.activeAttemptId}`);
+      return;
+    }
+
+    try {
+      setIsStarting(true);
+      setError(null);
+      const res = await fetch(`/api/exam/tests/${mock.id}/start`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to start examination");
+      }
+
+      onOpenChange(false);
+      router.push(`/exam/${data.attemptId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start examination");
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl rounded-3xl p-6 sm:p-8">
-        <DialogHeader className="space-y-2">
+      <DialogContent className="max-w-2xl p-6 sm:p-7">
+        <DialogHeader className="space-y-2 pr-8">
           <div className="flex items-center gap-2">
             <span className="rounded-md bg-brand-red/10 px-2.5 py-0.5 font-mono text-xs font-bold text-brand-red">
               {mock.code}
@@ -152,25 +187,43 @@ export function MockInstructionsDialog({
           </div>
         </div>
 
+        {error && (
+          <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            <AlertTriangle className="size-4 shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
+
         <DialogFooter className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isStarting}
             className="rounded-full text-xs font-medium"
           >
             Close Guidelines
           </Button>
           <Button
-            onClick={() => {
-              onOpenChange(false);
-              alert(
-                `Mock test session lobby for "${mock.title}" will open when the proctoring countdown begins. Ensure your device is prepared!`
-              );
-            }}
-            className="rounded-full bg-brand-red text-xs font-semibold text-white shadow-primary hover:bg-brand-red-hover"
+            onClick={handleStartExam}
+            disabled={isStarting || (mock.availabilityStatus === "COMPLETED" && !mock.activeAttemptId)}
+            className="rounded-full bg-brand-red text-xs font-semibold text-white shadow-primary hover:bg-brand-red-hover disabled:opacity-50"
           >
-            <CheckCircle2 className="mr-1.5 size-4" />
-            I Understand & Agree
+            {isStarting ? (
+              <>
+                <Loader2 className="mr-1.5 size-4 animate-spin" />
+                Preparing CBT Engine...
+              </>
+            ) : mock.activeAttemptId ? (
+              <>
+                <Play className="mr-1.5 size-4" />
+                Resume Active Examination
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mr-1.5 size-4" />
+                Start CBT Test Engine
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -45,9 +45,9 @@ export function TablePagination({
   onPageChange: (page: number) => void;
 }) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  if (totalItems <= pageSize) return null;
+  if (totalItems <= 0) return null;
 
-  const firstItem = (page - 1) * pageSize + 1;
+  const firstItem = Math.min((page - 1) * pageSize + 1, totalItems);
   const lastItem = Math.min(page * pageSize, totalItems);
   const pageNumbers = Array.from(
     { length: Math.min(5, totalPages) },
@@ -68,44 +68,46 @@ export function TablePagination({
         <span className="font-semibold text-slate-800">{lastItem}</span> of{" "}
         <span className="font-semibold text-slate-800">{totalItems}</span>
       </p>
-      <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          disabled={page === 1}
-          onClick={() => onPageChange(page - 1)}
-          className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="size-3.5" />
-          <span className="hidden sm:inline">Previous</span>
-        </button>
-        {pageNumbers.map((pageNumber) => (
+      {totalPages > 1 && (
+        <div className="flex items-center gap-1.5">
           <button
-            key={pageNumber}
             type="button"
-            onClick={() => onPageChange(pageNumber)}
-            className={`grid size-8 place-items-center rounded-full border text-xs font-medium transition ${
-              pageNumber === page
-                ? "border-brand-blue bg-brand-blue text-white"
-                : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-brand-blue"
-            }`}
-            aria-label={`Go to page ${pageNumber}`}
-            aria-current={pageNumber === page ? "page" : undefined}
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+            className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Previous page"
           >
-            {pageNumber}
+            <ChevronLeft className="size-3.5" />
+            <span className="hidden sm:inline">Previous</span>
           </button>
-        ))}
-        <button
-          type="button"
-          disabled={page === totalPages}
-          onClick={() => onPageChange(page + 1)}
-          className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Next page"
-        >
-          <span className="hidden sm:inline">Next</span>
-          <ChevronRight className="size-3.5" />
-        </button>
-      </div>
+          {pageNumbers.map((pageNumber) => (
+            <button
+              key={pageNumber}
+              type="button"
+              onClick={() => onPageChange(pageNumber)}
+              className={`grid size-8 place-items-center rounded-full border text-xs font-medium transition ${
+                pageNumber === page
+                  ? "border-brand-blue bg-brand-blue text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-brand-blue"
+              }`}
+              aria-label={`Go to page ${pageNumber}`}
+              aria-current={pageNumber === page ? "page" : undefined}
+            >
+              {pageNumber}
+            </button>
+          ))}
+          <button
+            type="button"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+            className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Next page"
+          >
+            <span className="hidden sm:inline">Next</span>
+            <ChevronRight className="size-3.5" />
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

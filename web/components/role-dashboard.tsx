@@ -92,7 +92,7 @@ export function RoleDashboard({ area }: { area: Area }) {
   }
 
   return (
-    <main className="min-h-svh bg-slate-50 py-(--space-layout) text-slate-900">
+    <main className="min-h-svh bg-slate-50 py-5 sm:py-7 text-slate-900">
       <PageContainer size="readable">
         <Stack gap="lg">
         <div className="flex items-center justify-between gap-4">

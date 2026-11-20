@@ -132,7 +132,7 @@ export default function RegisterPage() {
         </PageContainer>
       </header>
 
-      <PageContainer className="py-(--space-content)">
+      <PageContainer className="py-5 sm:py-6">
         <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
           <RegisterBenefitsSidebar />
 

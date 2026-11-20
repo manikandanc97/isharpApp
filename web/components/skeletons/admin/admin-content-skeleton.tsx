@@ -1,7 +1,8 @@
 import { skeletonItems, SkeletonLines } from "@/components/skeletons/skeleton-primitives";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Section } from "@/components/admin/admin-types";
 
-export type AdminSkeletonSection = "overview" | "students" | "courses";
+export type AdminSkeletonSection = Section | "overview" | "students" | "courses" | "tests";
 
 function OverviewSkeleton() {
   return (

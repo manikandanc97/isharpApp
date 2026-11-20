@@ -10,7 +10,10 @@ import {
   setMockTestQuestionsRecord,
 } from './mock-test.helper.js';
 import { uploadQuestionImage } from './question-media.helper.js';
-import { persistQuestionRecord } from './question-persistence.helper.js';
+import {
+  persistQuestionRecord,
+  type QuestionSavePolicy,
+} from './question-persistence.helper.js';
 import { runImportPreflight } from './question-preflight.helper.js';
 import {
   int,
@@ -102,10 +105,7 @@ export class QuestionBankService {
   saveQuestion(
     profileId: string | null,
     body: unknown,
-    savePolicy: {
-      skipExisting?: boolean;
-      createMissingChapter?: boolean;
-    } = {},
+    savePolicy: QuestionSavePolicy = {},
   ) {
     return persistQuestionRecord(this.prisma, profileId, body, savePolicy);
   }
@@ -122,62 +122,74 @@ export class QuestionBankService {
       error?: string;
     }[] = [];
     const seen = new Set<string>();
-    for (let index = 0; index < rows.length; index++) {
-      const envelope = obj(rows[index]);
-      const rowNumber = int(envelope.rowNumber, index + 2, 2, 1_000_000);
-      const row = envelope.data === undefined ? envelope : obj(envelope.data);
-      const externalId = str(row.externalId, 'externalId', false, 64);
-      const duplicateKey = externalId?.toLocaleLowerCase('en-US');
-      if (duplicateKey && seen.has(duplicateKey)) {
-        results.push({
-          row: rowNumber,
-          externalId: externalId ?? undefined,
-          status: 'skipped',
-          reason: 'Duplicate external ID in this workbook',
-        });
-        continue;
-      }
-      if (duplicateKey) seen.add(duplicateKey);
-      try {
-        const saved = await this.saveQuestion(profileId, row, {
-          skipExisting: true,
-          createMissingChapter: true,
-        });
-        results.push(
-          saved
-            ? {
+    const courseSubjectCache = new Map<string, unknown>();
+
+    const CONCURRENCY = 6;
+    for (let i = 0; i < rows.length; i += CONCURRENCY) {
+      const slice = rows.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        slice.map(async (rowItem, sliceIdx) => {
+          const index = i + sliceIdx;
+          const envelope = obj(rowItem);
+          const rowNumber = int(envelope.rowNumber, index + 2, 2, 1_000_000);
+          const row = envelope.data === undefined ? envelope : obj(envelope.data);
+          const externalId = str(row.externalId, 'externalId', false, 64);
+          const duplicateKey = externalId?.toLocaleLowerCase('en-US');
+          if (duplicateKey && seen.has(duplicateKey)) {
+            results.push({
+              row: rowNumber,
+              externalId: externalId ?? undefined,
+              status: 'skipped',
+              reason: 'Duplicate external ID in this workbook',
+            });
+            return;
+          }
+          if (duplicateKey) seen.add(duplicateKey);
+          try {
+            const saved = await this.saveQuestion(profileId, row, {
+              skipExisting: true,
+              createMissingChapter: true,
+              skipReturnDetails: true,
+              courseSubjectCache,
+            });
+            results.push(
+              saved
+                ? {
+                    row: rowNumber,
+                    externalId: saved.externalId,
+                    status: 'imported',
+                    reason: saved.importMeta?.createdChapter
+                      ? `Imported and created chapter: ${saved.importMeta.createdChapter}`
+                      : undefined,
+                  }
+                : {
+                    row: rowNumber,
+                    externalId: externalId ?? undefined,
+                    status: 'skipped',
+                    reason: 'Question already exists',
+                  },
+            );
+          } catch (error) {
+            if (externalId && isUniqueConstraintError(error)) {
+              results.push({
                 row: rowNumber,
-                externalId: saved.externalId,
-                status: 'imported',
-                reason: saved.importMeta?.createdChapter
-                  ? `Imported and created chapter: ${saved.importMeta.createdChapter}`
-                  : undefined,
-              }
-            : {
-                row: rowNumber,
-                externalId: externalId ?? undefined,
+                externalId,
                 status: 'skipped',
                 reason: 'Question already exists',
-              },
-        );
-      } catch (error) {
-        if (externalId && isUniqueConstraintError(error)) {
-          results.push({
-            row: rowNumber,
-            externalId,
-            status: 'skipped',
-            reason: 'Question already exists',
-          });
-          continue;
-        }
-        results.push({
-          row: rowNumber,
-          externalId: externalId ?? undefined,
-          status: 'failed',
-          error: error instanceof Error ? error.message : 'Import failed',
-        });
-      }
+              });
+              return;
+            }
+            results.push({
+              row: rowNumber,
+              externalId: externalId ?? undefined,
+              status: 'failed',
+              error: error instanceof Error ? error.message : 'Import failed',
+            });
+          }
+        }),
+      );
     }
+    results.sort((a, b) => a.row - b.row);
     return {
       total: rows.length,
       imported: results.filter((item) => item.status === 'imported').length,

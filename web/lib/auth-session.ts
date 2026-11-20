@@ -1,6 +1,14 @@
 import { createApiClient } from '@/lib/api-client';
 
-export const roleNames = ['STUDENT', 'ADMIN', 'SUPERADMIN'] as const;
+export const roleNames = [
+  'STUDENT',
+  'ADMIN',
+  'SUPERADMIN',
+  'QUESTION_MANAGER',
+  'ACADEMIC_MANAGER',
+  'EXAM_MANAGER',
+  'EVALUATOR',
+] as const;
 export type RoleName = (typeof roleNames)[number];
 
 export type AuthenticatedSession = {

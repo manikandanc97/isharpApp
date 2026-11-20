@@ -14,24 +14,34 @@ import {
   TYPES,
 } from './question-validation.helper.js';
 
+export type QuestionSavePolicy = {
+  skipExisting?: boolean;
+  createMissingChapter?: boolean;
+  skipReturnDetails?: boolean;
+  courseSubjectCache?: Map<string, any>;
+};
+
 export async function persistQuestionRecord(
   prisma: PrismaService,
   profileId: string | null,
   body: unknown,
-  savePolicy: {
-    skipExisting?: boolean;
-    createMissingChapter?: boolean;
-  } = {},
+  savePolicy: QuestionSavePolicy = {},
 ) {
   if (!profileId)
     throw new BadRequestException('Administrator profile is not linked');
   const input = obj(body);
-  const externalId = str(input.externalId, 'externalId', true, 64)!;
-  const courseCode = str(input.courseCode, 'courseCode', true, 50)!;
+  const courseCode = str(input.courseCode, 'courseCode', false, 50) || 'NEET';
   const subjectCode = str(input.subjectCode, 'subjectCode', true, 50)!;
   if (!NEET_SUBJECTS.includes(subjectCode.toUpperCase()))
     throw new BadRequestException(
       'subjectCode must be PHYSICS, CHEMISTRY or BIOLOGY',
+    );
+  const rawExternalId = str(input.externalId, 'externalId', false, 64);
+  const externalId =
+    rawExternalId ||
+    `${courseCode.toUpperCase()}-${subjectCode.substring(0, 3).toUpperCase()}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`.substring(
+      0,
+      64,
     );
   const type = enumValue(input.type, TYPES, 'SINGLE_CORRECT');
   const language = enumValue(input.language, LANGUAGES, 'BILINGUAL');
@@ -52,21 +62,29 @@ export async function persistQuestionRecord(
   );
   if (!solutionEn && !solutionTa && !solutionImageUrl)
     throw new BadRequestException('Solution text or image is required');
-  const courseSubject = await prisma.courseSubject.findFirst({
-    where: {
-      course: { code: { equals: courseCode, mode: 'insensitive' } },
-      subject: { code: { equals: subjectCode, mode: 'insensitive' } },
-    },
-    include: { chapters: true },
-  });
+  const cacheKey = `${courseCode.toLowerCase()}:${subjectCode.toLowerCase()}`;
+  let courseSubject = savePolicy.courseSubjectCache?.get(cacheKey);
+  if (!courseSubject) {
+    courseSubject = await prisma.courseSubject.findFirst({
+      where: {
+        course: { code: { equals: courseCode, mode: 'insensitive' } },
+        subject: { code: { equals: subjectCode, mode: 'insensitive' } },
+      },
+      include: { chapters: true },
+    });
+    if (courseSubject && savePolicy.courseSubjectCache) {
+      savePolicy.courseSubjectCache.set(cacheKey, courseSubject);
+    }
+  }
   if (!courseSubject)
     throw new BadRequestException(
       `Course/subject not found: ${courseCode}/${subjectCode}`,
     );
   const chapterTitle = str(input.chapterTitle, 'chapterTitle', false, 200);
   const chapter = chapterTitle
-    ? courseSubject.chapters.find(
-        (item) => item.title.toLowerCase() === chapterTitle.toLowerCase(),
+    ? (courseSubject.chapters as Array<{ id: string; title: string }>).find(
+        (item: { id: string; title: string }) =>
+          item.title.toLowerCase() === chapterTitle.toLowerCase(),
       )
     : undefined;
   if (chapterTitle && !chapter && !savePolicy.createMissingChapter)
@@ -168,6 +186,9 @@ export async function persistQuestionRecord(
             });
             chapterId = created.id;
             createdChapter = created.title;
+            if (savePolicy.courseSubjectCache) {
+              courseSubject.chapters.push(created);
+            }
           }
         }
 
@@ -194,6 +215,15 @@ export async function persistQuestionRecord(
               ...option,
             })),
           });
+
+        if (savePolicy.skipReturnDetails) {
+          return {
+            id: question.id,
+            externalId: question.externalId,
+            importMeta: { createdChapter },
+          } as never;
+        }
+
         const saved = await tx.question.findUnique({
           where: { id: question.id },
           include: { options: { orderBy: { position: 'asc' } } },
@@ -204,7 +234,6 @@ export async function persistQuestionRecord(
           importMeta: { createdChapter },
         };
       },
-      { isolationLevel: 'Serializable' },
     );
 
   for (let attempt = 0; attempt < 3; attempt++) {

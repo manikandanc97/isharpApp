@@ -6,7 +6,11 @@ import {
   StudentCategory,
   StudentPaymentStatus,
 } from '../generated/prisma/client.js';
-import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  isTransientConnectionError,
+  PrismaService,
+  withTransientDbRetry,
+} from '../prisma/prisma.service.js';
 import {
   generateStudentCode,
   setStudentIdAuditContext,
@@ -47,10 +51,12 @@ export class StudentAccessResolver {
     // Most authenticated requests only need an existing, unchanged profile.
     // Keep that hot path outside an interactive transaction so parallel page
     // requests do not compete for transaction slots in a small database pool.
-    const existing = await this.prisma.userProfile.findUnique({
-      where: { authUserId },
-      select: studentProfileSelect,
-    });
+    const existing = await withTransientDbRetry(() =>
+      this.prisma.userProfile.findUnique({
+        where: { authUserId },
+        select: studentProfileSelect,
+      }),
+    );
     if (existing) {
       if (email && existing.email && existing.email !== email)
         throw new ConflictException(

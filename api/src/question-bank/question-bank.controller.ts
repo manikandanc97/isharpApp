@@ -21,7 +21,7 @@ import { QuestionBankService } from './question-bank.service.js';
 
 @Controller('api/admin')
 @UseGuards(AuthGuard, RolesGuard)
-@Roles('ADMIN', 'SUPERADMIN')
+@Roles('ADMIN', 'SUPERADMIN', 'QUESTION_MANAGER')
 export class QuestionBankController {
   constructor(private readonly bank: QuestionBankService) {}
   @Get('questions')

@@ -51,8 +51,8 @@ export function StudentProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl p-6 sm:p-8">
-        <DialogHeader>
+      <DialogContent className="max-w-md p-6 sm:p-7">
+        <DialogHeader className="pr-8">
           <div className="flex items-center gap-3">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-red to-rose-400 font-bold text-white shadow-xs text-base">
               {initial}

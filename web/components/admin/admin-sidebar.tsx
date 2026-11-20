@@ -4,7 +4,9 @@ import { LoaderCircle, LogOut, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { initials } from "@/components/admin/admin-helpers";
 import {
+  platformOperationSections,
   sectionMeta,
+  systemConfigurationSections,
   type Section,
 } from "@/components/admin/admin-types";
 import type { AuthenticatedSession } from "@/lib/auth-session";
@@ -32,6 +34,76 @@ export function AdminSidebar({
   signingOut,
   onOpenLogoutDialog,
 }: AdminSidebarProps) {
+  const isItemActive = (key: Section) => {
+    if (section === key) return true;
+    if (key === "test-series" && section === "tests") return true;
+    return false;
+  };
+
+  const renderNavGroup = (title: string, keys: Section[]) => (
+    <div className="space-y-1">
+      <div className="mb-2 px-3 text-3xs font-semibold uppercase tracking-wider text-slate-400">
+        {title}
+      </div>
+      {keys.map((key) => {
+        const meta = sectionMeta[key];
+        const Icon = meta.icon;
+        const isActive = isItemActive(key);
+        const badgeCount =
+          key === "students" ? pendingNotificationCount : 0;
+        return (
+          <button
+            key={key}
+            onClick={() => {
+              onNavigate(key);
+              onCloseSidebar();
+            }}
+            className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition-all ${
+              isActive
+                ? "bg-brand-blue text-white shadow-xs"
+                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-950"
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-white/10 text-white"
+                    : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-900"
+                }`}
+              >
+                <Icon className="size-4" />
+              </div>
+              <div className="grid gap-0.5 min-w-0">
+                <p className="truncate text-xs font-semibold leading-tight">
+                  {meta.label}
+                </p>
+                <p
+                  className={`truncate text-3xs ${
+                    isActive ? "text-slate-300" : "text-slate-400"
+                  }`}
+                >
+                  {meta.description}
+                </p>
+              </div>
+            </div>
+            {badgeCount > 0 && (
+              <span
+                className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  isActive
+                    ? "bg-brand-red text-white"
+                    : "bg-amber-100 text-amber-800"
+                }`}
+              >
+                {badgeCount}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <>
       {/* SOLID SIDEBAR */}
@@ -52,67 +124,13 @@ export function AdminSidebar({
           </button>
         </div>
 
-        {/* Section Navigation Links */}
-        <div className="flex-1 space-y-1.5 overflow-y-auto px-4 py-6">
-          <div className="mb-2 px-3 text-3xs font-semibold uppercase tracking-wide text-slate-400">
-            Platform Operations
+        {/* Section Navigation Links with Clean Module Separation */}
+        <div className="sidebar-scrollbar flex-1 space-y-6 overflow-y-auto px-4 py-5 pr-3">
+          {renderNavGroup("Platform Operations", platformOperationSections)}
+
+          <div className="border-t border-slate-100 pt-3">
+            {renderNavGroup("System Configuration", systemConfigurationSections)}
           </div>
-          {(Object.keys(sectionMeta) as Section[]).map((key) => {
-            const meta = sectionMeta[key];
-            const Icon = meta.icon;
-            const isActive = section === key;
-            const badgeCount =
-              key === "students" ? pendingNotificationCount : 0;
-            return (
-              <button
-                key={key}
-                onClick={() => {
-                  onNavigate(key);
-                  onCloseSidebar();
-                }}
-                className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-3 text-left transition-all ${
-                  isActive
-                    ? "bg-brand-blue text-white shadow-xs"
-                    : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-950"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`grid size-8 place-items-center rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-white/10 text-white"
-                        : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-900"
-                    }`}
-                  >
-                    <Icon className="size-4" />
-                  </div>
-                  <div className="grid gap-1">
-                    <p className="text-xs font-semibold leading-none">
-                      {meta.label}
-                    </p>
-                    <p
-                      className={`text-3xs ${
-                        isActive ? "text-slate-300" : "text-slate-400"
-                      }`}
-                    >
-                      {meta.description}
-                    </p>
-                  </div>
-                </div>
-                {badgeCount > 0 && (
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      isActive
-                        ? "bg-brand-red text-white"
-                        : "bg-amber-100 text-amber-800"
-                    }`}
-                  >
-                    {badgeCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
         </div>
 
         {/* Sidebar Footer with Administrator Profile */}
@@ -157,4 +175,3 @@ export function AdminSidebar({
     </>
   );
 }
-

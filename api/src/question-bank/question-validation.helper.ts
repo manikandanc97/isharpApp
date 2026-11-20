@@ -53,13 +53,14 @@ export function int(
 }
 
 export function httpUrl(value: unknown, name: string) {
-  const result = str(value, name, false, 2_000);
+  const result = str(value, name, false, 200_000);
   if (!result) return null;
+  if (result.startsWith('/') || result.startsWith('data:image/')) return result;
   try {
     if (!['http:', 'https:'].includes(new URL(result).protocol))
       throw new Error();
   } catch {
-    throw new BadRequestException(`${name} must be an HTTP(S) URL`);
+    throw new BadRequestException(`${name} must be an HTTP(S) or valid image URL`);
   }
   return result;
 }

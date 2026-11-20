@@ -81,7 +81,7 @@ export default function PlansPage() {
         </PageContainer>
       </header>
 
-      <main className="flex flex-1 items-center py-(--space-layout)">
+      <main className="flex flex-1 items-center py-5 sm:py-6 lg:py-8">
         <PageContainer className="grid grid-cols-[minmax(0,1fr)] items-center gap-(--space-layout) lg:grid-cols-12 lg:gap-14">
           <section
             aria-labelledby="access-heading"

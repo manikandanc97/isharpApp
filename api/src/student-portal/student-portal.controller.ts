@@ -22,4 +22,14 @@ export class StudentPortalController {
     // request the dashboard.
     return { ...dashboard, session: request.user };
   }
+
+  @Get('tests')
+  async getTests(@Req() request: AuthenticatedRequest) {
+    return this.portal.getPublishedAssessmentTests(request.user.profileId);
+  }
+
+  @Get('test-series')
+  async getTestSeries(@Req() request: AuthenticatedRequest) {
+    return this.portal.getPublishedTestSeries(request.user.profileId);
+  }
 }

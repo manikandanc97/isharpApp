@@ -2,13 +2,13 @@
 
 import { X } from "lucide-react";
 import { Stack } from "@/components/layout/layout-primitives";
-import { MockTestsBuilder } from "./question-bank/mock-tests-builder";
 import { QuestionEditorDialog } from "./question-bank/question-editor-dialog";
 import { QuestionImportDialog } from "./question-bank/question-import-dialog";
 import { QuestionBankHeader } from "./question-bank/question-bank-header";
 import { QuestionBankTabsAndSubjects } from "./question-bank/question-bank-tabs-and-subjects";
 import { QuestionBankList } from "./question-bank/question-bank-list";
 import { useQuestionBank } from "./question-bank/use-question-bank";
+import { exportQuestionsToExcel } from "@/lib/question-export";
 
 export function QuestionBankManager() {
   const {
@@ -24,6 +24,15 @@ export function QuestionBankManager() {
     setTab,
     subjectFilter,
     setSubjectFilter,
+    chapterFilter,
+    setChapterFilter,
+    difficultyFilter,
+    setDifficultyFilter,
+    typeFilter,
+    setTypeFilter,
+    languageFilter,
+    setLanguageFilter,
+    availableChapters,
     editingId,
     editorOpen,
     setEditorOpen,
@@ -34,6 +43,8 @@ export function QuestionBankManager() {
     importReport,
     setImportReport,
     importBusy,
+    importError,
+    setImportError,
     busy,
     error,
     setError,
@@ -56,6 +67,22 @@ export function QuestionBankManager() {
     visible,
   } = useQuestionBank();
 
+  const handleExportExcel = async () => {
+    const toExport = visible.length > 0 ? visible : questions;
+    await exportQuestionsToExcel(
+      toExport,
+      `isharp-neet-questions-export-${Date.now()}.xlsx`
+    );
+  };
+
+  const handleDuplicateQuestion = (q: (typeof questions)[number]) => {
+    editQuestion({
+      ...q,
+      id: "",
+      externalId: `${q.externalId}-COPY`,
+    });
+  };
+
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_16px_45px_-36px_rgba(15,23,42,0.45)]">
       <QuestionBankHeader
@@ -67,19 +94,26 @@ export function QuestionBankManager() {
           setImportOpen(true);
           setImportFile(null);
           setImportReport(null);
+          setImportError(null);
           setError("");
         }}
+        onExportExcel={handleExportExcel}
       />
 
       <QuestionImportDialog
         open={importOpen}
-        onClose={() => setImportOpen(false)}
+        onClose={() => {
+          setImportOpen(false);
+          setImportError(null);
+        }}
         importFile={importFile}
         selectImportFile={selectImportFile}
         importReport={importReport}
         setImportReport={setImportReport}
         setImportFile={setImportFile}
         importBusy={importBusy}
+        importError={importError}
+        setImportError={setImportError}
         onImport={importExcel}
       />
 
@@ -99,7 +133,11 @@ export function QuestionBankManager() {
 
       {(error || notice) && (
         <div
-          className={`mx-5 mt-5 flex items-center justify-between rounded-xl border p-3 text-sm sm:mx-7 ${error ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}
+          className={`mx-5 mt-5 flex items-center justify-between rounded-xl border p-3 text-sm sm:mx-7 ${
+            error
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+          }`}
         >
           <span>{error || notice}</span>
           <button
@@ -125,35 +163,31 @@ export function QuestionBankManager() {
             subjectCounts={subjectCounts}
           />
 
-          {tab === "bank" ? (
-            <QuestionBankList
-              subjectFilter={subjectFilter}
-              showingExamples={showingExamples}
-              visibleCount={visible.length}
-              query={query}
-              onQueryChange={setQuery}
-              busy={busy}
-              libraryQuestions={libraryQuestions}
-              onEdit={(q) =>
-                showingExamples ? applyDemoQuestion(q) : editQuestion(q)
-              }
-              onDelete={
-                showingExamples
-                  ? undefined
-                  : (q) => void deleteQuestion(q)
-              }
-            />
-          ) : (
-            <MockTestsBuilder
-              tests={tests}
-              questions={questions}
-              selected={selected}
-              onSelectionChange={setSelected}
-              onCreated={load}
-              onError={setError}
-              onNotice={setNotice}
-            />
-          )}
+          <QuestionBankList
+            subjectFilter={subjectFilter}
+            showingExamples={showingExamples}
+            visibleCount={visible.length}
+            query={query}
+            onQueryChange={setQuery}
+            chapterFilter={chapterFilter}
+            onChapterChange={setChapterFilter}
+            difficultyFilter={difficultyFilter}
+            onDifficultyChange={setDifficultyFilter}
+            typeFilter={typeFilter}
+            onTypeChange={setTypeFilter}
+            languageFilter={languageFilter}
+            onLanguageChange={setLanguageFilter}
+            availableChapters={availableChapters}
+            busy={busy}
+            libraryQuestions={libraryQuestions}
+            onEdit={(q) =>
+              showingExamples ? applyDemoQuestion(q) : editQuestion(q)
+            }
+            onDuplicate={handleDuplicateQuestion}
+            onDelete={
+              showingExamples ? undefined : (q) => void deleteQuestion(q)
+            }
+          />
         </Stack>
       </div>
     </section>

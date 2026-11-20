@@ -13,6 +13,9 @@ import { AdminModule } from './admin/admin.module.js';
 import { QuestionBankModule } from './question-bank/question-bank.module.js';
 import { StudentPortalModule } from './student-portal/student-portal.module.js';
 import { DemoTestModule } from './demo-test/demo-test.module.js';
+import { TestSeriesModule } from './test-series/test-series.module.js';
+import { ExaminationEngineModule } from './examination-engine/examination-engine.module.js';
+import { OfflineExaminationModule } from './offline-examination/offline-examination.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -27,6 +30,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     QuestionBankModule,
     StudentPortalModule,
     DemoTestModule,
+    TestSeriesModule,
+    ExaminationEngineModule,
+    OfflineExaminationModule,
     ...(process.env.OBSERVE_APP_KEY &&
     process.env.OBSERVE_APP_SECRET &&
     process.env.OBSERVE_APP_KEY !== 'YOUR_APP_KEY'

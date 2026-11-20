@@ -47,7 +47,34 @@ export type StudentPortalData = {
     scheduledAt: string | null;
     availableUntil: string | null;
     questionCount: number;
+    testType?: string;
+    seriesId?: string | null;
+    seriesTitle?: string | null;
+    categoryName?: string;
+    attemptCount?: number;
+    maxAttempts?: number;
+    activeAttemptId?: string | null;
+    availabilityStatus?: "LIVE" | "UPCOMING" | "EXPIRED" | "COMPLETED" | "RESUMABLE";
+    latestResult?: {
+      score: number;
+      maxMarks: number;
+      percentage: number;
+      accuracy: number;
+    } | null;
   }>;
+  testSeries?: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    description: string | null;
+    categoryId: string;
+    categoryName: string;
+    academicYear: string;
+    coverImageUrl: string | null;
+    course: { id: string; title: string; code: string } | null;
+    tests: Array<any>;
+  }>;
+  assessmentTests?: Array<any>;
   recentQuestions: Array<{
     id: string;
     externalId: string;

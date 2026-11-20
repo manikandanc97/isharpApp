@@ -23,6 +23,14 @@ model UserProfile {
   verificationAudits    MembershipVerificationAudit[] @relation("VerificationAuditActor")
   authoredQuestions     Question[]                    @relation("QuestionAuthor")
   createdMockTests      MockTest[]                    @relation("MockTestCreator")
+  createdTestSeries          TestSeries[]                  @relation("TestSeriesCreator")
+  createdAssessmentTests     AssessmentTest[]              @relation("AssessmentTestCreator")
+  studentAttempts            TestAttempt[]                 @relation("StudentTestAttempts")
+  testResults                TestResult[]                  @relation("StudentTestResults")
+  createdOfflineSessions     OfflineExamSession[]          @relation("OfflineSessionCreator")
+  offlineAttendances         OfflineStudentAttendance[]    @relation("OfflineStudentAttendanceUser")
+  recordedOfflineAttendances OfflineStudentAttendance[]    @relation("OfflineAttendanceRecorder")
+  answerKeyAudits            AnswerKeyAudit[]              @relation("AnswerKeyAuditActor")
   studentAccessAudits   StudentAccessAudit[]          @relation("StudentAccessAuditActor")
   studentIdChanges      StudentIdHistory[]            @relation("StudentIdHistoryActor")
 
@@ -92,6 +100,7 @@ model InstitutionMembership {
   audits           MembershipVerificationAudit[]
   accessAudits     StudentAccessAudit[]
   studentIdHistory StudentIdHistory[]
+  testAttempts     TestAttempt[]
 
   @@index([status], map: "institution_memberships_status_idx")
   @@index([verifiedById], map: "institution_memberships_verified_by_id_idx")
@@ -192,6 +201,7 @@ model Course {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   courseSubjects CourseSubject[]
+  testSeries     TestSeries[]
 
   @@map("courses")
 }
@@ -241,7 +251,8 @@ model Chapter {
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   courseSubject CourseSubject @relation(fields: [courseSubjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  questions     Question[]
+  questions      Question[]
+  testBlueprints TestBlueprint[]
 
   @@unique([courseSubjectId, position], map: "chapters_course_subject_id_position_key")
   @@map("chapters")
@@ -251,6 +262,9 @@ enum QuestionType {
   SINGLE_CORRECT
   MULTIPLE_CORRECT
   NUMERICAL
+  ASSERTION_REASON
+  STATEMENT_BASED
+  MATCH_FOLLOWING
 }
 
 enum QuestionDifficulty {
@@ -297,8 +311,12 @@ model Question {
   courseSubject CourseSubject      @relation(fields: [courseSubjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   chapter       Chapter?           @relation(fields: [chapterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   createdBy     UserProfile        @relation("QuestionAuthor", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  options       QuestionOption[]
-  mockTests     MockTestQuestion[]
+  options             QuestionOption[]
+  mockTests           MockTestQuestion[]
+  assessmentQuestions AssessmentTestQuestion[]
+  attemptQuestions    AttemptQuestion[]
+  attemptAnswers      AttemptAnswer[]
+  answerKeyAudits     AnswerKeyAudit[]
 
   @@index([courseSubjectId, chapterId], map: "questions_course_subject_chapter_idx")
   @@index([type, difficulty, isActive], map: "questions_type_difficulty_active_idx")
@@ -319,6 +337,8 @@ model QuestionOption {
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  attemptOptionMappings AttemptOptionMapping[]
+  attemptAnswers        AttemptAnswer[]
 
   @@unique([questionId, label], map: "question_options_question_id_label_key")
   @@unique([questionId, position], map: "question_options_question_id_position_key")
@@ -366,4 +386,401 @@ model MockTestQuestion {
   @@unique([mockTestId, position], map: "mock_test_questions_test_position_key")
   @@index([questionId], map: "mock_test_questions_question_id_idx")
   @@map("mock_test_questions")
+}
+
+
+// ==========================================
+// ENTERPRISE NEET TEST SERIES & EXAM ENGINE
+// ==========================================
+
+enum TestSeriesStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model TestSeriesCategory {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.VarChar(150)
+  slug        String   @unique(map: "test_series_categories_slug_key") @db.VarChar(100)
+  description String?  @db.Text
+  position    Int      @default(0) @db.SmallInt
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  series TestSeries[]
+
+  @@index([isActive, position], map: "test_series_categories_active_pos_idx")
+  @@map("test_series_categories")
+}
+
+model TestSeries {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String           @db.VarChar(200)
+  slug          String           @unique(map: "test_series_slug_key") @db.VarChar(200)
+  description   String?          @db.Text
+  categoryId    String           @map("category_id") @db.Uuid
+  academicYear  String           @default("2026-2027") @map("academic_year") @db.VarChar(32)
+  coverImageUrl String?          @map("cover_image_url") @db.Text
+  courseId      String?          @map("course_id") @db.Uuid
+  status        TestSeriesStatus @default(DRAFT)
+  isActive      Boolean          @default(true) @map("is_active")
+  startDate     DateTime?        @map("start_date") @db.Timestamptz(3)
+  endDate       DateTime?        @map("end_date") @db.Timestamptz(3)
+  createdById   String           @map("created_by_id") @db.Uuid
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  category  TestSeriesCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  course    Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdBy UserProfile        @relation("TestSeriesCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tests     AssessmentTest[]
+
+  @@index([categoryId, status], map: "test_series_category_status_idx")
+  @@index([status, academicYear], map: "test_series_status_academic_year_idx")
+  @@map("test_series")
+}
+
+enum AssessmentTestType {
+  CHAPTER_WISE
+  SUBJECT_WISE
+  UNIT_TEST
+  PART_TEST
+  REVISION_TEST
+  FULL_SYLLABUS
+  GRAND_TEST
+  CUSTOM_TEST
+}
+
+enum AssessmentTestStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  COMPLETED
+  ARCHIVED
+}
+
+model AssessmentTest {
+  id                     String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  testSeriesId           String               @map("test_series_id") @db.Uuid
+  code                   String               @unique(map: "assessment_tests_code_key") @db.VarChar(64)
+  title                  String               @db.VarChar(200)
+  description            String?              @db.Text
+  instructionsEn         String?              @map("instructions_en") @db.Text
+  instructionsTa         String?              @map("instructions_ta") @db.Text
+  testType               AssessmentTestType   @default(FULL_SYLLABUS) @map("test_type")
+  status                 AssessmentTestStatus @default(DRAFT)
+  durationMinutes        Int                  @default(180) @map("duration_minutes") @db.SmallInt
+  totalQuestions         Int                  @default(180) @map("total_questions") @db.SmallInt
+  totalMarks             Int                  @default(720) @map("total_marks") @db.SmallInt
+  passingMarks           Int?                 @map("passing_marks") @db.SmallInt
+  hasNegativeMarking     Boolean              @default(true) @map("has_negative_marking")
+  correctMarks           Int                  @default(4) @map("correct_marks") @db.SmallInt
+  negativeMarks          Int                  @default(1) @map("negative_marks") @db.SmallInt
+  maxAttempts            Int                  @default(1) @map("max_attempts") @db.SmallInt
+  randomizeQuestions     Boolean              @default(true) @map("randomize_questions")
+  randomizeOptions       Boolean              @default(true) @map("randomize_options")
+  showResultsImmediately Boolean              @default(false) @map("show_results_immediately")
+  isOfflineAvailable     Boolean              @default(true) @map("is_offline_available")
+  orderIndex             Int                  @default(0) @map("order_index") @db.SmallInt
+  scheduledAt            DateTime?            @map("scheduled_at") @db.Timestamptz(3)
+  availableUntil         DateTime?            @map("available_until") @db.Timestamptz(3)
+  createdById            String               @map("created_by_id") @db.Uuid
+  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  testSeries      TestSeries               @relation(fields: [testSeriesId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdBy       UserProfile              @relation("AssessmentTestCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  questions       AssessmentTestQuestion[]
+  blueprints      TestBlueprint[]
+  attempts        TestAttempt[]
+  paperSets       PaperSet[]
+  offlineSessions OfflineExamSession[]
+  results         TestResult[]
+  answerKeyAudits AnswerKeyAudit[]
+
+  @@index([testSeriesId, orderIndex], map: "assessment_tests_series_order_idx")
+  @@index([status, scheduledAt], map: "assessment_tests_status_scheduled_idx")
+  @@map("assessment_tests")
+}
+
+model AssessmentTestQuestion {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessmentTestId String   @map("assessment_test_id") @db.Uuid
+  questionId       String   @map("question_id") @db.Uuid
+  position         Int      @db.SmallInt
+  section          String   @default("A") @db.VarChar(50)
+  correctMarks     Int      @default(4) @map("correct_marks") @db.SmallInt
+  negativeMarks    Int      @default(1) @map("negative_marks") @db.SmallInt
+  isDropped        Boolean  @default(false) @map("is_dropped")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  assessmentTest AssessmentTest @relation(fields: [assessmentTestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question       Question       @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([assessmentTestId, questionId], map: "assessment_test_questions_test_q_key")
+  @@unique([assessmentTestId, position], map: "assessment_test_questions_test_pos_key")
+  @@index([questionId], map: "assessment_test_questions_question_id_idx")
+  @@map("assessment_test_questions")
+}
+
+model TestBlueprint {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessmentTestId String   @map("assessment_test_id") @db.Uuid
+  subjectCode      String   @map("subject_code") @db.VarChar(50)
+  subjectName      String   @map("subject_name") @db.VarChar(100)
+  chapterId        String?  @map("chapter_id") @db.Uuid
+  sectionName      String   @default("Section A") @map("section_name") @db.VarChar(50)
+  totalQuestions   Int      @map("total_questions") @db.SmallInt
+  mandatoryCount   Int      @map("mandatory_count") @db.SmallInt
+  correctMarks     Int      @default(4) @map("correct_marks") @db.SmallInt
+  negativeMarks    Int      @default(1) @map("negative_marks") @db.SmallInt
+  orderIndex       Int      @default(0) @map("order_index") @db.SmallInt
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  assessmentTest AssessmentTest @relation(fields: [assessmentTestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chapter        Chapter?       @relation(fields: [chapterId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([assessmentTestId, orderIndex], map: "test_blueprints_test_order_idx")
+  @@map("test_blueprints")
+}
+
+model PaperSet {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessmentTestId  String   @map("assessment_test_id") @db.Uuid
+  setName           String   @map("set_name") @db.VarChar(16)
+  setKey            String   @unique(map: "paper_sets_test_set_key") @map("set_key") @db.VarChar(64)
+  questionOrderJson Json     @map("question_order_json")
+  optionOrderJson   Json?    @map("option_order_json")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  assessmentTest AssessmentTest @relation(fields: [assessmentTestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([assessmentTestId], map: "paper_sets_test_idx")
+  @@map("paper_sets")
+}
+
+enum TestAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  TIMED_OUT
+  EVALUATED
+  ABANDONED
+}
+
+enum ExamDeliveryMode {
+  ONLINE
+  OFFLINE
+}
+
+model TestAttempt {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessmentTestId String            @map("assessment_test_id") @db.Uuid
+  studentProfileId String            @map("student_profile_id") @db.Uuid
+  membershipId     String?           @map("membership_id") @db.Uuid
+  paperSetId       String?           @map("paper_set_id") @db.Uuid
+  attemptNumber    Int               @default(1) @map("attempt_number") @db.SmallInt
+  mode             ExamDeliveryMode  @default(ONLINE)
+  status           TestAttemptStatus @default(IN_PROGRESS)
+  startedAt        DateTime          @default(now()) @map("started_at") @db.Timestamptz(3)
+  expiresAt        DateTime          @map("expires_at") @db.Timestamptz(3)
+  submittedAt      DateTime?         @map("submitted_at") @db.Timestamptz(3)
+  durationSeconds  Int               @default(0) @map("duration_seconds")
+  totalScore       Float?            @map("total_score")
+  randomSeed       String?           @map("random_seed") @db.VarChar(64)
+  ipAddress        String?           @map("ip_address") @db.VarChar(64)
+  userAgent        String?           @map("user_agent") @db.Text
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  assessmentTest AssessmentTest         @relation(fields: [assessmentTestId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  studentProfile UserProfile            @relation("StudentTestAttempts", fields: [studentProfileId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  membership     InstitutionMembership? @relation(fields: [membershipId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  questions      AttemptQuestion[]
+  answers        AttemptAnswer[]
+  result         TestResult?
+
+  @@unique([assessmentTestId, studentProfileId, attemptNumber], map: "test_attempts_test_student_attempt_key")
+  @@index([studentProfileId, status], map: "test_attempts_student_status_idx")
+  @@index([assessmentTestId, status], map: "test_attempts_test_status_idx")
+  @@map("test_attempts")
+}
+
+model AttemptQuestion {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attemptId      String   @map("attempt_id") @db.Uuid
+  questionId     String   @map("question_id") @db.Uuid
+  position       Int      @db.SmallInt
+  section        String   @db.VarChar(50)
+  correctMarks   Int      @default(4) @map("correct_marks") @db.SmallInt
+  negativeMarks  Int      @default(1) @map("negative_marks") @db.SmallInt
+  isDropped      Boolean  @default(false) @map("is_dropped")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  attempt        TestAttempt            @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question       Question               @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  optionMappings AttemptOptionMapping[]
+
+  @@unique([attemptId, position], map: "attempt_questions_attempt_position_key")
+  @@unique([attemptId, questionId], map: "attempt_questions_attempt_question_key")
+  @@index([questionId], map: "attempt_questions_question_id_idx")
+  @@map("attempt_questions")
+}
+
+model AttemptOptionMapping {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attemptQuestionId String   @map("attempt_question_id") @db.Uuid
+  canonicalOptionId String   @map("canonical_option_id") @db.Uuid
+  shuffledPosition  Int      @map("shuffled_position") @db.SmallInt
+  displayedLabel    String   @map("displayed_label") @db.VarChar(8)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  attemptQuestion AttemptQuestion @relation(fields: [attemptQuestionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  canonicalOption QuestionOption  @relation(fields: [canonicalOptionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([attemptQuestionId, shuffledPosition], map: "attempt_option_mapping_pos_key")
+  @@unique([attemptQuestionId, canonicalOptionId], map: "attempt_option_mapping_opt_key")
+  @@map("attempt_option_mappings")
+}
+
+model AttemptAnswer {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attemptId         String    @map("attempt_id") @db.Uuid
+  questionId        String    @map("question_id") @db.Uuid
+  selectedOptionId  String?   @map("selected_option_id") @db.Uuid
+  numericalAnswer   String?   @map("numerical_answer") @db.VarChar(100)
+  isMarkedForReview Boolean   @default(false) @map("is_marked_for_review")
+  isVisited         Boolean   @default(true) @map("is_visited")
+  timeSpentSeconds  Int       @default(0) @map("time_spent_seconds")
+  isCorrect         Boolean?  @map("is_correct")
+  marksAwarded      Float     @default(0) @map("marks_awarded")
+  answeredAt        DateTime? @map("answered_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  attempt  TestAttempt     @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question Question        @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  option   QuestionOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([attemptId, questionId], map: "attempt_answers_attempt_question_key")
+  @@index([attemptId], map: "attempt_answers_attempt_idx")
+  @@map("attempt_answers")
+}
+
+model TestResult {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attemptId          String   @unique(map: "test_results_attempt_id_key") @map("attempt_id") @db.Uuid
+  assessmentTestId   String   @map("assessment_test_id") @db.Uuid
+  studentProfileId   String   @map("student_profile_id") @db.Uuid
+  totalMarksScored   Float    @map("total_marks_scored")
+  maxMarks           Int      @map("max_marks") @db.SmallInt
+  percentage         Float
+  percentile         Float?
+  rank               Int?     @db.Integer
+  correctCount       Int      @default(0) @map("correct_count") @db.SmallInt
+  incorrectCount     Int      @default(0) @map("incorrect_count") @db.SmallInt
+  unansweredCount    Int      @default(0) @map("unanswered_count") @db.SmallInt
+  accuracyPercentage Float    @default(0) @map("accuracy_percentage")
+  physicsScore       Float    @default(0) @map("physics_score")
+  chemistryScore     Float    @default(0) @map("chemistry_score")
+  biologyScore       Float    @default(0) @map("biology_score")
+  botanyScore        Float?   @default(0) @map("botany_score")
+  zoologyScore       Float?   @default(0) @map("zoology_score")
+  subjectBreakdown   Json?    @map("subject_breakdown")
+  calculatedAt       DateTime @default(now()) @map("calculated_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  attempt        TestAttempt    @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessmentTest AssessmentTest @relation(fields: [assessmentTestId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  studentProfile UserProfile    @relation("StudentTestResults", fields: [studentProfileId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([assessmentTestId, totalMarksScored], map: "test_results_test_score_idx")
+  @@index([studentProfileId], map: "test_results_student_idx")
+  @@map("test_results")
+}
+
+enum OfflineSessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  EVALUATED
+  CANCELLED
+}
+
+model OfflineExamSession {
+  id               String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessmentTestId String               @map("assessment_test_id") @db.Uuid
+  sessionName      String               @map("session_name") @db.VarChar(150)
+  centerName       String               @default("I-SHARP Main Campus") @map("center_name") @db.VarChar(150)
+  roomNumber       String?              @map("room_number") @db.VarChar(50)
+  examDate         DateTime             @map("exam_date") @db.Date
+  startTime        String               @map("start_time") @db.VarChar(16)
+  endTime          String               @map("end_time") @db.VarChar(16)
+  status           OfflineSessionStatus @default(SCHEDULED)
+  totalAssigned    Int                  @default(0) @map("total_assigned") @db.SmallInt
+  totalPresent     Int                  @default(0) @map("total_present") @db.SmallInt
+  totalAbsent      Int                  @default(0) @map("total_absent") @db.SmallInt
+  instructions     String?              @db.Text
+  createdById      String               @map("created_by_id") @db.Uuid
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  assessmentTest AssessmentTest             @relation(fields: [assessmentTestId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdBy      UserProfile                @relation("OfflineSessionCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  attendance     OfflineStudentAttendance[]
+
+  @@index([assessmentTestId, status], map: "offline_exam_sessions_test_status_idx")
+  @@map("offline_exam_sessions")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  DISQUALIFIED
+}
+
+model OfflineStudentAttendance {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId        String           @map("session_id") @db.Uuid
+  studentProfileId String           @map("student_profile_id") @db.Uuid
+  assignedPaperSet String           @default("SET_A") @map("assigned_paper_set") @db.VarChar(16)
+  deskNumber       String?          @map("desk_number") @db.VarChar(32)
+  status           AttendanceStatus @default(PRESENT)
+  omrSheetCode     String?          @map("omr_sheet_code") @db.VarChar(64)
+  marksEntered     Boolean          @default(false) @map("marks_entered")
+  evaluatedScore   Float?           @map("evaluated_score")
+  rawAnswersJson   Json?            @map("raw_answers_json")
+  recordedById     String?          @map("recorded_by_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  session        OfflineExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  studentProfile UserProfile        @relation("OfflineStudentAttendanceUser", fields: [studentProfileId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  recordedBy     UserProfile?       @relation("OfflineAttendanceRecorder", fields: [recordedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([sessionId, studentProfileId], map: "offline_attendance_session_student_key")
+  @@index([sessionId, status], map: "offline_attendance_session_status_idx")
+  @@map("offline_student_attendance")
+}
+
+model AnswerKeyAudit {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessmentTestId String   @map("assessment_test_id") @db.Uuid
+  questionId       String   @map("question_id") @db.Uuid
+  previousKey      String?  @map("previous_key") @db.VarChar(200)
+  newKey           String   @map("new_key") @db.VarChar(200)
+  changeType       String   @map("change_type") @db.VarChar(50)
+  reason           String   @db.VarChar(500)
+  changedById      String   @map("changed_by_id") @db.Uuid
+  recalculated     Boolean  @default(false)
+  affectedAttempts Int      @default(0) @map("affected_attempts")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  assessmentTest AssessmentTest @relation(fields: [assessmentTestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question       Question       @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  changedBy      UserProfile    @relation("AnswerKeyAuditActor", fields: [changedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([assessmentTestId, createdAt], map: "answer_key_audits_test_created_idx")
+  @@map("answer_key_audits")
 }

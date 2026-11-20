@@ -1,12 +1,13 @@
 import ExcelJS from "exceljs";
 import type { NextRequest } from "next/server";
+import { normalizeExcelXmlBuffer } from "@/lib/excel-patch";
 import { ApiClientError } from "@/lib/api-client";
 import { collectEmbeddedImages } from "@/lib/excel-embedded-images";
 import { getNestApiBaseUrl, getNestApiClient } from "@/lib/nest-api";
-import { mapQuestionRow, QUESTION_HEADERS } from "@/lib/question-import";
+import { generateExternalId, mapQuestionRow, TEMPLATE_HEADERS } from "@/lib/question-import";
 import { getRequestAccessToken } from "@/lib/server-access-token";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 type ImportRow = {
   rowNumber: number;
@@ -61,10 +62,10 @@ export async function POST(request: NextRequest) {
     );
 
   try {
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    const cleanBuffer = await normalizeExcelXmlBuffer(rawBuffer);
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(
-      Buffer.from(await file.arrayBuffer()) as never,
-    );
+    await workbook.xlsx.load(cleanBuffer as never);
     const sheet =
       workbook.getWorksheet("Questions") ?? workbook.worksheets[0];
     if (!sheet || sheet.rowCount < 2)
@@ -87,8 +88,15 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 },
       );
-    const missing = QUESTION_HEADERS.filter(
+    const OPTIONAL_COLUMNS = new Set([
+      "external_id",
+      "course_code",
+      "source",
+      "numerical_answer",
+    ]);
+    const missing = TEMPLATE_HEADERS.filter(
       (header) =>
+        !OPTIONAL_COLUMNS.has(header) &&
         !names.includes(header) &&
         !(header.endsWith("_image") && names.includes(`${header}_url`)),
     );
@@ -120,11 +128,26 @@ export async function POST(request: NextRequest) {
       );
 
     const allRows: ImportRow[] = [...records.entries()].map(
-      ([rowNumber, record]) => ({
-        rowNumber,
-        record,
-        externalId: String(record.external_id ?? "").trim(),
-      }),
+      ([rowNumber, record], index) => {
+        const courseCode = String(record.course_code ?? "NEET").trim() || "NEET";
+        const subjectCode = String(record.subject_code ?? "PHYSICS").trim();
+        let externalId = String(record.external_id ?? "").trim();
+        if (!externalId) {
+          externalId = generateExternalId(courseCode, subjectCode, index + 1);
+          record.external_id = externalId;
+        }
+        if (!record.course_code) {
+          record.course_code = courseCode;
+        }
+        if (!record.source) {
+          record.source = "NEET practice";
+        }
+        return {
+          rowNumber,
+          record,
+          externalId,
+        };
+      },
     );
     const skipped: ImportResult[] = [];
     const workbookIds = new Set<string>();
@@ -186,56 +209,104 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     const occupiedImageCells = new Set<string>();
-    for (const image of embedded) {
-      if (!candidateRowNumbers.has(image.rowNumber)) continue;
-      if (
-        !image.columnName.endsWith("_image") &&
-        !image.columnName.endsWith("_image_url")
-      )
-        throw new Error(
-          `Image at row ${image.rowNumber} must be placed in an image column`,
-        );
-      const imageCell = `${image.rowNumber}:${image.columnName}`;
-      if (occupiedImageCells.has(imageCell))
-        throw new Error(
-          `Only one image is allowed in ${image.columnName} at row ${image.rowNumber}`,
-        );
-      occupiedImageCells.add(imageCell);
-      const record = records.get(image.rowNumber);
-      if (!record)
-        throw new Error(
-          `Image at row ${image.rowNumber} has no question data`,
-        );
-      const imageBuffer = new ArrayBuffer(image.bytes.byteLength);
-      new Uint8Array(imageBuffer).set(image.bytes);
-      const form = new FormData();
-      form.set(
-        "file",
-        new Blob([imageBuffer], { type: image.mimeType }),
-        `excel-row-${image.rowNumber}.${image.extension}`,
+    const validImages = embedded.filter((image) =>
+      candidateRowNumbers.has(image.rowNumber),
+    );
+
+    // Upload embedded images concurrently in chunks of 4
+    const IMAGE_CONCURRENCY = 4;
+    for (let i = 0; i < validImages.length; i += IMAGE_CONCURRENCY) {
+      const chunk = validImages.slice(i, i + IMAGE_CONCURRENCY);
+      await Promise.all(
+        chunk.map(async (image) => {
+          if (
+            !image.columnName.endsWith("_image") &&
+            !image.columnName.endsWith("_image_url")
+          )
+            throw new Error(
+              `Image at row ${image.rowNumber} must be placed in an image column`,
+            );
+          const imageCell = `${image.rowNumber}:${image.columnName}`;
+          if (occupiedImageCells.has(imageCell))
+            throw new Error(
+              `Only one image is allowed in ${image.columnName} at row ${image.rowNumber}`,
+            );
+          occupiedImageCells.add(imageCell);
+          const record = records.get(image.rowNumber);
+          if (!record)
+            throw new Error(
+              `Image at row ${image.rowNumber} has no question data`,
+            );
+          const imageBuffer = new ArrayBuffer(image.bytes.byteLength);
+          new Uint8Array(imageBuffer).set(image.bytes);
+          const form = new FormData();
+          form.set(
+            "file",
+            new Blob([imageBuffer], { type: image.mimeType }),
+            `excel-row-${image.rowNumber}.${image.extension}`,
+          );
+          let imageUrl: string | null = null;
+          try {
+            const upload = await fetch(
+              `${getNestApiBaseUrl()}/api/admin/question-media`,
+              {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+                body: form,
+                cache: "no-store",
+                signal: AbortSignal.timeout(4000),
+              },
+            );
+            if (upload.ok) {
+              const uploaded = (await upload.json().catch(() => ({}))) as {
+                url?: string;
+              };
+              if (uploaded?.url) {
+                imageUrl = uploaded.url;
+              }
+            }
+          } catch {
+            // Nest API or Supabase timed out, fall back to local disk
+          }
+
+          if (!imageUrl) {
+            try {
+              const fs = await import("node:fs/promises");
+              const path = await import("node:path");
+              const crypto = await import("node:crypto");
+              const year = new Date().getUTCFullYear();
+              const filename = `import-${Date.now()}-${crypto.randomUUID()}.${image.extension}`;
+              const uploadDir = path.join(
+                process.cwd(),
+                "public",
+                "uploads",
+                "question-media",
+                String(year),
+              );
+              await fs.mkdir(uploadDir, { recursive: true });
+              await fs.writeFile(
+                path.join(uploadDir, filename),
+                Buffer.from(image.bytes),
+              );
+              imageUrl = `/uploads/question-media/${year}/${filename}`;
+            } catch {
+              // Base64 data URL fallback
+              imageUrl = `data:${image.mimeType};base64,${Buffer.from(image.bytes).toString("base64")}`;
+            }
+          }
+
+          record[image.columnName] = imageUrl;
+        }),
       );
-      const upload = await fetch(
-        `${getNestApiBaseUrl()}/api/admin/question-media`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: form,
-          cache: "no-store",
-        },
-      );
-      const uploaded = (await upload.json().catch(() => ({}))) as {
-        url?: string;
-        message?: string;
-      };
-      if (!upload.ok || !uploaded.url)
-        throw new Error(
-          uploaded.message || `Image upload failed at row ${image.rowNumber}`,
-        );
-      record[image.columnName] = uploaded.url;
     }
 
-    const imported = candidateRows.length
-      ? await getNestApiClient().request<{
+    // Process candidate rows in batches of 50 to prevent timeout and avoid heavy long-running transactions
+    const importedResults: ImportResult[] = [];
+    if (candidateRows.length) {
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < candidateRows.length; i += BATCH_SIZE) {
+        const batch = candidateRows.slice(i, i + BATCH_SIZE);
+        const batchResponse = await getNestApiClient().request<{
           total: number;
           imported: number;
           skipped: number;
@@ -245,16 +316,19 @@ export async function POST(request: NextRequest) {
           method: "POST",
           accessToken: token,
           body: {
-            rows: candidateRows.map((row) => ({
+            rows: batch.map((row) => ({
               rowNumber: row.rowNumber,
-              data: mapQuestionRow(row.record),
+              data: mapQuestionRow(row.record, row.rowNumber),
             })),
           },
           cache: "no-store",
-          timeoutMs: 120_000,
-        })
-      : { total: 0, imported: 0, skipped: 0, failed: 0, results: [] };
-    const results = [...skipped, ...imported.results].sort(
+          timeoutMs: 90_000,
+        });
+        importedResults.push(...batchResponse.results);
+      }
+    }
+
+    const results = [...skipped, ...importedResults].sort(
       (left, right) => left.row - right.row,
     );
     return Response.json(

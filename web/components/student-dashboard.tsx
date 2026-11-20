@@ -64,7 +64,7 @@ export function StudentDashboard() {
       />
 
       <main className="flex-1">
-        <PageContainer size="workspace" className="space-y-6 py-(--space-content)">
+        <PageContainer size="workspace" className="space-y-5 pt-4 pb-8 sm:space-y-6 sm:pt-5 sm:pb-10">
           <StudentTabNav
             activeTab={dashboard.activeTab}
             onTabChange={dashboard.setActiveTab}

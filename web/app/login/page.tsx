@@ -87,7 +87,7 @@ export default function LoginPage() {
       </header>
 
       {/* 02. MAIN CONTENT AREA */}
-      <main className="relative flex min-h-0 flex-1 items-center py-(--space-content) sm:py-8 lg:py-10">
+      <main className="relative flex min-h-0 flex-1 items-center py-5 sm:py-6 lg:py-7">
         <PageContainer className="relative grid grid-cols-[minmax(0,1fr)] items-center gap-(--space-layout) lg:grid-cols-12 lg:gap-10 xl:gap-14">
           {/* Left Column: Academic Brand Presentation (Compact for laptop screen) */}
           <section

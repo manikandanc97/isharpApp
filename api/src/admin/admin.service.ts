@@ -317,7 +317,7 @@ export class AdminService {
             chapters: {
               where: { isActive: true },
               orderBy: { position: 'asc' },
-              select: { id: true, title: true },
+              select: { id: true, title: true, position: true, isActive: true },
             },
             _count: { select: { chapters: true } },
           },

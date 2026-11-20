@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import type { PoolConfig } from 'pg';
+import { Pool, type PoolConfig } from 'pg';
 import { PrismaClient } from '../generated/prisma/client.js';
 
 export function normalizeDatabaseConnectionString(connectionString: string) {
@@ -25,6 +25,11 @@ export function normalizeDatabaseConnectionString(connectionString: string) {
 }
 
 export function databasePoolConfig(connectionString: string): PoolConfig {
+  const url = new URL(connectionString);
+  const isSupabaseSharedPooler =
+    url.hostname === 'pooler.supabase.com' ||
+    url.hostname.endsWith('.pooler.supabase.com');
+
   const envMax = process.env.DATABASE_POOL_MAX
     ? parseInt(process.env.DATABASE_POOL_MAX, 10)
     : undefined;
@@ -53,11 +58,48 @@ export function databasePoolConfig(connectionString: string): PoolConfig {
   };
 }
 
+export function isTransientConnectionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as {
+    code?: string;
+    message?: string;
+    meta?: { driverAdapterError?: { cause?: { kind?: string } } };
+  };
+  return (
+    err.code === 'P1017' ||
+    err.meta?.driverAdapterError?.cause?.kind === 'ConnectionClosed' ||
+    (typeof err.message === 'string' &&
+      (err.message.includes('Server has closed the connection') ||
+        err.message.includes('ConnectionClosed')))
+  );
+}
+
+export async function withTransientDbRetry<T>(
+  fn: () => Promise<T>,
+  maxAttempts = 2,
+): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+      if (attempt < maxAttempts && isTransientConnectionError(err)) {
+        await new Promise((r) => setTimeout(r, 100));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  private readonly pool: Pool;
+
   constructor(configService?: ConfigService) {
     const connectionString =
       configService?.get<string>('DATABASE_URL') ?? process.env.DATABASE_URL;
@@ -66,9 +108,18 @@ export class PrismaService
       throw new Error('DATABASE_URL is not configured');
     }
 
-    const adapter = new PrismaPg(databasePoolConfig(connectionString));
+    const poolConfig = databasePoolConfig(connectionString);
+    const pool = new Pool(poolConfig);
+
+    pool.on('error', () => {
+      // Catch errors on idle clients (e.g. server closed connection)
+      // so node-postgres evicts the dead client from the pool cleanly
+    });
+
+    const adapter = new PrismaPg(pool);
 
     super({ adapter });
+    this.pool = pool;
   }
 
   async onModuleInit(): Promise<void> {
@@ -82,5 +133,6 @@ export class PrismaService
 
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
+    await this.pool.end();
   }
 }

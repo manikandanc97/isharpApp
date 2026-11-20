@@ -93,7 +93,7 @@ export function AdminLayoutSkeleton({
       <div className="min-w-0 lg:pl-(--layout-sidebar-width)">
         <AdminTopbarSkeleton />
         <main>
-          <div className="layout-container py-(--space-layout)" data-size="workspace">
+          <div className="layout-container pt-4 pb-8 sm:pt-5 sm:pb-10" data-size="workspace">
             <AdminWorkspaceContentSkeleton section={section} />
           </div>
         </main>

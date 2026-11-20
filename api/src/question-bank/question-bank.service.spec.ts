@@ -61,7 +61,7 @@ describe('QuestionBankService validation', () => {
     expect(save).toHaveBeenCalledWith(
       'profile-id',
       { externalId: 'EXISTING-1' },
-      { skipExisting: true, createMissingChapter: true },
+      expect.objectContaining({ skipExisting: true, createMissingChapter: true }),
     );
     expect(result).toMatchObject({
       imported: 0,

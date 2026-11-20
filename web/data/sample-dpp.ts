@@ -41,7 +41,7 @@ export const sampleDPPQuestions: SampleQuestion[] = [
   },
   {
     id: "Q-NEET-2026-02",
-    subject: "Biology (Botany)",
+    subject: "Biology",
     topic: "Cell Cycle & Division",
     difficulty: "Easy",
     questionEn:

@@ -45,8 +45,8 @@ export function MobilePaletteDialog({
 }: MobilePaletteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-3xl p-5">
-        <DialogHeader className="space-y-1">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-5">
+        <DialogHeader className="space-y-1 pr-8">
           <DialogTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <LayoutGrid className="size-4 text-brand-red" />
             <span>Question Palette ({questions.length} Questions)</span>
@@ -147,8 +147,8 @@ export function SubmitConfirmDialog({
 }: SubmitConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl p-6">
-        <DialogHeader className="space-y-2">
+      <DialogContent className="max-w-md p-6">
+        <DialogHeader className="space-y-2 pr-8">
           <div className="mx-auto grid size-10 place-items-center rounded-full bg-rose-50 text-brand-red">
             <AlertTriangle className="size-5" />
           </div>
@@ -214,8 +214,8 @@ export function ExitConfirmDialog({
 }: ExitConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm rounded-3xl p-6">
-        <DialogHeader className="space-y-1">
+      <DialogContent className="max-w-sm p-6">
+        <DialogHeader className="space-y-1 pr-8">
           <DialogTitle className="text-base font-bold text-slate-900">
             Exit Demo Test?
           </DialogTitle>

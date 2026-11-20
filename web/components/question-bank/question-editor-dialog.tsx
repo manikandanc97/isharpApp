@@ -1,6 +1,15 @@
 "use client";
 
-import { LoaderCircle, Pencil, Plus, X } from "lucide-react";
+import { LoaderCircle, Pencil, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Draft } from "./types";
 import { Field, ImageField } from "./helpers";
 import { QuestionOptionsEditor } from "./question-options-editor";
@@ -30,40 +39,24 @@ export function QuestionEditorDialog({
   onSave: () => Promise<void>;
   busy: boolean;
 }) {
-  if (!open) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={editingId ? "Edit question" : "Add question"}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-      className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/65 p-3 backdrop-blur-sm sm:p-6"
-    >
-      <div className="mx-auto my-2 max-w-5xl overflow-hidden rounded-3xl border border-white/20 bg-white shadow-2xl sm:my-6">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur-xl sm:px-7">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-              Assessment editor
-            </p>
-            <h3 className="mt-1 type-section-title text-slate-950">
-              {editingId
-                ? "Edit question"
-                : `Add ${subjectFilter[0] + subjectFilter.slice(1).toLowerCase()} question`}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid size-9 place-items-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-            aria-label="Close question editor"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-        <div className="space-y-5 bg-slate-50/50 p-5 sm:p-7">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && !busy && onClose()}>
+      <DialogContent className="max-w-5xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100 shrink-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">
+            Assessment editor
+          </p>
+          <DialogTitle className="mt-1 text-base sm:text-lg font-bold text-slate-950">
+            {editingId
+              ? "Edit question"
+              : `Add ${subjectFilter[0] + subjectFilter.slice(1).toLowerCase()} question`}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            Configure question metadata, bilingual text, options, and step-by-step explanations.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto space-y-5 bg-slate-50/50 p-5 sm:p-7">
           <div className="grid gap-3 md:grid-cols-3">
             <Field label="External ID">
               <input
@@ -223,23 +216,35 @@ export function QuestionEditorDialog({
               placeholder="NCERT / NEET 2025 / Institute module"
             />
           </Field>
-          <button
+        </div>
+
+        <DialogFooter className="px-6 py-3.5 border-t border-slate-100 bg-white shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={onClose}
+            className="text-xs font-medium"
+          >
+            Cancel
+          </Button>
+          <Button
             type="button"
             disabled={busy}
             onClick={() => void onSave()}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-red px-4 py-3 font-semibold text-white shadow-primary transition hover:bg-brand-red-hover active:scale-95 disabled:opacity-60"
+            className="bg-brand-red text-xs font-semibold text-white shadow-primary hover:bg-brand-red-hover"
           >
             {busy ? (
-              <LoaderCircle className="size-4 animate-spin" />
+              <LoaderCircle className="size-4 animate-spin mr-1.5" />
             ) : editingId ? (
-              <Pencil className="size-4" />
+              <Pencil className="size-4 mr-1.5" />
             ) : (
-              <Plus className="size-4" />
-            )}{" "}
+              <Plus className="size-4 mr-1.5" />
+            )}
             {editingId ? "Update question" : "Add question"} (+4 / −1)
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
