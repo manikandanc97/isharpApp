@@ -79,7 +79,7 @@ export function QuestionEditorDialog({
               />
             </Field>
           </div>
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-3">
             <Field label="Chapter (exact)">
               <input
                 value={draft.chapterTitle}
@@ -91,23 +91,30 @@ export function QuestionEditorDialog({
             <Field label="Type">
               <select
                 value={draft.type}
-                onChange={(e) => setDraft({ ...draft, type: e.target.value })}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  setDraft((prev) => {
+                    let newOptions = prev.options;
+                    if (newType === "SINGLE_CORRECT") {
+                      let foundFirst = false;
+                      newOptions = prev.options.map((opt) => {
+                        if (opt.isCorrect && !foundFirst) {
+                          foundFirst = true;
+                          return opt;
+                        }
+                        return { ...opt, isCorrect: false };
+                      });
+                      if (!foundFirst && newOptions.length > 0) {
+                        newOptions[0] = { ...newOptions[0], isCorrect: true };
+                      }
+                    }
+                    return { ...prev, type: newType, options: newOptions };
+                  });
+                }}
               >
                 <option>SINGLE_CORRECT</option>
                 <option>MULTIPLE_CORRECT</option>
                 <option>NUMERICAL</option>
-              </select>
-            </Field>
-            <Field label="Language">
-              <select
-                value={draft.language}
-                onChange={(e) =>
-                  setDraft({ ...draft, language: e.target.value })
-                }
-              >
-                <option>BILINGUAL</option>
-                <option>ENGLISH</option>
-                <option>TAMIL</option>
               </select>
             </Field>
             <Field label="Difficulty">

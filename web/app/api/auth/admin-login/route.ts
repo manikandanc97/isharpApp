@@ -57,14 +57,21 @@ export async function POST(request: Request) {
         error?.message?.toLowerCase().includes('rate limit') ||
         error?.message?.toLowerCase().includes('too many requests');
 
+      const isNetworkError =
+        error?.message?.toLowerCase().includes('fetch failed') ||
+        error?.name === 'AuthRetryableFetchError' ||
+        error?.status === 0;
+
       const message = isRateLimited
         ? 'Too many sign-in attempts. Please wait a minute and try again.'
+        : isNetworkError
+        ? 'Unable to reach the authentication service. Please check your internet connection or Supabase connectivity.'
         : 'Invalid email or password.';
 
       return Response.json(
         { message },
         {
-          status: isRateLimited ? 429 : 401,
+          status: isRateLimited ? 429 : isNetworkError ? 503 : 401,
           headers: { 'Cache-Control': 'no-store, private' },
         },
       );
@@ -76,7 +83,8 @@ export async function POST(request: Request) {
         '/api/auth/me',
         { accessToken: data.session.access_token, cache: 'no-store' },
       );
-    } catch {
+    } catch (nestErr) {
+      console.error('[AdminLogin] NestApiClient request to /api/auth/me failed:', nestErr);
       await supabase.auth.signOut();
       return Response.json(
         { message: 'The authorization service is temporarily unavailable.' },

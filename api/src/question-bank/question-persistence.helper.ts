@@ -148,16 +148,49 @@ export async function persistQuestionRecord(
     solutionTa,
     solutionImageUrl,
     numericalAnswer: type === 'NUMERICAL' ? numericalAnswer : null,
-    correctMarks: int(input.correctMarks, 4, 0, 20),
-    negativeMarks: int(input.negativeMarks, 1, 0, 20),
+    correctMarks: int(
+      input.correctMarks !== undefined && input.correctMarks !== null && input.correctMarks !== ''
+        ? Math.abs(Number(input.correctMarks))
+        : 4,
+      4,
+      0,
+      20,
+      'correctMarks',
+    ),
+    negativeMarks: int(
+      input.negativeMarks !== undefined && input.negativeMarks !== null && input.negativeMarks !== ''
+        ? Math.abs(Number(input.negativeMarks))
+        : 1,
+      1,
+      0,
+      20,
+      'negativeMarks',
+    ),
     source: str(input.source, 'source', false, 200),
     isActive: input.isActive !== false,
   };
   const persist = () =>
     prisma.$transaction(
       async (tx) => {
+        const orConditions: Array<Record<string, unknown>> = [
+          { externalId: { equals: externalId, mode: 'insensitive' } },
+        ];
+        if (savePolicy.skipExisting) {
+          if (textEn) {
+            orConditions.push({
+              courseSubjectId: courseSubject.id,
+              textEn: { equals: textEn, mode: 'insensitive' },
+            });
+          } else if (textTa) {
+            orConditions.push({
+              courseSubjectId: courseSubject.id,
+              textTa: { equals: textTa, mode: 'insensitive' },
+            });
+          }
+        }
+
         const existing = await tx.question.findFirst({
-          where: { externalId: { equals: externalId, mode: 'insensitive' } },
+          where: { OR: orConditions },
         });
         if (existing && savePolicy.skipExisting) return null;
 

@@ -91,6 +91,7 @@ export function useQuestionBank() {
     createQuestion,
     applyDemoQuestion,
     deleteQuestion,
+    bulkDeleteQuestions,
   } = useQuestionDraftEditor({
     subjectFilter,
     setSubjectFilter,
@@ -112,6 +113,7 @@ export function useQuestionBank() {
     importBusy,
     importError,
     setImportError,
+    importProgress,
     selectImportFile,
     importExcel,
   } = useQuestionImport({
@@ -173,6 +175,7 @@ export function useQuestionBank() {
     importBusy,
     importError,
     setImportError,
+    importProgress,
     busy,
     error,
     setError,
@@ -187,6 +190,7 @@ export function useQuestionBank() {
     createQuestion,
     applyDemoQuestion,
     deleteQuestion,
+    bulkDeleteQuestions,
     selectImportFile,
     importExcel,
     subjectCounts,

@@ -3,14 +3,19 @@
 import {
   AlertCircle,
   CheckCircle2,
+  Copy,
+  Database,
   FileDown,
   FileSpreadsheet,
   LoaderCircle,
   RefreshCw,
+  Rows3,
+  ShieldCheck,
   Upload,
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +24,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { ImportReport } from "./types";
+import type { ImportProgress, ImportReport } from "./types";
+
+function formatBytes(bytes: number) {
+  if (!bytes) return "0 MB";
+  return `${(bytes / 1024 / 1024).toFixed(bytes >= 1024 * 1024 ? 2 : 3)} MB`;
+}
+
+function AnimatedCount({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplay(value);
+      return;
+    }
+    const startedAt = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / 550);
+      setDisplay(Math.round(value * (1 - (1 - progress) ** 3)));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value]);
+
+  return <>{display.toLocaleString()}</>;
+}
 
 export function QuestionImportDialog({
   open,
@@ -32,6 +64,7 @@ export function QuestionImportDialog({
   importBusy,
   importError,
   setImportError,
+  importProgress,
   onImport,
 }: {
   open: boolean;
@@ -44,6 +77,7 @@ export function QuestionImportDialog({
   importBusy: boolean;
   importError?: string | null;
   setImportError?: (err: string | null) => void;
+  importProgress: ImportProgress;
   onImport: () => Promise<void>;
 }) {
   return (
@@ -121,7 +155,7 @@ export function QuestionImportDialog({
             </div>
           )}
 
-          {!importReport && (
+          {!importReport && !importBusy && (
             <>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
@@ -196,6 +230,92 @@ export function QuestionImportDialog({
             </>
           )}
 
+          {importBusy && (
+            <div
+              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm animate-in fade-in-0 zoom-in-95 duration-300"
+              aria-live="polite"
+            >
+              <div className="relative bg-slate-950 px-5 py-5 text-white sm:px-6">
+                <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_top_right,#38bdf8,transparent_45%)]" />
+                <div className="relative flex items-center gap-4">
+                  <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/10 ring-1 ring-white/15">
+                    {importProgress.phase === "uploading" ? (
+                      <Upload className="size-5 animate-pulse" />
+                    ) : (
+                      <ShieldCheck className="size-5 animate-pulse" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold">
+                          {importProgress.phase === "uploading"
+                            ? "Uploading workbook"
+                            : "Validating and importing questions"}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-slate-300">
+                          {importFile?.name}
+                        </p>
+                      </div>
+                      <span className="text-lg font-bold tabular-nums">
+                        {importProgress.phase === "uploading"
+                          ? `${importProgress.percent}%`
+                          : "Processing"}
+                      </span>
+                    </div>
+                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+                      {importProgress.phase === "uploading" ? (
+                        <div
+                          className="h-full rounded-full bg-sky-400 transition-[width] duration-300 ease-out"
+                          style={{ width: `${importProgress.percent}%` }}
+                        />
+                      ) : (
+                        <div className="h-full w-full origin-left animate-pulse rounded-full bg-sky-400/80" />
+                      )}
+                    </div>
+                    <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs text-slate-400">
+                      <span>
+                        {importProgress.phase === "uploading"
+                          ? `${formatBytes(importProgress.loadedBytes)} of ${formatBytes(importProgress.totalBytes)}`
+                          : "Checking duplicates, validating rows and saving records"}
+                      </span>
+                      <span>Do not close this window</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-px bg-slate-200 sm:grid-cols-3">
+                {[
+                  ["1", "Upload", importProgress.phase !== "uploading"],
+                  ["2", "Validate & de-duplicate", false],
+                  ["3", "Save & summarize", false],
+                ].map(([step, label, done], index) => {
+                  const active =
+                    (index === 0 && importProgress.phase === "uploading") ||
+                    (index === 1 && importProgress.phase === "processing");
+                  return (
+                    <div key={String(label)} className="flex items-center gap-3 bg-slate-50 px-4 py-3">
+                      <span
+                        className={`grid size-7 place-items-center rounded-full text-xs font-bold ${
+                          done
+                            ? "bg-emerald-100 text-emerald-700"
+                            : active
+                              ? "bg-sky-100 text-sky-700 ring-4 ring-sky-50"
+                              : "bg-slate-200 text-slate-500"
+                        }`}
+                      >
+                        {done ? <CheckCircle2 className="size-4" /> : step}
+                      </span>
+                      <span className={`text-xs font-semibold ${active ? "text-slate-900" : "text-slate-500"}`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {importReport && (
             <div className="space-y-4">
               {importReport.failed > 0 ? (
@@ -207,6 +327,18 @@ export function QuestionImportDialog({
                     </p>
                     <p className="mt-0.5 text-amber-800">
                       Review the failed rows below to see specific validation errors. Correct them in your spreadsheet and re-upload.
+                    </p>
+                  </div>
+                </div>
+              ) : importReport.skipped > 0 ? (
+                <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-xs text-amber-900">
+                  <Copy className="mt-0.5 size-4.5 shrink-0 text-amber-600" />
+                  <div>
+                    <p className="font-bold text-amber-950">
+                      Import completed with duplicates skipped
+                    </p>
+                    <p className="mt-0.5 text-amber-800">
+                      {importReport.imported} uploaded successfully and {importReport.skipped} duplicate {importReport.skipped === 1 ? "row was" : "rows were"} safely skipped.
                     </p>
                   </div>
                 </div>
@@ -224,21 +356,47 @@ export function QuestionImportDialog({
                 </div>
               )}
 
-              <div className="grid gap-3 sm:grid-cols-4">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-4 text-white shadow-sm">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Import summary</p>
+                    <p className="mt-1 text-sm font-semibold">{importFile?.name}</p>
+                  </div>
+                  <p className="text-xs text-slate-400">{importReport.total.toLocaleString()} rows processed</p>
+                </div>
+                <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-slate-800" aria-label="Import result distribution">
+                  {importReport.imported > 0 && (
+                    <span className="h-full bg-emerald-400 transition-all duration-700" style={{ width: `${(importReport.imported / importReport.total) * 100}%` }} />
+                  )}
+                  {importReport.skipped > 0 && (
+                    <span className="h-full bg-amber-400 transition-all duration-700" style={{ width: `${(importReport.skipped / importReport.total) * 100}%` }} />
+                  )}
+                  {importReport.failed > 0 && (
+                    <span className="h-full bg-rose-400 transition-all duration-700" style={{ width: `${(importReport.failed / importReport.total) * 100}%` }} />
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {[
-                  ["Total", importReport.total, "text-slate-950"],
-                  ["Imported", importReport.imported, "text-emerald-700"],
-                  ["Skipped", importReport.skipped, "text-amber-700"],
-                  ["Failed", importReport.failed, "text-rose-700"],
-                ].map(([label, value, tone]) => (
+                  { label: "Total rows", value: importReport.total, tone: "text-slate-950", Icon: Rows3, iconTone: "bg-slate-100 text-slate-600" },
+                  { label: "Uploaded", value: importReport.imported, tone: "text-emerald-700", Icon: Database, iconTone: "bg-emerald-50 text-emerald-700" },
+                  { label: "Duplicates", value: importReport.skipped, tone: "text-amber-700", Icon: Copy, iconTone: "bg-amber-50 text-amber-700" },
+                  { label: "Errors", value: importReport.failed, tone: "text-rose-700", Icon: AlertCircle, iconTone: "bg-rose-50 text-rose-700" },
+                ].map(({ label, value, tone, Icon, iconTone }) => (
                   <div
                     key={String(label)}
-                    className="rounded-xl border border-slate-200 bg-white p-3"
+                    className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs animate-in fade-in-0 slide-in-from-bottom-1 duration-500"
                   >
-                    <p className={"type-metric " + tone}>{value}</p>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      {label}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={"type-metric tabular-nums " + tone}><AnimatedCount value={Number(value)} /></p>
+                        <p className="mt-0.5 text-xs font-semibold text-slate-500">{label}</p>
+                      </div>
+                      <span className={`grid size-9 place-items-center rounded-lg ${iconTone}`}>
+                        <Icon className="size-4.5" />
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -279,7 +437,11 @@ export function QuestionImportDialog({
                           {result.status === "imported" && (
                             <CheckCircle2 className="size-3" />
                           )}
-                          {result.status}
+                          {result.status === "skipped"
+                            ? "duplicate"
+                            : result.status === "failed"
+                              ? "error"
+                              : "uploaded"}
                         </span>
                         <span className="text-slate-500">
                           {result.reason ||

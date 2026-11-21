@@ -13,6 +13,7 @@ import {
   MoreVertical,
   Search,
   Trash2,
+  X,
   XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -147,8 +148,21 @@ export function TestSeriesTable({
                 setCurrentPage(1);
               }}
               placeholder="Search series by title or keyword..."
-              className="h-9 pl-8 text-xs bg-slate-50/50"
+              className="h-9 pl-8 pr-8 text-xs bg-slate-50/50"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setCurrentPage(1);
+                }}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600 transition focus:outline-none"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Category Filter */}

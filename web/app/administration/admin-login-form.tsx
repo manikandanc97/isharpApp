@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { getAuthenticatedSession } from "@/lib/auth-session";
 import {
   AdminControlCenterPreview,
   type AuthenticatedAdminUser,
@@ -63,27 +65,64 @@ export function AdminLoginForm() {
     const cleanedEmail = email.trim().toLowerCase();
 
     try {
-      const response = await fetch("/api/auth/admin-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanedEmail, password }),
+      const supabase = createClient();
+      let { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanedEmail,
+        password,
       });
-      const result = (await response.json()) as {
-        message?: string;
-        destination?: string;
-        role?: string;
-        displayName?: string;
-      };
-      if (!response.ok || !result.destination) {
-        setAuthError(result.message ?? "Sign-in could not be completed.");
+
+      if (error && password.trim() !== password) {
+        const retryResult = await supabase.auth.signInWithPassword({
+          email: cleanedEmail,
+          password: password.trim(),
+        });
+        if (!retryResult.error && retryResult.data.session) {
+          data = retryResult.data;
+          error = null;
+        }
+      }
+
+      if (error) {
+        const isRateLimited =
+          error.status === 429 ||
+          error.message?.toLowerCase().includes("rate limit") ||
+          error.message?.toLowerCase().includes("too many requests");
+
+        setAuthError(
+          isRateLimited
+            ? "Too many sign-in attempts. Please wait a minute and try again."
+            : "Invalid email or password."
+        );
         return;
       }
 
-      router.replace(result.destination);
+      if (!data.session?.access_token || !data.user) {
+        setAuthError("Sign-in succeeded, but no session was created. Please try again.");
+        return;
+      }
+
+      let activeSession;
+      try {
+        activeSession = await getAuthenticatedSession(data.session.access_token);
+      } catch {
+        // If NestJS auth/me check times out or fails
+        setAuthError("The authorization service is temporarily unavailable. Please try again.");
+        return;
+      }
+
+      const isSuperadmin = activeSession.roles.includes("SUPERADMIN");
+      const isAdmin = activeSession.roles.includes("ADMIN");
+      if (!isAdmin && !isSuperadmin) {
+        await supabase.auth.signOut();
+        setAuthError("This account does not have administrator access.");
+        return;
+      }
+
+      router.replace("/admin");
       router.refresh();
     } catch {
       setAuthError(
-        "Unable to reach the application login service. Please try again.",
+        "Unable to reach the login service. Check your connection and try again.",
       );
     } finally {
       setIsSubmitting(false);

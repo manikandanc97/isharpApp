@@ -81,6 +81,13 @@ export type ImportReport = {
   results: ImportRowResult[];
 };
 
+export type ImportProgress = {
+  phase: "idle" | "uploading" | "processing" | "complete";
+  percent: number;
+  loadedBytes: number;
+  totalBytes: number;
+};
+
 export const emptyDraft = (): Draft => ({
   externalId: `NEET-${Date.now().toString().slice(-8)}`,
   courseCode: "",

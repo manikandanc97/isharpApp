@@ -61,6 +61,7 @@ export function getNestApiBaseUrl(): string {
  */
 export function getNestApiClient(options?: { timeoutMs?: number }) {
   const baseUrl = getNestApiBaseUrl();
+  console.log('[getNestApiClient] Using Base URL:', baseUrl);
   return createApiClient({
     baseUrl,
     defaultTimeoutMs: options?.timeoutMs ?? 15_000,

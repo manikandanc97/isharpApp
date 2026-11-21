@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { ImportReport } from "./types";
+import type { ImportProgress, ImportReport } from "./types";
+
+const initialProgress: ImportProgress = {
+  phase: "idle",
+  percent: 0,
+  loadedBytes: 0,
+  totalBytes: 0,
+};
 
 export interface UseQuestionImportOptions {
   onImportSuccess: () => Promise<void> | void;
@@ -18,10 +25,13 @@ export function useQuestionImport({
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importProgress, setImportProgress] =
+    useState<ImportProgress>(initialProgress);
 
   const selectImportFile = (file: File | null) => {
     setImportReport(null);
     setImportError(null);
+    setImportProgress(initialProgress);
     if (!file) {
       setImportFile(null);
       return;
@@ -44,33 +54,76 @@ export function useQuestionImport({
     setImportBusy(true);
     setImportError(null);
     setImportReport(null);
+    setImportProgress({
+      phase: "uploading",
+      percent: 0,
+      loadedBytes: 0,
+      totalBytes: importFile.size,
+    });
     try {
       const form = new FormData();
       form.set("file", importFile);
-      const response = await fetch("/api/admin/questions/import", {
-        method: "POST",
-        body: form,
+      const result = await new Promise<
+        ImportReport & { message?: string; error?: string }
+      >((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        request.open("POST", "/api/admin/questions/import");
+        request.responseType = "json";
+        request.timeout = 310_000;
+
+        request.upload.onprogress = (event) => {
+          const total = event.lengthComputable ? event.total : importFile.size;
+          const percent = total > 0 ? Math.min(100, Math.round((event.loaded / total) * 100)) : 0;
+          setImportProgress({
+            phase: percent >= 100 ? "processing" : "uploading",
+            percent,
+            loadedBytes: event.loaded,
+            totalBytes: total,
+          });
+        };
+        request.upload.onload = () => {
+          setImportProgress({
+            phase: "processing",
+            percent: 100,
+            loadedBytes: importFile.size,
+            totalBytes: importFile.size,
+          });
+        };
+        request.onerror = () => reject(new Error("Network error. Check your connection and try again."));
+        request.ontimeout = () => reject(new Error("Import timed out. Please try again."));
+        request.onload = () => {
+          const body = request.response as
+            | (ImportReport & { message?: string; error?: string })
+            | null;
+          if (request.status < 200 || request.status >= 300) {
+            reject(
+              new Error(
+                body?.message ||
+                  body?.error ||
+                  `Excel import failed (HTTP ${request.status})`,
+              ),
+            );
+            return;
+          }
+          if (!body) {
+            reject(new Error("Empty response received from import service."));
+            return;
+          }
+          resolve(body);
+        };
+        request.send(form);
       });
 
-      let result: (ImportReport & { message?: string; error?: string }) | null = null;
-      try {
-        result = await response.json();
-      } catch {
-        throw new Error(`Server returned HTTP ${response.status}: ${response.statusText || "Unexpected response"}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(result?.message || result?.error || `Excel import failed (HTTP ${response.status})`);
-      }
-
-      if (!result) {
-        throw new Error("Empty response received from import service.");
-      }
-
-      setImportReport(result);
       if (result.imported > 0) {
         await onImportSuccess();
       }
+      setImportReport(result);
+      setImportProgress({
+        phase: "complete",
+        percent: 100,
+        loadedBytes: importFile.size,
+        totalBytes: importFile.size,
+      });
       if (setNotice && result.failed === 0 && result.imported > 0) {
         setNotice(
           `${result.imported} question${result.imported > 1 ? "s" : ""} imported successfully.`,
@@ -79,6 +132,7 @@ export function useQuestionImport({
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Excel import failed";
       setImportError(message);
+      setImportProgress(initialProgress);
     } finally {
       setImportBusy(false);
     }
@@ -95,6 +149,7 @@ export function useQuestionImport({
     setImportBusy,
     importError,
     setImportError,
+    importProgress,
     selectImportFile,
     importExcel,
   };

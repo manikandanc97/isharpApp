@@ -1,4 +1,4 @@
-import { RotateCcw, Search } from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface StudentDppFilterBarProps {
@@ -77,9 +77,10 @@ export function StudentDppFilterBar({
             <button
               type="button"
               onClick={() => onSearchChange("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 hover:text-slate-600 cursor-pointer"
+              aria-label="Clear search"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600 transition focus:outline-none"
             >
-              Clear
+              <X className="size-3.5" />
             </button>
           )}
         </div>

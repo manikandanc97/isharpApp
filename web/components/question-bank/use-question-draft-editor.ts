@@ -210,10 +210,6 @@ export function useQuestionDraftEditor({
   };
 
   const deleteQuestion = async (question: Question) => {
-    if (
-      !window.confirm(`Delete ${question.externalId}? This cannot be undone.`)
-    )
-      return;
     setBusy(true);
     try {
       await request(`questions/${question.id}`, { method: "DELETE" });
@@ -225,6 +221,40 @@ export function useQuestionDraftEditor({
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Question delete failed",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const bulkDeleteQuestions = async (toDelete: Question[]) => {
+    if (!toDelete.length) return;
+    setBusy(true);
+    const toDeleteIds = new Set(toDelete.map((q) => q.id));
+    let deletedCount = 0;
+    try {
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < toDelete.length; i += BATCH_SIZE) {
+        const batch = toDelete.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map(async (q) => {
+            await request(`questions/${q.id}`, { method: "DELETE" });
+            deletedCount += 1;
+          }),
+        );
+      }
+      setQuestions((current) =>
+        current.filter((item) => !toDeleteIds.has(item.id)),
+      );
+      setSelected((current) =>
+        current.filter((id) => !toDeleteIds.has(id)),
+      );
+      setNotice(`${deletedCount} question${deletedCount > 1 ? "s" : ""} deleted.`);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : `Failed deleting questions (${deletedCount}/${toDelete.length} completed)`,
       );
     } finally {
       setBusy(false);
@@ -246,5 +276,6 @@ export function useQuestionDraftEditor({
     createQuestion,
     applyDemoQuestion,
     deleteQuestion,
+    bulkDeleteQuestions,
   };
 }

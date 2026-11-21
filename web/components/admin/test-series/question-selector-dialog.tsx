@@ -586,8 +586,18 @@ export function QuestionSelectorDialog({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search question text, external ID, or chapter..."
-                  className="pl-8 text-xs h-9 bg-white"
+                  className="pl-8 pr-8 text-xs h-9 bg-white"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition focus:outline-none"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* shadcn Select: Difficulty */}

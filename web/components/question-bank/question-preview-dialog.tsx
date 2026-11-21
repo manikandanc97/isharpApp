@@ -49,9 +49,11 @@ export function QuestionPreviewDialog({
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700">
-                {question.externalId}
-              </span>
+              {!question.externalId?.startsWith("DEMO-") && (
+                <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700">
+                  {question.externalId}
+                </span>
+              )}
               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
                 {question.courseSubject.subject.name}
               </span>
@@ -125,23 +127,59 @@ export function QuestionPreviewDialog({
             <div className="text-3xs font-bold uppercase tracking-wider text-slate-400">
               Question Statement
             </div>
-            {(langMode === "BILINGUAL" || langMode === "EN") && question.textEn && (
-              <div className="text-sm font-medium leading-relaxed text-slate-900">
+            {langMode === "TA" && question.textTa ? (
+              <div className="text-sm font-bold leading-relaxed text-slate-900 font-serif">
+                {question.textTa}
+              </div>
+            ) : langMode === "EN" && question.textEn ? (
+              <div className="text-sm font-bold leading-relaxed text-slate-900">
                 {question.textEn}
               </div>
-            )}
-            {(langMode === "BILINGUAL" || langMode === "TA") && question.textTa && (
-              <div className="text-sm leading-relaxed text-slate-700 border-t border-slate-100 pt-2 font-serif">
-                {question.textTa}
+            ) : (
+              /* Bilingual: Tamil first (bold), English second */
+              <div className="space-y-2">
+                {question.textTa && (
+                  <div className="text-sm font-bold leading-relaxed text-slate-900 font-serif">
+                    {question.textTa}
+                  </div>
+                )}
+                {question.textEn && (
+                  <div className={`text-sm leading-relaxed ${question.textTa ? "text-slate-600 font-medium border-t border-slate-100 pt-2" : "text-slate-900 font-bold"}`}>
+                    {question.textEn}
+                  </div>
+                )}
               </div>
             )}
             {question.questionImageUrl && (
-              <div className="mt-3 flex justify-center rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-                <img
-                  src={question.questionImageUrl}
-                  alt="Question Diagram"
-                  className="max-h-64 object-contain rounded-lg"
-                />
+              <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                <div className="mb-2 flex items-center justify-between text-3xs font-semibold text-slate-500">
+                  <span>Question Diagram</span>
+                  <a
+                    href={question.questionImageUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-indigo-600 hover:underline"
+                  >
+                    Open Full Image ↗
+                  </a>
+                </div>
+                <div className="flex justify-center bg-white p-2 rounded-lg border border-slate-100">
+                  <img
+                    src={question.questionImageUrl}
+                    alt="Question Diagram"
+                    className="max-h-72 object-contain rounded-lg"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                      const parent = e.currentTarget.parentElement;
+                      if (parent && !parent.querySelector(".img-error-hint")) {
+                        const hint = document.createElement("div");
+                        hint.className = "img-error-hint py-4 text-center text-xs text-slate-400 font-medium";
+                        hint.textContent = "Diagram image preview unavailable or not found";
+                        parent.appendChild(hint);
+                      }
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -149,8 +187,15 @@ export function QuestionPreviewDialog({
           {/* Question Options */}
           {question.options && question.options.length > 0 && (
             <div className="space-y-3">
-              <div className="text-3xs font-bold uppercase tracking-wider text-slate-400">
-                Answer Options
+              <div className="flex items-center justify-between">
+                <div className="text-3xs font-bold uppercase tracking-wider text-slate-400">
+                  Answer Options
+                </div>
+                {question.type === "MULTIPLE_CORRECT" && (
+                  <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-3xs font-bold text-purple-700">
+                    Multiple Correct Question ({question.options.filter((o) => o.isCorrect).length} Answers)
+                  </span>
+                )}
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {question.options.map((option, idx) => {
@@ -175,11 +220,20 @@ export function QuestionPreviewDialog({
                           {option.label || displayNum}
                         </span>
                         <div className="space-y-1 text-xs">
-                          {(langMode === "BILINGUAL" || langMode === "EN") && option.textEn && (
+                          {langMode === "TA" && option.textTa ? (
+                            <p className="font-semibold text-slate-900 font-serif">{option.textTa}</p>
+                          ) : langMode === "EN" && option.textEn ? (
                             <p className="font-medium text-slate-900">{option.textEn}</p>
-                          )}
-                          {(langMode === "BILINGUAL" || langMode === "TA") && option.textTa && (
-                            <p className="text-slate-600 font-serif">{option.textTa}</p>
+                          ) : (
+                            /* Bilingual: Tamil first, then English */
+                            <>
+                              {option.textTa && (
+                                <p className="font-semibold text-slate-900 font-serif">{option.textTa}</p>
+                              )}
+                              {option.textEn && (
+                                <p className={`leading-snug ${option.textTa ? "text-slate-500 font-normal" : "font-semibold text-slate-900"}`}>{option.textEn}</p>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -222,15 +276,28 @@ export function QuestionPreviewDialog({
               <Sparkles className="size-4" />
               <span>Step-by-Step Worked Solution</span>
             </div>
-            {(langMode === "BILINGUAL" || langMode === "EN") && question.solutionEn && (
+            {langMode === "TA" && question.solutionTa ? (
+              <p className="text-xs leading-relaxed text-slate-800 font-serif whitespace-pre-line font-medium">
+                {question.solutionTa}
+              </p>
+            ) : langMode === "EN" && question.solutionEn ? (
               <p className="text-xs leading-relaxed text-slate-800 font-sans whitespace-pre-line">
                 {question.solutionEn}
               </p>
-            )}
-            {(langMode === "BILINGUAL" || langMode === "TA") && question.solutionTa && (
-              <p className="text-xs leading-relaxed text-slate-700 font-serif whitespace-pre-line border-t border-blue-100 pt-2">
-                {question.solutionTa}
-              </p>
+            ) : (
+              /* Bilingual: Tamil solution first, English second */
+              <div className="space-y-2">
+                {question.solutionTa && (
+                  <p className="text-xs leading-relaxed text-slate-800 font-serif whitespace-pre-line font-medium">
+                    {question.solutionTa}
+                  </p>
+                )}
+                {question.solutionEn && (
+                  <p className={`text-xs leading-relaxed font-sans whitespace-pre-line ${question.solutionTa ? "text-slate-600 border-t border-blue-100 pt-2" : "text-slate-800"}`}>
+                    {question.solutionEn}
+                  </p>
+                )}
+              </div>
             )}
             {question.solutionImageUrl && (
               <div className="mt-3 flex justify-center rounded-xl border border-blue-100 bg-white p-4">

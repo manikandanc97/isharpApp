@@ -1,12 +1,12 @@
 import type ExcelJS from 'exceljs';
-import '@/lib/excel-patch';
+import './excel-patch';
 
 export type EmbeddedExcelImage = {
   rowNumber: number;
   columnName: string;
   bytes: Uint8Array;
-  mimeType: 'image/jpeg' | 'image/png';
-  extension: 'jpg' | 'png';
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+  extension: 'jpg' | 'png' | 'webp';
 };
 
 export function collectEmbeddedImages(
@@ -19,20 +19,19 @@ export function collectEmbeddedImages(
 
   for (const { imageId, range } of rawImages) {
     if (!range || !range.tl) continue;
-    const colIdx =
-      typeof range.tl.nativeCol === 'number'
-        ? range.tl.nativeCol
-        : (range.tl as any).col;
-    const rowIdx =
-      typeof range.tl.nativeRow === 'number'
-        ? range.tl.nativeRow
-        : (range.tl as any).row;
-    if (typeof colIdx !== 'number' || typeof rowIdx !== 'number') continue;
+    const anchor = range.tl as { col?: number; row?: number; nativeCol?: number; nativeRow?: number };
+    const rawCol = typeof anchor.nativeCol === 'number' ? anchor.nativeCol : anchor.col;
+    const rawRow = typeof anchor.nativeRow === 'number' ? anchor.nativeRow : anchor.row;
+    if (typeof rawCol !== 'number' || typeof rawRow !== 'number') continue;
+    const colIdx = Math.floor(rawCol);
+    const rowIdx = Math.floor(rawRow);
     const columnName = headers[colIdx];
     const rowNumber = rowIdx + 1;
     if (!columnName || rowNumber < 2) continue;
     const image = workbook.getImage(Number(imageId));
-    if (!image || !['jpeg', 'png'].includes(image.extension)) continue;
+    if (!image) continue;
+    const ext = String(image.extension || '').toLowerCase();
+    if (!['jpeg', 'jpg', 'png', 'webp'].includes(ext)) continue;
     const bytes: Uint8Array | null = image.buffer
       ? new Uint8Array(image.buffer)
       : image.base64
@@ -44,15 +43,20 @@ export function collectEmbeddedImages(
           )
         : null;
     if (!bytes?.byteLength) continue;
+    // Skip 1x1 transparent dummy pixels (usually <= 100 bytes)
+    if (bytes.byteLength <= 100) continue;
     if (bytes.byteLength > 5 * 1024 * 1024)
       throw new Error(`Embedded image at row ${rowNumber} exceeds 5 MB`);
+
+    const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    const extension = ext === 'png' ? 'png' : ext === 'webp' ? 'webp' : 'jpg';
 
     result.push({
       rowNumber,
       columnName,
       bytes,
-      mimeType: image.extension === 'jpeg' ? 'image/jpeg' : 'image/png',
-      extension: image.extension === 'jpeg' ? 'jpg' : 'png',
+      mimeType,
+      extension,
     });
   }
 

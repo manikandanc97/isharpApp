@@ -1,5 +1,5 @@
 export const QUESTION_HEADERS = [
-  'external_id', 'course_code', 'subject_code', 'chapter_title', 'question_type', 'language', 'difficulty',
+  'external_id', 'course_code', 'subject_code', 'chapter_title', 'question_type', 'difficulty',
   'question_text_en', 'question_text_ta', 'question_image',
   'option_a_en', 'option_a_ta', 'option_a_image', 'option_b_en', 'option_b_ta', 'option_b_image',
   'option_c_en', 'option_c_ta', 'option_c_image', 'option_d_en', 'option_d_ta', 'option_d_image',
@@ -8,7 +8,7 @@ export const QUESTION_HEADERS = [
 ] as const;
 
 export const TEMPLATE_HEADERS = [
-  'subject_code', 'chapter_title', 'question_type', 'language', 'difficulty',
+  'subject_code', 'chapter_title', 'question_type', 'difficulty',
   'question_text_en', 'question_text_ta', 'question_image',
   'option_a_en', 'option_a_ta', 'option_a_image', 'option_b_en', 'option_b_ta', 'option_b_image',
   'option_c_en', 'option_c_ta', 'option_c_image', 'option_d_en', 'option_d_ta', 'option_d_image',
@@ -42,6 +42,16 @@ export function mapQuestionRow(row: CellMap, index = 1) {
   const externalId = value(row, 'external_id') || generateExternalId(courseCode, subjectCode, index);
   const source = value(row, 'source') || 'NEET practice';
 
+  const rawCorrect = value(row, 'correct_marks');
+  const correctMarks = rawCorrect && !isNaN(Number(rawCorrect))
+    ? String(Math.abs(Number(rawCorrect)))
+    : '4';
+
+  const rawNegative = value(row, 'negative_marks');
+  const negativeMarks = rawNegative && !isNaN(Number(rawNegative))
+    ? String(Math.abs(Number(rawNegative)))
+    : '1';
+
   return {
     externalId,
     courseCode,
@@ -58,8 +68,8 @@ export function mapQuestionRow(row: CellMap, index = 1) {
     solutionEn: value(row, 'solution_en'),
     solutionTa: value(row, 'solution_ta'),
     solutionImageUrl: imageValue(row, 'solution'),
-    correctMarks: value(row, 'correct_marks') || '4',
-    negativeMarks: value(row, 'negative_marks') || '1',
+    correctMarks,
+    negativeMarks,
     source,
   };
 }

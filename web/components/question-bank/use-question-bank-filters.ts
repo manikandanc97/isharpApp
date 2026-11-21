@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { demoQuestions } from "./demo-questions";
 import type { Question } from "./types";
 
 export type SubjectFilter = "PHYSICS" | "CHEMISTRY" | "BIOLOGY";
@@ -83,14 +82,10 @@ export function useQuestionBankFilters({
     ).length,
   }), [questions]);
 
-  const showingExamples =
-    !busy && !query.trim() && subjectCounts[subjectFilter] === 0;
-
-  const libraryQuestions = showingExamples
-    ? demoQuestions.filter(
-        (item) => item.courseSubject.subject.code === subjectFilter,
-      )
-    : visible;
+  // Never inject demo questions into live question bank views when a subject is empty.
+  // Instead, allow the UI to display an honest and clean empty state.
+  const showingExamples = false;
+  const libraryQuestions = visible;
 
   return {
     query,

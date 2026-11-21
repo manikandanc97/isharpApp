@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Trophy,
   Users,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TablePagination } from "@/components/admin/admin-helpers";
@@ -355,8 +356,18 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search student or ID..."
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs outline-none focus:border-indigo-400"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-8 text-xs outline-none focus:border-indigo-400"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition focus:outline-none"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

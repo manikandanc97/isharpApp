@@ -42,13 +42,14 @@ export function int(
   fallback: number,
   min: number,
   max: number,
+  name = 'Number',
 ) {
   const result =
     value === undefined || value === null || value === ''
       ? fallback
       : Number(value);
   if (!Number.isInteger(result) || result < min || result > max)
-    throw new BadRequestException(`Number must be between ${min} and ${max}`);
+    throw new BadRequestException(`${name} must be between ${min} and ${max}`);
   return result;
 }
 

@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import type { Membership } from "./admin-types";
@@ -202,15 +203,25 @@ export function LightSearchBox({
   placeholder: string;
 }) {
   return (
-    <label className="relative block w-full max-w-md">
+    <div className="relative block w-full max-w-md">
       <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-9 pr-3.5 text-xs text-slate-900 outline-none transition placeholder-slate-400 focus:border-brand-blue focus:bg-white focus:ring-2 focus:ring-blue-100 sm:text-sm"
+        className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-9 pr-8 text-xs text-slate-900 outline-none transition placeholder-slate-400 focus:border-brand-blue focus:bg-white focus:ring-2 focus:ring-blue-100 sm:text-sm"
       />
-    </label>
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label="Clear search"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600 transition focus:outline-none"
+        >
+          <X className="size-3.5" />
+        </button>
+      )}
+    </div>
   );
 }
 

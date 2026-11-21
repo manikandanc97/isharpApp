@@ -42,7 +42,6 @@ export async function exportQuestionsToExcel(
       q.courseSubject?.subject?.code || "PHYSICS",
       q.chapter?.title || "",
       q.type || "SINGLE_CORRECT",
-      q.language || "BILINGUAL",
       q.difficulty || "MEDIUM",
       q.textEn || "",
       q.textTa || "",

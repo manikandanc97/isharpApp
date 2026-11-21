@@ -151,19 +151,39 @@ export async function POST(request: NextRequest) {
     );
     const skipped: ImportResult[] = [];
     const workbookIds = new Set<string>();
+    const workbookTexts = new Set<string>();
     const uniqueRows = allRows.filter((row) => {
-      if (!row.externalId) return true;
-      const key = row.externalId.toLocaleLowerCase("en-US");
-      if (workbookIds.has(key)) {
-        skipped.push({
-          row: row.rowNumber,
-          externalId: row.externalId,
-          status: "skipped",
-          reason: "Duplicate external ID in this workbook",
-        });
-        return false;
+      if (row.externalId) {
+        const key = row.externalId.toLocaleLowerCase("en-US");
+        if (workbookIds.has(key)) {
+          skipped.push({
+            row: row.rowNumber,
+            externalId: row.externalId,
+            status: "skipped",
+            reason: "Duplicate external ID in this workbook",
+          });
+          return false;
+        }
+        workbookIds.add(key);
       }
-      workbookIds.add(key);
+
+      const textEn = String(row.record.question_text_en ?? "").trim().toLowerCase();
+      const textTa = String(row.record.question_text_ta ?? "").trim().toLowerCase();
+      const sub = String(row.record.subject_code ?? "").trim().toUpperCase();
+      const textKey = `${sub}:${textEn || textTa}`;
+      if (textEn || textTa) {
+        if (workbookTexts.has(textKey)) {
+          skipped.push({
+            row: row.rowNumber,
+            externalId: row.externalId,
+            status: "skipped",
+            reason: "Duplicate question content in this workbook",
+          });
+          return false;
+        }
+        workbookTexts.add(textKey);
+      }
+
       return true;
     });
 

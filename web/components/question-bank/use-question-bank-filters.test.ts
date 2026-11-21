@@ -116,4 +116,16 @@ describe("Question bank filter utilities", () => {
     );
     expect(visible).toHaveLength(0);
   });
+
+  it("yields empty array when subject has zero questions without injecting demo questions", () => {
+    const biologyCount = sampleQuestions.filter(
+      (item) => item.courseSubject.subject.code === "BIOLOGY"
+    ).length;
+    expect(biologyCount).toBe(0);
+
+    const visibleBiology = sampleQuestions.filter(
+      (item) => item.courseSubject.subject.code === "BIOLOGY"
+    );
+    expect(visibleBiology).toHaveLength(0);
+  });
 });

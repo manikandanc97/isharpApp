@@ -45,6 +45,7 @@ export function QuestionBankManager() {
     importBusy,
     importError,
     setImportError,
+    importProgress,
     busy,
     error,
     setError,
@@ -59,6 +60,7 @@ export function QuestionBankManager() {
     createQuestion,
     applyDemoQuestion,
     deleteQuestion,
+    bulkDeleteQuestions,
     selectImportFile,
     importExcel,
     subjectCounts,
@@ -114,6 +116,7 @@ export function QuestionBankManager() {
         importBusy={importBusy}
         importError={importError}
         setImportError={setImportError}
+        importProgress={importProgress}
         onImport={importExcel}
       />
 
@@ -167,6 +170,7 @@ export function QuestionBankManager() {
             subjectFilter={subjectFilter}
             showingExamples={showingExamples}
             visibleCount={visible.length}
+            totalSubjectCount={subjectCounts[subjectFilter]}
             query={query}
             onQueryChange={setQuery}
             chapterFilter={chapterFilter}
@@ -180,13 +184,25 @@ export function QuestionBankManager() {
             availableChapters={availableChapters}
             busy={busy}
             libraryQuestions={libraryQuestions}
-            onEdit={(q) =>
-              showingExamples ? applyDemoQuestion(q) : editQuestion(q)
-            }
+            onEdit={editQuestion}
             onDuplicate={handleDuplicateQuestion}
-            onDelete={
-              showingExamples ? undefined : (q) => void deleteQuestion(q)
-            }
+            onDelete={(q) => void deleteQuestion(q)}
+            onBulkDelete={bulkDeleteQuestions}
+            onCreateQuestion={createQuestion}
+            onOpenImport={() => {
+              setImportOpen(true);
+              setImportFile(null);
+              setImportReport(null);
+              setImportError(null);
+              setError("");
+            }}
+            onClearFilters={() => {
+              setQuery("");
+              setChapterFilter("ALL");
+              setDifficultyFilter("ALL");
+              setTypeFilter("ALL");
+              setLanguageFilter("ALL");
+            }}
           />
         </Stack>
       </div>
