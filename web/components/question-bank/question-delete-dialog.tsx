@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Question } from "./types";
+import { formatDisplayQuestionId } from "@/lib/question-format";
 
 interface QuestionDeleteDialogProps {
   open: boolean;
@@ -57,8 +58,11 @@ export function QuestionDeleteDialog({
           {isSingle && singleQuestion ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-2">
               <div className="flex flex-wrap items-center gap-1.5 text-3xs font-semibold">
-                <span className="rounded bg-indigo-50 px-2 py-0.5 text-indigo-700 font-bold">
-                  {singleQuestion.externalId}
+                <span
+                  title={`ID: ${singleQuestion.externalId}`}
+                  className="rounded bg-indigo-50 px-2 py-0.5 text-indigo-700 font-bold"
+                >
+                  {formatDisplayQuestionId(singleQuestion.externalId)}
                 </span>
                 <span className="text-slate-400">·</span>
                 <span className="text-slate-700">
@@ -91,9 +95,10 @@ export function QuestionDeleteDialog({
                 {questions.slice(0, 8).map((q) => (
                   <span
                     key={q.id}
+                    title={`ID: ${q.externalId}`}
                     className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-3xs font-medium text-slate-600 font-mono"
                   >
-                    {q.externalId}
+                    {formatDisplayQuestionId(q.externalId)}
                   </span>
                 ))}
                 {questions.length > 8 && (

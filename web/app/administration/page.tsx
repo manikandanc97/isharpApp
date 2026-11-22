@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -157,7 +158,9 @@ export default function AdministrationPage() {
             aria-label="Admin Credentials Sign In"
             className="flex justify-center lg:col-span-6 xl:col-span-5"
           >
-            <AdminLoginForm />
+            <Suspense fallback={<div className="h-72 w-full max-w-md animate-pulse rounded-2xl bg-white" />}>
+              <AdminLoginForm />
+            </Suspense>
           </section>
         </PageContainer>
       </main>

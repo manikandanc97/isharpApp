@@ -2,24 +2,33 @@ import type { NextRequest } from 'next/server';
 
 import { ApiClientError } from '@/lib/api-client';
 import type { AuthenticatedSession } from '@/lib/auth-session';
+import { retryTransientAuth } from '@/lib/auth-verification';
 import { getNestApiClient } from '@/lib/nest-api';
 import { getRequestAccessToken } from '@/lib/server-access-token';
 
-// Route is inherently dynamic (reads Authorization header per request)
+// Route is inherently dynamic (reads Authorization header or cookie per request)
 
 export async function GET(request: NextRequest) {
   const accessToken = await getRequestAccessToken(request);
   if (!accessToken) {
     return Response.json(
-      { message: 'Bearer access token is required' },
-      { status: 401 },
+      {
+        message: 'Session has expired. Please sign in again.',
+        code: 'SESSION_EXPIRED',
+      },
+      {
+        status: 401,
+        headers: { 'Cache-Control': 'no-store, private' },
+      },
     );
   }
 
   try {
-    const session = await getNestApiClient().request<AuthenticatedSession>(
-      '/api/auth/me',
-      { accessToken, cache: 'no-store' },
+    const session = await retryTransientAuth(() =>
+      getNestApiClient({ timeoutMs: 10_000 }).request<AuthenticatedSession>(
+        '/api/auth/me',
+        { accessToken, cache: 'no-store' },
+      ),
     );
     return Response.json(session, {
       headers: { 'Cache-Control': 'no-store, private' },
@@ -32,9 +41,12 @@ export async function GET(request: NextRequest) {
     return Response.json(
       {
         message:
-          status === 503
-            ? 'Authentication service is unavailable'
-            : 'Session is not authorized',
+          status === 401
+            ? 'Session has expired. Please sign in again.'
+            : status === 403
+            ? 'Session is not authorized'
+            : 'Authentication service is unavailable',
+        code: status === 401 ? 'SESSION_EXPIRED' : undefined,
       },
       { status, headers: { 'Cache-Control': 'no-store, private' } },
     );

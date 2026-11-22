@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatDisplayQuestionId } from "@/lib/question-format";
 import type { Question } from "./types";
 
 interface QuestionPreviewDialogProps {
@@ -47,11 +48,14 @@ export function QuestionPreviewDialog({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-4xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100 shrink-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pr-8 sm:pr-9">
             <div className="flex items-center gap-2">
               {!question.externalId?.startsWith("DEMO-") && (
-                <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700">
-                  {question.externalId}
+                <span
+                  title={`ID: ${question.externalId}`}
+                  className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700"
+                >
+                  {formatDisplayQuestionId(question.externalId)}
                 </span>
               )}
               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">

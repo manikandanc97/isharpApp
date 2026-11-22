@@ -9,10 +9,14 @@ export async function getServerAuthenticatedSession(): Promise<AuthenticatedSess
   if (!isSupabaseConfigured()) return null;
   try {
     const supabase = await createClient();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) return null;
+
     const { data, error } = await supabase.auth.getSession();
     const accessToken = error ? null : data.session?.access_token;
     if (!accessToken) return null;
-    return await getNestApiClient().request<AuthenticatedSession>(
+
+    return await getNestApiClient({ timeoutMs: 4_000 }).request<AuthenticatedSession>(
       "/api/auth/me",
       { accessToken, cache: "no-store" },
     );

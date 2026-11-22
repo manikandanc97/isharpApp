@@ -36,8 +36,8 @@ function AdminSidebarSkeleton({ section }: { section: AdminSkeletonSection }) {
                   className={`size-9 rounded-xl ${isActive ? "bg-brand-red/30" : ""}`}
                 />
                 <SkeletonLines
-                  className="flex-1 space-y-1.5"
-                  widths={["w-20", "w-28"]}
+                  className="flex-1"
+                  widths={["w-24"]}
                 />
               </div>
             );

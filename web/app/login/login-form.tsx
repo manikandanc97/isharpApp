@@ -25,12 +25,19 @@ type FieldErrors = {
   password?: string;
 };
 
-export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string }) {
+export function LoginForm({
+  initialAuthError = "",
+  initialExpiredNotice = "",
+}: {
+  initialAuthError?: string;
+  initialExpiredNotice?: string;
+}) {
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [authError, setAuthError] = useState(initialAuthError);
+  const [expiredNotice, setExpiredNotice] = useState(initialExpiredNotice);
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -52,6 +59,7 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAuthError("");
+    setExpiredNotice("");
     setStatusMessage("");
 
     if (!validateForm()) {
@@ -278,6 +286,23 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
           </button>
         </div>
 
+        {/* Session Expired Banner */}
+        {expiredNotice && (
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50/90 p-3 text-xs leading-snug text-amber-900 shadow-2xs"
+          >
+            <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <div className="space-y-0.5">
+              <p className="font-semibold text-amber-950">Session Expired</p>
+              <p className="text-amber-800">{expiredNotice}</p>
+              <p className="font-tamil text-[11px] text-amber-700">
+                உங்கள் அமர்வு முடிவடைந்தது. தொடர மீண்டும் உள்நுழையவும்.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Auth Error Banner */}
         {authError && (
           <div
@@ -331,5 +356,16 @@ export function LoginForm({ initialAuthError = "" }: { initialAuthError?: string
 export function OAuthAwareLoginForm() {
   const searchParams = useSearchParams();
   const oauthState = searchParams.get("oauth");
-  return <LoginForm initialAuthError={oauthState ? oauthStatusMessages[oauthState] ?? "" : ""} />;
+  const reason = searchParams.get("reason");
+  const initialExpiredNotice =
+    reason === "session_expired"
+      ? "Your session has expired. Please sign in again to continue."
+      : "";
+
+  return (
+    <LoginForm
+      initialAuthError={oauthState ? oauthStatusMessages[oauthState] ?? "" : ""}
+      initialExpiredNotice={initialExpiredNotice}
+    />
+  );
 }

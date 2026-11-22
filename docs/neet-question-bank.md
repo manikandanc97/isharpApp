@@ -15,13 +15,13 @@ The new database tables are `questions`, `question_options`, `mock_tests` and `m
 
 Download the current `.xlsx` template from **Admin → Question Bank → Excel template**. Do not rename its columns.
 
-- `external_id` is the stable unique key. Importing the same ID updates the question and replaces its options.
+- `external_id` is the stable unique key. Importing the same ID updates the question and replaces its options. When it is omitted, a later import matches the same subject and question text so diagrams can be added without creating a duplicate.
 - Use `course_code` = `NEET`. Allowed `subject_code` values are only `PHYSICS`, `CHEMISTRY` and `BIOLOGY`.
 - `question_type`: `SINGLE_CORRECT`, `MULTIPLE_CORRECT` or `NUMERICAL`.
 - `language`: `ENGLISH`, `TAMIL` or `BILINGUAL`.
 - `difficulty`: `EASY`, `MEDIUM` or `HARD`.
 - `correct_options`: `A` for one correct option or `A,C` for multiple correct options. Leave blank for numerical questions and use `numerical_answer`.
-- Image columns accept embedded JPG/PNG pictures. In Excel use **Insert → Pictures**, place and resize one picture completely inside the matching `*_image` cell. Import extracts it, uploads it through the protected API to Supabase Storage and saves the generated URL. Existing public HTTPS URLs and older `*_image_url` templates remain supported.
+- Image columns accept embedded JPG/PNG/SVG pictures. In Excel use **Insert → Pictures**, place and resize one picture completely inside the matching `*_image` cell. SVG diagrams are safely rasterized to PNG, then import uploads the image through the protected API to Supabase Storage and saves the generated URL. Existing public HTTPS URLs and older `*_image_url` templates remain supported.
 - A question, option and solution can use text, an image, or both.
 - Import size is limited to 500 rows, 100 embedded pictures, 5 MB per picture and 25 MB per workbook. Invalid rows are reported without discarding valid rows.
 

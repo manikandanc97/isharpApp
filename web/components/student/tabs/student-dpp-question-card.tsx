@@ -11,6 +11,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDisplayQuestionId } from "@/lib/question-format";
 import { getDifficultyTheme, getSubjectTheme } from "../student-helpers";
 import type { LanguageMode, StudentPortalData } from "../student-types";
 
@@ -93,7 +94,7 @@ export function StudentDppQuestionCard({
               className="flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-3xs font-semibold text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
               title="Copy Question Code"
             >
-              <span>{question.externalId}</span>
+              <span>{formatDisplayQuestionId(question.externalId)}</span>
               {isCopied ? (
                 <Check className="size-3 text-emerald-600" />
               ) : (

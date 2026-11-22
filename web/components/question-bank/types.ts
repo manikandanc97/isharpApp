@@ -86,10 +86,15 @@ export type ImportProgress = {
   percent: number;
   loadedBytes: number;
   totalBytes: number;
+  totalRows: number;
+  processedRows: number;
+  importedRows: number;
+  skippedRows: number;
+  failedRows: number;
 };
 
 export const emptyDraft = (): Draft => ({
-  externalId: `NEET-${Date.now().toString().slice(-8)}`,
+  externalId: `Q-${Date.now().toString().slice(-6)}`,
   courseCode: "",
   subjectCode: "",
   chapterTitle: "",

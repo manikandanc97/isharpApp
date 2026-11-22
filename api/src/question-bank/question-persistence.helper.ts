@@ -16,6 +16,7 @@ import {
 
 export type QuestionSavePolicy = {
   skipExisting?: boolean;
+  matchExistingContent?: boolean;
   createMissingChapter?: boolean;
   skipReturnDetails?: boolean;
   courseSubjectCache?: Map<string, any>;
@@ -175,7 +176,7 @@ export async function persistQuestionRecord(
         const orConditions: Array<Record<string, unknown>> = [
           { externalId: { equals: externalId, mode: 'insensitive' } },
         ];
-        if (savePolicy.skipExisting) {
+        if (savePolicy.skipExisting || savePolicy.matchExistingContent) {
           if (textEn) {
             orConditions.push({
               courseSubjectId: courseSubject.id,

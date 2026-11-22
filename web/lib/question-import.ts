@@ -17,11 +17,10 @@ export const TEMPLATE_HEADERS = [
 ] as const;
 
 export function generateExternalId(courseCode?: string, subjectCode?: string, index = 1): string {
-  const course = (courseCode || 'NEET').trim().toUpperCase();
   const sub = (subjectCode || 'GEN').trim().substring(0, 3).toUpperCase();
-  const time = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `${course}-${sub}-${time}-${rand}-${index}`.substring(0, 64);
+  const num = String(index).padStart(3, '0');
+  const batch = Math.random().toString(36).substring(2, 5).toUpperCase();
+  return `${sub}-${batch}-${num}`;
 }
 
 type CellMap = Record<string, unknown>;

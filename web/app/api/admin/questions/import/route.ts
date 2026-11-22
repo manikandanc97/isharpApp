@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { normalizeExcelXmlBuffer } from "@/lib/excel-patch";
 import { ApiClientError } from "@/lib/api-client";
 import { collectEmbeddedImages } from "@/lib/excel-embedded-images";
+import { prepareEmbeddedImageForUpload } from "@/lib/excel-image-upload";
 import { getNestApiBaseUrl, getNestApiClient } from "@/lib/nest-api";
 import { generateExternalId, mapQuestionRow, TEMPLATE_HEADERS } from "@/lib/question-import";
 import { getRequestAccessToken } from "@/lib/server-access-token";
@@ -187,37 +188,10 @@ export async function POST(request: NextRequest) {
       return true;
     });
 
-    const preflight = await getNestApiClient().request<{
-      existingExternalIds: string[];
-    }>("/api/admin/questions/import/preflight", {
-      method: "POST",
-      accessToken: token,
-      body: {
-        externalIds: uniqueRows.map((row) => row.externalId).filter(Boolean),
-      },
-      cache: "no-store",
-      timeoutMs: 30_000,
-    });
-    const existingIds = new Set(
-      preflight.existingExternalIds.map((id) =>
-        id.toLocaleLowerCase("en-US"),
-      ),
-    );
-    const candidateRows = uniqueRows.filter((row) => {
-      if (
-        row.externalId &&
-        existingIds.has(row.externalId.toLocaleLowerCase("en-US"))
-      ) {
-        skipped.push({
-          row: row.rowNumber,
-          externalId: row.externalId,
-          status: "skipped",
-          reason: "Question already exists",
-        });
-        return false;
-      }
-      return true;
-    });
+    // Existing rows must continue through image extraction and the API. The
+    // API upserts them by external ID (or matching question text), allowing a
+    // second import to add diagrams to questions that were imported earlier.
+    const candidateRows = uniqueRows;
     const candidateRowNumbers = new Set(
       candidateRows.map((row) => row.rowNumber),
     );
@@ -257,13 +231,14 @@ export async function POST(request: NextRequest) {
             throw new Error(
               `Image at row ${image.rowNumber} has no question data`,
             );
-          const imageBuffer = new ArrayBuffer(image.bytes.byteLength);
-          new Uint8Array(imageBuffer).set(image.bytes);
+          const uploadImage = await prepareEmbeddedImageForUpload(image);
+          const imageBuffer = new ArrayBuffer(uploadImage.bytes.byteLength);
+          new Uint8Array(imageBuffer).set(uploadImage.bytes);
           const form = new FormData();
           form.set(
             "file",
-            new Blob([imageBuffer], { type: image.mimeType }),
-            `excel-row-${image.rowNumber}.${image.extension}`,
+            new Blob([imageBuffer], { type: uploadImage.mimeType }),
+            `excel-row-${image.rowNumber}.${uploadImage.extension}`,
           );
           let imageUrl: string | null = null;
           try {
@@ -295,7 +270,7 @@ export async function POST(request: NextRequest) {
               const path = await import("node:path");
               const crypto = await import("node:crypto");
               const year = new Date().getUTCFullYear();
-              const filename = `import-${Date.now()}-${crypto.randomUUID()}.${image.extension}`;
+              const filename = `import-${Date.now()}-${crypto.randomUUID()}.${uploadImage.extension}`;
               const uploadDir = path.join(
                 process.cwd(),
                 "public",
@@ -306,12 +281,12 @@ export async function POST(request: NextRequest) {
               await fs.mkdir(uploadDir, { recursive: true });
               await fs.writeFile(
                 path.join(uploadDir, filename),
-                Buffer.from(image.bytes),
+                Buffer.from(uploadImage.bytes),
               );
               imageUrl = `/uploads/question-media/${year}/${filename}`;
             } catch {
               // Base64 data URL fallback
-              imageUrl = `data:${image.mimeType};base64,${Buffer.from(image.bytes).toString("base64")}`;
+              imageUrl = `data:${uploadImage.mimeType};base64,${Buffer.from(uploadImage.bytes).toString("base64")}`;
             }
           }
 
@@ -320,47 +295,86 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Process candidate rows in batches of 50 to prevent timeout and avoid heavy long-running transactions
-    const importedResults: ImportResult[] = [];
-    if (candidateRows.length) {
-      const BATCH_SIZE = 50;
-      for (let i = 0; i < candidateRows.length; i += BATCH_SIZE) {
-        const batch = candidateRows.slice(i, i + BATCH_SIZE);
-        const batchResponse = await getNestApiClient().request<{
-          total: number;
-          imported: number;
-          skipped: number;
-          failed: number;
-          results: ImportResult[];
-        }>("/api/admin/questions/import", {
-          method: "POST",
-          accessToken: token,
-          body: {
-            rows: batch.map((row) => ({
-              rowNumber: row.rowNumber,
-              data: mapQuestionRow(row.record, row.rowNumber),
-            })),
-          },
-          cache: "no-store",
-          timeoutMs: 90_000,
-        });
-        importedResults.push(...batchResponse.results);
-      }
-    }
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const send = (value: unknown) =>
+          controller.enqueue(encoder.encode(`${JSON.stringify(value)}\n`));
+        const importedResults: ImportResult[] = [];
+        const sendProgress = () => {
+          const results = [...skipped, ...importedResults];
+          send({
+            type: "progress",
+            total: allRows.length,
+            processed: results.length,
+            imported: results.filter((item) => item.status === "imported").length,
+            skipped: results.filter((item) => item.status === "skipped").length,
+            failed: results.filter((item) => item.status === "failed").length,
+          });
+        };
 
-    const results = [...skipped, ...importedResults].sort(
-      (left, right) => left.row - right.row,
-    );
-    return Response.json(
-      {
-        total: allRows.length,
-        imported: results.filter((item) => item.status === "imported").length,
-        skipped: results.filter((item) => item.status === "skipped").length,
-        failed: results.filter((item) => item.status === "failed").length,
-        results,
+        try {
+          sendProgress();
+
+          // Smaller batches let the browser show real saved-row counts while
+          // keeping the API calls efficient and transactions short.
+          const BATCH_SIZE = 10;
+          for (let i = 0; i < candidateRows.length; i += BATCH_SIZE) {
+            const batch = candidateRows.slice(i, i + BATCH_SIZE);
+            const batchResponse = await getNestApiClient().request<{
+              total: number;
+              imported: number;
+              skipped: number;
+              failed: number;
+              results: ImportResult[];
+            }>("/api/admin/questions/import", {
+              method: "POST",
+              accessToken: token,
+              body: {
+                rows: batch.map((row) => ({
+                  rowNumber: row.rowNumber,
+                  data: mapQuestionRow(row.record, row.rowNumber),
+                })),
+              },
+              cache: "no-store",
+              timeoutMs: 90_000,
+            });
+            importedResults.push(...batchResponse.results);
+            sendProgress();
+          }
+
+          const results = [...skipped, ...importedResults].sort(
+            (left, right) => left.row - right.row,
+          );
+          send({
+            type: "complete",
+            report: {
+              total: allRows.length,
+              imported: results.filter((item) => item.status === "imported").length,
+              skipped: results.filter((item) => item.status === "skipped").length,
+              failed: results.filter((item) => item.status === "failed").length,
+              results,
+            },
+          });
+        } catch (error) {
+          send({
+            type: "error",
+            message:
+              error instanceof Error ? error.message : "Excel import failed",
+          });
+        } finally {
+          controller.close();
+        }
       },
-      { headers: { "Cache-Control": "no-store, private" } },
-    );
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-store, private, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+    });
   } catch (error) {
     const status = error instanceof ApiClientError ? error.status : 400;
     return Response.json(

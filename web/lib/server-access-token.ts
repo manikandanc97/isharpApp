@@ -12,9 +12,13 @@ export async function getRequestAccessToken(request: NextRequest) {
 
   try {
     const supabase = await createClient();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) return null;
+
     const { data, error } = await supabase.auth.getSession();
-    if (error) return null;
-    return selectAccessToken({ supabaseToken: data.session?.access_token });
+    if (error || !data.session?.access_token) return null;
+
+    return selectAccessToken({ supabaseToken: data.session.access_token });
   } catch {
     return null;
   }

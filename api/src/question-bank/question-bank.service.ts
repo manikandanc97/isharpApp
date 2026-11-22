@@ -147,7 +147,11 @@ export class QuestionBankService {
           if (duplicateKey) seen.add(duplicateKey);
           try {
             const saved = await this.saveQuestion(profileId, row, {
-              skipExisting: true,
+              // Excel files generated from the blank template do not have a
+              // stable external ID. Match their existing question text so a
+              // later import can backfill diagrams instead of creating a
+              // duplicate or silently skipping the image update.
+              matchExistingContent: true,
               createMissingChapter: true,
               skipReturnDetails: true,
               courseSubjectCache,

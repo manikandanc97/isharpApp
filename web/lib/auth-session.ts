@@ -26,7 +26,9 @@ export type AuthenticatedSession = {
   } | null;
 };
 
-const frontendApi = createApiClient({ baseUrl: '', defaultTimeoutMs: 8_000 });
+// The session route may make two 10-second attempts while the API wakes from a
+// cold start. Keep the browser timeout slightly above that retry window.
+const frontendApi = createApiClient({ baseUrl: '', defaultTimeoutMs: 25_000 });
 
 export function getAuthenticatedSession(accessToken: string) {
   return frontendApi.request<AuthenticatedSession>('/api/session', {

@@ -1,4 +1,6 @@
+import { ApiClientError } from '@/lib/api-client';
 import type { AuthenticatedSession } from '@/lib/auth-session';
+import { retryTransientAuth } from '@/lib/auth-verification';
 import { getNestApiClient } from '@/lib/nest-api';
 import { createClient } from '@/lib/supabase/server';
 
@@ -79,16 +81,28 @@ export async function POST(request: Request) {
 
     let session: AuthenticatedSession;
     try {
-      session = await getNestApiClient().request<AuthenticatedSession>(
-        '/api/auth/me',
-        { accessToken: data.session.access_token, cache: 'no-store' },
+      session = await retryTransientAuth(() =>
+        getNestApiClient({ timeoutMs: 10_000 }).request<AuthenticatedSession>(
+          '/api/auth/me',
+          { accessToken: data.session!.access_token, cache: 'no-store' },
+        ),
       );
     } catch (nestErr) {
       console.error('[AdminLogin] NestApiClient request to /api/auth/me failed:', nestErr);
-      await supabase.auth.signOut();
+      const status =
+        nestErr instanceof ApiClientError && [401, 403].includes(nestErr.status)
+          ? nestErr.status
+          : 503;
       return Response.json(
-        { message: 'The authorization service is temporarily unavailable.' },
-        { status: 503, headers: { 'Cache-Control': 'no-store, private' } },
+        {
+          message:
+            status === 401
+              ? 'Your session could not be verified. Please sign in again.'
+              : status === 403
+                ? 'This account is not authorized.'
+                : 'The authorization service is temporarily unavailable. Please try again.',
+        },
+        { status, headers: { 'Cache-Control': 'no-store, private' } },
       );
     }
 

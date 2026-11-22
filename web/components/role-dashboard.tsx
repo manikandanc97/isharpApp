@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { LogoutConfirmationDialog } from '@/components/logout-confirmation-dialog';
 import type { AuthenticatedSession, RoleName } from '@/lib/auth-session';
 import { hasRequiredRole } from '@/lib/role-policy';
+import { handleSessionExpired } from '@/lib/session-manager';
 
 type Area = 'student' | 'admin' | 'superadmin';
 
@@ -37,6 +38,7 @@ export function RoleDashboard({ area }: { area: Area }) {
         const sessionResponse = await fetch('/api/session', { cache: 'no-store' });
         if (sessionResponse.status === 401) {
           if (active) setStatus('unauthenticated');
+          handleSessionExpired({ destination: area === 'student' ? '/login' : '/administration' });
           return;
         }
         if (!sessionResponse.ok) throw new Error('Authentication API connection failed');
@@ -84,8 +86,10 @@ export function RoleDashboard({ area }: { area: Area }) {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setShowLogoutDialog(false);
-      router.replace('/login');
-      router.refresh();
+      handleSessionExpired({
+        destination: area === 'student' ? '/login' : '/administration',
+        reason: 'logged_out',
+      });
     } finally {
       setIsLoggingOut(false);
     }

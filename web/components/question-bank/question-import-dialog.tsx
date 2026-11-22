@@ -36,8 +36,8 @@ function AnimatedCount({ value }: { value: number }) {
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setDisplay(value);
-      return;
+      const frame = requestAnimationFrame(() => setDisplay(value));
+      return () => cancelAnimationFrame(frame);
     }
     const startedAt = performance.now();
     let frame = 0;
@@ -260,7 +260,9 @@ export function QuestionImportDialog({
                       <span className="text-lg font-bold tabular-nums">
                         {importProgress.phase === "uploading"
                           ? `${importProgress.percent}%`
-                          : "Processing"}
+                          : importProgress.totalRows > 0
+                            ? `${importProgress.processedRows.toLocaleString()} / ${importProgress.totalRows.toLocaleString()}`
+                            : "Processing"}
                       </span>
                     </div>
                     <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
@@ -270,14 +272,23 @@ export function QuestionImportDialog({
                           style={{ width: `${importProgress.percent}%` }}
                         />
                       ) : (
-                        <div className="h-full w-full origin-left animate-pulse rounded-full bg-sky-400/80" />
+                        <div
+                          className={`h-full origin-left rounded-full bg-sky-400/80 transition-[width] duration-300 ${importProgress.totalRows ? "" : "animate-pulse"}`}
+                          style={{
+                            width: importProgress.totalRows
+                              ? `${importProgress.percent}%`
+                              : "100%",
+                          }}
+                        />
                       )}
                     </div>
                     <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs text-slate-400">
                       <span>
                         {importProgress.phase === "uploading"
                           ? `${formatBytes(importProgress.loadedBytes)} of ${formatBytes(importProgress.totalBytes)}`
-                          : "Checking duplicates, validating rows and saving records"}
+                          : importProgress.totalRows > 0
+                            ? `${importProgress.processedRows.toLocaleString()} of ${importProgress.totalRows.toLocaleString()} rows processed`
+                            : "Checking duplicates, validating rows and saving records"}
                       </span>
                       <span>Do not close this window</span>
                     </div>
@@ -313,6 +324,21 @@ export function QuestionImportDialog({
                   );
                 })}
               </div>
+              {importProgress.phase === "processing" && importProgress.totalRows > 0 && (
+                <div className="grid grid-cols-2 gap-px border-t border-slate-200 bg-slate-200 sm:grid-cols-4" aria-label="Live import counts">
+                  {[
+                    ["Processed", importProgress.processedRows, "text-slate-950"],
+                    ["Imported", importProgress.importedRows, "text-emerald-700"],
+                    ["Duplicates", importProgress.skippedRows, "text-amber-700"],
+                    ["Errors", importProgress.failedRows, "text-rose-700"],
+                  ].map(([label, value, tone]) => (
+                    <div key={String(label)} className="bg-white px-4 py-3 text-center">
+                      <p className={`text-lg font-bold tabular-nums ${tone}`}>{Number(value).toLocaleString()}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

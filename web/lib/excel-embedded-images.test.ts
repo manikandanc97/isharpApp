@@ -32,4 +32,47 @@ describe('collectEmbeddedImages', () => {
     const images = collectEmbeddedImages(workbook, sheet, headers);
     expect(images).toHaveLength(0);
   });
+
+  it('accepts a passive embedded SVG for later PNG rasterization', () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Questions');
+    const headers = ['external_id', 'question_image'];
+    sheet.addRow(headers);
+    sheet.addRow(['Q-1', '']);
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="190" height="110" viewBox="0 0 190 110"><rect width="190" height="110" fill="white"/><path d="M10 10 L180 100" stroke="#173b67" stroke-width="3"/></svg>';
+    const imageId = workbook.addImage({
+      base64: Buffer.from(svg).toString('base64'),
+      // ExcelJS can read SVG media but its public addImage type is narrower.
+      extension: 'svg' as 'png',
+    });
+    sheet.addImage(imageId, 'B2:B2');
+
+    const images = collectEmbeddedImages(workbook, sheet, headers);
+
+    expect(images).toHaveLength(1);
+    expect(images[0]).toMatchObject({
+      rowNumber: 2,
+      columnName: 'question_image',
+      mimeType: 'image/svg+xml',
+      extension: 'svg',
+    });
+  });
+
+  it('rejects active content in an embedded SVG', () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Questions');
+    const headers = ['external_id', 'question_image'];
+    sheet.addRow(headers);
+    sheet.addRow(['Q-1', '']);
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="190" height="110"><rect width="190" height="110"/><script>alert("unsafe")</script></svg>';
+    const imageId = workbook.addImage({
+      base64: Buffer.from(svg).toString('base64'),
+      extension: 'svg' as 'png',
+    });
+    sheet.addImage(imageId, 'B2:B2');
+
+    expect(() => collectEmbeddedImages(workbook, sheet, headers)).toThrow(
+      'contains unsupported external or active content',
+    );
+  });
 });

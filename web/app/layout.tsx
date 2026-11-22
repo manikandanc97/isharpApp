@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins, Noto_Sans_Tamil } from "next/font/google";
+import { SessionExpiryProvider } from "@/components/auth/session-expiry-provider";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -36,7 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${poppins.variable} ${notoSansTamil.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <SessionExpiryProvider />
+        {children}
+      </body>
     </html>
   );
 }

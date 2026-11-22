@@ -15,6 +15,7 @@ import {
 } from "@/components/admin/admin-types";
 import type { AuthenticatedSession } from "@/lib/auth-session";
 import { hasRequiredRole } from "@/lib/role-policy";
+import { handleSessionExpired } from "@/lib/session-manager";
 
 export function useAdminDashboard() {
   const router = useRouter();
@@ -52,8 +53,8 @@ export function useAdminDashboard() {
         const sessionResponse = await fetch("/api/session", {
           cache: "no-store",
         });
-        if (sessionResponse.status === 401) {
-          router.replace("/administration");
+        if (sessionResponse.status === 401 || sessionResponse.status === 403) {
+          handleSessionExpired({ destination: "/administration" });
           return;
         }
         if (!sessionResponse.ok)
@@ -61,7 +62,8 @@ export function useAdminDashboard() {
         const currentSession =
           (await sessionResponse.json()) as AuthenticatedSession;
         if (!hasRequiredRole(currentSession.roles, "ADMIN")) {
-          throw new Error("This account does not have admin access");
+          handleSessionExpired({ destination: "/administration" });
+          return;
         }
         setSession(currentSession);
         const [overviewData, userData, rosterData, courseData] =
@@ -108,10 +110,8 @@ export function useAdminDashboard() {
     setSigningOut(true);
     setError("");
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (!response.ok) throw new Error("Sign out failed. Please try again.");
-      router.replace("/administration");
-      router.refresh();
+      await fetch("/api/auth/logout", { method: "POST" });
+      handleSessionExpired({ destination: "/administration", reason: "logged_out" });
     } catch (signOutError) {
       setError(
         signOutError instanceof Error

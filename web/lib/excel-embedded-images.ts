@@ -5,9 +5,21 @@ export type EmbeddedExcelImage = {
   rowNumber: number;
   columnName: string;
   bytes: Uint8Array;
-  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
-  extension: 'jpg' | 'png' | 'webp';
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/svg+xml';
+  extension: 'jpg' | 'png' | 'webp' | 'svg';
 };
+
+function assertSafeSvg(bytes: Uint8Array, rowNumber: number) {
+  const source = Buffer.from(bytes).toString('utf8');
+  const unsafe =
+    !/<svg\b/i.test(source) ||
+    /<!doctype|<!entity|<script\b|<foreignObject\b|<iframe\b|<object\b|<embed\b|<image\b|@import/i.test(source) ||
+    /\son[a-z]+\s*=/i.test(source) ||
+    /(?:href|xlink:href)\s*=\s*["'](?!#)/i.test(source) ||
+    /url\(\s*["']?(?!#)/i.test(source);
+  if (unsafe)
+    throw new Error(`Embedded SVG at row ${rowNumber} contains unsupported external or active content`);
+}
 
 export function collectEmbeddedImages(
   workbook: ExcelJS.Workbook,
@@ -31,7 +43,7 @@ export function collectEmbeddedImages(
     const image = workbook.getImage(Number(imageId));
     if (!image) continue;
     const ext = String(image.extension || '').toLowerCase();
-    if (!['jpeg', 'jpg', 'png', 'webp'].includes(ext)) continue;
+    if (!['jpeg', 'jpg', 'png', 'webp', 'svg'].includes(ext)) continue;
     const bytes: Uint8Array | null = image.buffer
       ? new Uint8Array(image.buffer)
       : image.base64
@@ -48,8 +60,16 @@ export function collectEmbeddedImages(
     if (bytes.byteLength > 5 * 1024 * 1024)
       throw new Error(`Embedded image at row ${rowNumber} exceeds 5 MB`);
 
-    const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-    const extension = ext === 'png' ? 'png' : ext === 'webp' ? 'webp' : 'jpg';
+    if (ext === 'svg') assertSafeSvg(bytes, rowNumber);
+
+    const mimeType = ext === 'png'
+      ? 'image/png'
+      : ext === 'webp'
+        ? 'image/webp'
+        : ext === 'svg'
+          ? 'image/svg+xml'
+          : 'image/jpeg';
+    const extension = ext === 'png' ? 'png' : ext === 'webp' ? 'webp' : ext === 'svg' ? 'svg' : 'jpg';
 
     result.push({
       rowNumber,

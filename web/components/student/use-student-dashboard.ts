@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { handleSessionExpired } from "@/lib/session-manager";
 import type { AuthenticatedSession } from "@/lib/auth-session";
 import type { LanguageMode, StudentPortalData, TabId } from "./student-types";
 
@@ -52,6 +53,7 @@ export function useStudentDashboard() {
 
         if (dashboardResponse.status === 401) {
           if (active) setStatus("unauthenticated");
+          handleSessionExpired({ destination: "/login" });
           return;
         }
         if (dashboardResponse.status === 403) {
@@ -115,11 +117,9 @@ export function useStudentDashboard() {
     if (isSigningOut) return;
     setIsSigningOut(true);
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (!response.ok) throw new Error("Unable to sign out");
+      await fetch("/api/auth/logout", { method: "POST" });
       setLogoutDialogOpen(false);
-      router.replace("/login");
-      router.refresh();
+      handleSessionExpired({ destination: "/login", reason: "logged_out" });
     } finally {
       setIsSigningOut(false);
     }

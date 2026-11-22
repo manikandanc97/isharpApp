@@ -82,7 +82,7 @@ export function TopicManagementDialog({
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
         {/* Header */}
         <div className="border-b border-slate-200 bg-[#fbfbfa] p-5 sm:px-6">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 pr-9 sm:pr-10">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
                 <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-3xs font-bold uppercase tracking-wider text-indigo-700">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { handleSessionExpired } from "@/lib/session-manager";
 import { ExamResultView } from "@/components/exam-runner/exam-result-view";
 import { ProductionExamRunner } from "@/components/exam-runner/production-exam-runner";
 import type { ExamResultPayload, SanitizedAttemptPayload } from "@/components/exam-runner/exam.types";
@@ -29,6 +30,10 @@ export default function ExamAttemptPage() {
         setError(null);
 
         const res = await fetch(`/api/exam/attempts/${attemptId}`);
+        if (res.status === 401) {
+          handleSessionExpired({ destination: "/login" });
+          return;
+        }
         const data = await res.json();
 
         if (!isMounted) return;

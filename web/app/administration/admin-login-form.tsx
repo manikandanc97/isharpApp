@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   Headphones,
@@ -13,10 +13,11 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
+import { ApiClientError } from "@/lib/api-client";
+import { getAuthenticatedSession } from "@/lib/auth-session";
+import { createClient } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
-import { getAuthenticatedSession } from "@/lib/auth-session";
 import {
   AdminControlCenterPreview,
   type AuthenticatedAdminUser,
@@ -27,10 +28,17 @@ const inputBaseStyle =
 
 export function AdminLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reason = searchParams.get("reason");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(
+    reason === "session_expired"
+      ? "Your administrative session has expired. Please sign in again with your credentials."
+      : "",
+  );
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const [authenticatedUser, setAuthenticatedUser] =
@@ -58,6 +66,7 @@ export function AdminLoginForm() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setAuthError("");
+    setSessionExpiredNotice("");
 
     if (!validate()) return;
 
@@ -83,15 +92,23 @@ export function AdminLoginForm() {
       }
 
       if (error) {
+        const message = error.message?.toLowerCase() ?? "";
         const isRateLimited =
           error.status === 429 ||
-          error.message?.toLowerCase().includes("rate limit") ||
-          error.message?.toLowerCase().includes("too many requests");
+          message.includes("rate limit") ||
+          message.includes("too many requests");
+        const isNetworkError =
+          error.name === "AuthRetryableFetchError" ||
+          error.status === 0 ||
+          message.includes("fetch failed") ||
+          message.includes("failed to fetch");
 
         setAuthError(
           isRateLimited
             ? "Too many sign-in attempts. Please wait a minute and try again."
-            : "Invalid email or password."
+            : isNetworkError
+              ? "Unable to reach the authentication service. Check your connection and try again."
+              : "Invalid email or password.",
         );
         return;
       }
@@ -101,20 +118,35 @@ export function AdminLoginForm() {
         return;
       }
 
-      let activeSession;
       try {
-        activeSession = await getAuthenticatedSession(data.session.access_token);
-      } catch {
-        // If NestJS auth/me check times out or fails
-        setAuthError("The authorization service is temporarily unavailable. Please try again.");
-        return;
-      }
+        const activeSession = await getAuthenticatedSession(
+          data.session.access_token,
+        );
+        const hasAdminAccess = activeSession.roles.some(
+          (role) => role === "ADMIN" || role === "SUPERADMIN",
+        );
 
-      const isSuperadmin = activeSession.roles.includes("SUPERADMIN");
-      const isAdmin = activeSession.roles.includes("ADMIN");
-      if (!isAdmin && !isSuperadmin) {
-        await supabase.auth.signOut();
-        setAuthError("This account does not have administrator access.");
+        if (!hasAdminAccess) {
+          await supabase.auth.signOut();
+          setAuthError("This account does not have administrator access.");
+          return;
+        }
+      } catch (sessionError) {
+        if (
+          sessionError instanceof ApiClientError &&
+          [401, 403].includes(sessionError.status)
+        ) {
+          await supabase.auth.signOut();
+          setAuthError(
+            sessionError.status === 403
+              ? "This account does not have administrator access."
+              : "Your session could not be verified. Please sign in again.",
+          );
+        } else {
+          setAuthError(
+            "The authorization service is temporarily unavailable. Please try again.",
+          );
+        }
         return;
       }
 
@@ -249,6 +281,20 @@ export function AdminLoginForm() {
           <span>Secure cookie session</span>
           <span className="text-xs text-slate-400">256-Bit Encrypted</span>
         </div>
+
+        {/* Session Expired Banner */}
+        {sessionExpiredNotice && (
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50/90 p-3 text-xs leading-snug text-amber-900 shadow-2xs"
+          >
+            <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <div className="space-y-0.5">
+              <p className="font-semibold text-amber-950">Administrative Session Expired</p>
+              <p className="text-amber-800">{sessionExpiredNotice}</p>
+            </div>
+          </div>
+        )}
 
         {authError && (
           <div

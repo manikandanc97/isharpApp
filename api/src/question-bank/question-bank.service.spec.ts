@@ -52,8 +52,10 @@ describe('QuestionBankService validation', () => {
     save.mockRestore();
   });
 
-  it('reports an existing question as skipped instead of overwriting it', async () => {
-    const save = vi.spyOn(service, 'saveQuestion').mockResolvedValueOnce(null);
+  it('upserts an existing question so imports can backfill images', async () => {
+    const save = vi
+      .spyOn(service, 'saveQuestion')
+      .mockResolvedValueOnce({ externalId: 'EXISTING-1' } as never);
     const result = await service.importQuestions('profile-id', {
       rows: [{ rowNumber: 7, data: { externalId: 'EXISTING-1' } }],
     });
@@ -61,18 +63,20 @@ describe('QuestionBankService validation', () => {
     expect(save).toHaveBeenCalledWith(
       'profile-id',
       { externalId: 'EXISTING-1' },
-      expect.objectContaining({ skipExisting: true, createMissingChapter: true }),
+      expect.objectContaining({
+        matchExistingContent: true,
+        createMissingChapter: true,
+      }),
     );
     expect(result).toMatchObject({
-      imported: 0,
-      skipped: 1,
+      imported: 1,
+      skipped: 0,
       failed: 0,
       results: [
         {
           row: 7,
           externalId: 'EXISTING-1',
-          status: 'skipped',
-          reason: 'Question already exists',
+          status: 'imported',
         },
       ],
     });

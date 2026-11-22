@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Check, Copy, ExternalLink, Eye, Pencil, Trash2 } from "lucide-react";
 import type { Question } from "./types";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatDisplayQuestionId } from "@/lib/question-format";
 
 export interface QuestionCardProps {
   question: Question;
@@ -70,21 +71,23 @@ export function QuestionCard({
             </div>
           )}
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
-              {!demo ? (
-                <>
-                  <span className="text-indigo-700 font-bold">{question.externalId}</span>
-                  {question.chapter?.title && (
-                    <>
-                      <span className="text-slate-400">·</span>
-                      <span className="text-slate-600 font-medium truncate max-w-[260px]">{question.chapter.title}</span>
-                    </>
-                  )}
-                </>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+              {question.chapter?.title ? (
+                <span className="text-slate-800 font-semibold truncate max-w-[320px]">
+                  {question.chapter.title}
+                </span>
               ) : (
-                question.chapter?.title && (
-                  <span className="text-slate-600 font-semibold">{question.chapter.title}</span>
-                )
+                <span className="text-slate-800 font-semibold">
+                  {question.courseSubject?.subject?.name || "Question"}
+                </span>
+              )}
+              {!demo && question.externalId && (
+                <span
+                  title={`ID: ${question.externalId}`}
+                  className="inline-flex items-center rounded-md bg-indigo-50/80 px-2 py-0.5 font-mono text-3xs font-semibold text-indigo-700 border border-indigo-100"
+                >
+                  {formatDisplayQuestionId(question.externalId)}
+                </span>
               )}
             </div>
             {/* Question Text: Tamil first and bold, English second */}

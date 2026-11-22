@@ -74,18 +74,9 @@ export function AdminSidebar({
               >
                 <Icon className="size-4" />
               </div>
-              <div className="grid gap-0.5 min-w-0">
-                <p className="truncate text-xs font-semibold leading-tight">
-                  {meta.label}
-                </p>
-                <p
-                  className={`truncate text-3xs ${
-                    isActive ? "text-slate-300" : "text-slate-400"
-                  }`}
-                >
-                  {meta.description}
-                </p>
-              </div>
+              <span className="truncate text-xs font-semibold leading-tight">
+                {meta.label}
+              </span>
             </div>
             {badgeCount > 0 && (
               <span

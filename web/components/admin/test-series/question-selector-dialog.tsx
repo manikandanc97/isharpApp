@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatDisplayQuestionId } from "@/lib/question-format";
 import {
   Dialog,
   DialogContent,
@@ -707,8 +708,8 @@ export function QuestionSelectorDialog({
 
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-3xs font-bold text-brand-red">
-                            {q.externalId}
+                          <span title={`ID: ${q.externalId}`} className="font-mono text-3xs font-bold text-brand-red">
+                            {formatDisplayQuestionId(q.externalId)}
                           </span>
                           <Badge variant="outline" className="text-3xs px-2 py-0 border-slate-200">
                             {sub}
@@ -835,8 +836,8 @@ export function QuestionSelectorDialog({
               selectedQuestions.map((q, idx) => (
                 <div key={q.id} className="rounded-xl border border-slate-200 bg-white p-3.5 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-brand-red">
-                      Q{idx + 1}. ({q.externalId})
+                    <span title={`ID: ${q.externalId}`} className="font-mono font-bold text-brand-red">
+                      Q{idx + 1}. ({formatDisplayQuestionId(q.externalId)})
                     </span>
                     <Badge variant="outline" className="text-3xs">
                       {resolveSubject(q)}
