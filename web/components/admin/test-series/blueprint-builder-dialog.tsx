@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -322,9 +323,33 @@ export function BlueprintBuilderDialog({
         {/* Blueprint Table */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-slate-400 gap-2">
-              <RefreshCw className="size-4 animate-spin" />
-              <span className="text-xs">Loading blueprint settings...</span>
+            <div className="space-y-2.5">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs grid grid-cols-1 sm:grid-cols-12 gap-3 items-center"
+                >
+                  <div className="sm:col-span-3 space-y-1">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                  </div>
+                  <div className="sm:col-span-3 space-y-1">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                  </div>
+                  <div className="sm:col-span-2 space-y-1">
+                    <Skeleton className="h-3 w-14" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                  </div>
+                  <div className="sm:col-span-2 space-y-1">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                  </div>
+                  <div className="sm:col-span-2 flex justify-end">
+                    <Skeleton className="size-8 rounded-lg" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : blueprints.length === 0 ? (
             <div className="py-12 text-center space-y-2">

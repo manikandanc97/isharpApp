@@ -15,6 +15,17 @@ describe('normalizeDatabaseConnectionString', () => {
     expect(result.searchParams.get('uselibpqcompat')).toBe('true');
   });
 
+  it('uses libpq require semantics for direct Supabase connections (*.supabase.co)', () => {
+    const result = new URL(
+      normalizeDatabaseConnectionString(
+        'postgresql://postgres.project:secret@db.project.supabase.co:5432/postgres?sslmode=require',
+      ),
+    );
+
+    expect(result.searchParams.get('sslmode')).toBe('require');
+    expect(result.searchParams.get('uselibpqcompat')).toBe('true');
+  });
+
   it('does not alter SSL behavior for non-Supabase databases', () => {
     const result = new URL(
       normalizeDatabaseConnectionString(

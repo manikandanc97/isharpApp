@@ -1,4 +1,5 @@
 import { ApiClientError } from '@/lib/api-client';
+import { getLoginErrorMessage } from '@/lib/auth-error';
 import type { AuthenticatedSession } from '@/lib/auth-session';
 import { retryTransientAuth } from '@/lib/auth-verification';
 import { getNestApiClient } from '@/lib/nest-api';
@@ -64,16 +65,17 @@ export async function POST(request: Request) {
         error?.name === 'AuthRetryableFetchError' ||
         error?.status === 0;
 
-      const message = isRateLimited
-        ? 'Too many sign-in attempts. Please wait a minute and try again.'
-        : isNetworkError
-        ? 'Unable to reach the authentication service. Please check your internet connection or Supabase connectivity.'
-        : 'Invalid email or password.';
+      const isServerError =
+        (typeof error?.status === 'number' && error.status >= 500) ||
+        error?.message?.toLowerCase().includes('internal server error') ||
+        error?.message?.toLowerCase().includes('service unavailable');
+
+      const message = getLoginErrorMessage(error);
 
       return Response.json(
         { message },
         {
-          status: isRateLimited ? 429 : isNetworkError ? 503 : 401,
+          status: isRateLimited ? 429 : isNetworkError || isServerError ? 503 : 401,
           headers: { 'Cache-Control': 'no-store, private' },
         },
       );
@@ -82,13 +84,14 @@ export async function POST(request: Request) {
     let session: AuthenticatedSession;
     try {
       session = await retryTransientAuth(() =>
-        getNestApiClient({ timeoutMs: 10_000 }).request<AuthenticatedSession>(
+        getNestApiClient({ timeoutMs: 20_000 }).request<AuthenticatedSession>(
           '/api/auth/me',
           { accessToken: data.session!.access_token, cache: 'no-store' },
         ),
       );
     } catch (nestErr) {
       console.error('[AdminLogin] NestApiClient request to /api/auth/me failed:', nestErr);
+      await supabase.auth.signOut();
       const status =
         nestErr instanceof ApiClientError && [401, 403].includes(nestErr.status)
           ? nestErr.status

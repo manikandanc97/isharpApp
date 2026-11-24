@@ -1,5 +1,6 @@
 import type ExcelJS from 'exceljs';
 import './excel-patch';
+import { hashImageBytes } from './question-duplicate-detection';
 
 export type EmbeddedExcelImage = {
   rowNumber: number;
@@ -7,6 +8,7 @@ export type EmbeddedExcelImage = {
   bytes: Uint8Array;
   mimeType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/svg+xml';
   extension: 'jpg' | 'png' | 'webp' | 'svg';
+  imageHash: string;
 };
 
 function assertSafeSvg(bytes: Uint8Array, rowNumber: number) {
@@ -70,14 +72,35 @@ export function collectEmbeddedImages(
           ? 'image/svg+xml'
           : 'image/jpeg';
     const extension = ext === 'png' ? 'png' : ext === 'webp' ? 'webp' : ext === 'svg' ? 'svg' : 'jpg';
+    const imageHash = hashImageBytes(bytes, mimeType);
 
-    result.push({
-      rowNumber,
-      columnName,
-      bytes,
-      mimeType,
-      extension,
-    });
+    const cellKey = `${rowNumber}:${columnName}`;
+    const existingIndex = result.findIndex(
+      (item) => `${item.rowNumber}:${item.columnName}` === cellKey,
+    );
+
+    if (existingIndex !== -1) {
+      // If previous was raster and current is SVG, prefer SVG
+      if (extension === 'svg' && result[existingIndex].extension !== 'svg') {
+        result[existingIndex] = {
+          rowNumber,
+          columnName,
+          bytes,
+          mimeType,
+          extension,
+          imageHash,
+        };
+      }
+    } else {
+      result.push({
+        rowNumber,
+        columnName,
+        bytes,
+        mimeType,
+        extension,
+        imageHash,
+      });
+    }
   }
 
   return result;

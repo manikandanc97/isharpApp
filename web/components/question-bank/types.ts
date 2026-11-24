@@ -15,6 +15,9 @@ export type Question = {
   textEn: string | null;
   textTa: string | null;
   questionImageUrl: string | null;
+  contentFingerprint?: string | null;
+  equivalentFingerprint?: string | null;
+  fingerprintVersion?: number | null;
   solutionEn: string | null;
   solutionTa: string | null;
   solutionImageUrl: string | null;
@@ -69,6 +72,9 @@ export type ImportRowResult = {
   row: number;
   externalId?: string;
   status: "imported" | "skipped" | "failed";
+  duplicateCategory?: "within_excel" | "database";
+  duplicateType?: "exact" | "equivalent" | "answer_conflict" | "id_conflict";
+  matchedId?: string | number;
   reason?: string;
   error?: string;
 };
@@ -78,11 +84,16 @@ export type ImportReport = {
   imported: number;
   skipped: number;
   failed: number;
+  withinExcelDuplicates?: number;
+  databaseDuplicates?: number;
+  conflicts?: number;
   results: ImportRowResult[];
 };
 
 export type ImportProgress = {
   phase: "idle" | "uploading" | "processing" | "complete";
+  stage?: "uploading" | "parsing" | "deduplicating" | "images" | "persisting" | "complete";
+  stageMessage?: string;
   percent: number;
   loadedBytes: number;
   totalBytes: number;

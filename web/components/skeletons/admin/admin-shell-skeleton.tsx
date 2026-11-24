@@ -7,7 +7,16 @@ import { skeletonItems, SkeletonLines } from "@/components/skeletons/skeleton-pr
 import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 
 function AdminSidebarSkeleton({ section }: { section: AdminSkeletonSection }) {
-  const activeIndex = section === "overview" ? 0 : section === "students" ? 1 : 2;
+  const sectionOrder = [
+    "overview",
+    "students",
+    "courses",
+    "questions",
+    "test-series",
+    "exams",
+    "results",
+  ];
+  const activeIndex = sectionOrder.indexOf(section);
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-(--layout-sidebar-width) flex-col border-r border-slate-200 bg-white shadow-xs lg:flex">
@@ -21,7 +30,7 @@ function AdminSidebarSkeleton({ section }: { section: AdminSkeletonSection }) {
       <div className="flex-1 px-4 py-3">
         <Skeleton className="ml-3 h-3 w-20" />
         <div className="mt-2.5 space-y-1.5">
-          {skeletonItems(3).map((item) => {
+          {skeletonItems(6).map((item) => {
             const isActive = item === activeIndex;
             return (
               <div

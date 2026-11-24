@@ -11,11 +11,9 @@ import {
   LoaderCircle,
   LogOut,
   Menu,
-  RefreshCw,
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,8 +32,6 @@ import type { AuthenticatedSession } from "@/lib/auth-session";
 interface AdminHeaderProps {
   section: Section;
   onOpenSidebar: () => void;
-  refreshing: boolean;
-  onRefresh: () => void;
   pendingNotificationCount: number;
   recentPendingVerifications: Membership[];
   onNavigate: (section: Section) => void;
@@ -48,8 +44,6 @@ interface AdminHeaderProps {
 export function AdminHeader({
   section,
   onOpenSidebar,
-  refreshing,
-  onRefresh,
   pendingNotificationCount,
   recentPendingVerifications,
   onNavigate,
@@ -82,21 +76,6 @@ export function AdminHeader({
       </div>
 
       <div className="flex items-center gap-2.5">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={refreshing}
-          onClick={onRefresh}
-          className="h-8 gap-1.5 rounded-full border-slate-200/90 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 shadow-2xs"
-        >
-          <RefreshCw
-            className={`size-3.5 ${refreshing ? "animate-spin" : ""}`}
-          />
-          <span className="hidden sm:inline">
-            {refreshing ? "Syncing…" : "Refresh"}
-          </span>
-        </Button>
-
         {/* Notification drop */}
         <DropdownMenu>
           <DropdownMenuTrigger

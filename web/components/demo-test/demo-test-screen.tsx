@@ -8,6 +8,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { DemoTestLobby } from "./demo-test-lobby";
 import { DemoTestRunner } from "./demo-test-runner";
 import { DemoTestScorecard } from "./demo-test-scorecard";
+import { DemoTestScreenSkeleton } from "@/components/skeletons/demo-test-skeleton";
 import type { LanguageMode, SubjectMode } from "./demo-test.types";
 import { useDemoTestWorkflow } from "./use-demo-test-workflow";
 
@@ -56,23 +57,7 @@ export function DemoTestScreen({
   return (
     <div className="flex min-h-screen w-full flex-col bg-slate-50 font-sans text-slate-900 selection:bg-brand-red selection:text-white antialiased">
       {/* 01. LOADING PHASE */}
-      {phase === "loading" && (
-        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center space-y-4">
-          <div className="grid size-16 place-items-center rounded-2xl bg-rose-50 text-brand-red animate-pulse shadow-md">
-            <Loader2 className="size-9 animate-spin" />
-          </div>
-          <div className="space-y-1.5">
-            <h2 className="text-xl font-bold text-slate-900">
-              Calibrating Your Full-Screen NEET Assessment...
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-md">
-              {subjectMode === "ALL"
-                ? "Sampling balanced bilingual questions from Physics, Chemistry, and Biology question banks."
-                : `Preparing authentic randomized ${subjectMode.toLowerCase()} questions with step-by-step solutions.`}
-            </p>
-          </div>
-        </div>
-      )}
+      {phase === "loading" && <DemoTestScreenSkeleton />}
 
       {/* 02. LOBBY PHASE (FULL-SCREEN EXPERIENCE) */}
       {phase === "lobby" && (

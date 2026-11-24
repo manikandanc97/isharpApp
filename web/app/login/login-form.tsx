@@ -13,6 +13,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { PasswordInput } from "@/components/ui/password-input";
+import { getLoginErrorMessage } from "@/lib/auth-error";
 import { getAuthenticatedSession } from "@/lib/auth-session";
 import { getPostAuthDestination, oauthStatusMessages } from "@/lib/oauth-flow";
 import { createClient } from "@/lib/supabase/client";
@@ -89,15 +90,7 @@ export function LoginForm({
       }
 
       if (error) {
-        const isRateLimited =
-          error.status === 429 ||
-          error.message?.toLowerCase().includes("rate limit") ||
-          error.message?.toLowerCase().includes("too many requests");
-        setAuthError(
-          isRateLimited
-            ? "Too many sign-in attempts. Please wait a minute and try again."
-            : "Invalid email or password."
-        );
+        setAuthError(getLoginErrorMessage(error));
         return;
       }
 

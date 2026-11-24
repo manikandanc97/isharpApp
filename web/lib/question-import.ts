@@ -26,6 +26,7 @@ export function generateExternalId(courseCode?: string, subjectCode?: string, in
 type CellMap = Record<string, unknown>;
 const value = (row: CellMap, key: string) => String(row[key] ?? '').trim();
 const imageValue = (row: CellMap, key: string) => value(row, `${key}_image`) || value(row, `${key}_image_url`);
+const imageHashValue = (row: CellMap, key: string) => value(row, `${key}_image_hash`) || undefined;
 
 export function mapQuestionRow(row: CellMap, index = 1) {
   const correct = new Set(value(row, 'correct_options').toUpperCase().split(',').map((item) => item.trim()).filter(Boolean));
@@ -33,8 +34,17 @@ export function mapQuestionRow(row: CellMap, index = 1) {
     const key = label.toLowerCase();
     const numLabel = String(idx + 1);
     const isCorrect = correct.has(label) || correct.has(numLabel);
-    return { label: numLabel, textEn: value(row, `option_${key}_en`), textTa: value(row, `option_${key}_ta`), imageUrl: imageValue(row, `option_${key}`), isCorrect };
-  }).filter((option) => option.textEn || option.textTa || option.imageUrl);
+    const imageUrl = imageValue(row, `option_${key}`);
+    const imageHash = imageHashValue(row, `option_${key}`);
+    return {
+      label: numLabel,
+      textEn: value(row, `option_${key}_en`),
+      textTa: value(row, `option_${key}_ta`),
+      imageUrl,
+      imageHash,
+      isCorrect,
+    };
+  }).filter((option) => option.textEn || option.textTa || option.imageUrl || option.imageHash);
 
   const courseCode = value(row, 'course_code') || 'NEET';
   const subjectCode = value(row, 'subject_code') || 'PHYSICS';
@@ -62,11 +72,13 @@ export function mapQuestionRow(row: CellMap, index = 1) {
     textEn: value(row, 'question_text_en'),
     textTa: value(row, 'question_text_ta'),
     questionImageUrl: imageValue(row, 'question'),
+    questionImageHash: imageHashValue(row, 'question'),
     options,
     numericalAnswer: value(row, 'numerical_answer'),
     solutionEn: value(row, 'solution_en'),
     solutionTa: value(row, 'solution_ta'),
     solutionImageUrl: imageValue(row, 'solution'),
+    solutionImageHash: imageHashValue(row, 'solution'),
     correctMarks,
     negativeMarks,
     source,

@@ -57,6 +57,11 @@ export class QuestionBankController {
   @Post('questions/import/preflight') importPreflight(@Body() body: unknown) {
     return this.bank.importPreflight(body);
   }
+  @Post('questions/backfill-fingerprints')
+  backfillFingerprints(@Query('batchSize') batchSize?: string) {
+    const size = batchSize ? parseInt(batchSize, 10) : 100;
+    return this.bank.backfillFingerprints(size);
+  }
   @Delete('questions/:id')
   deleteQuestion(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.bank.deleteQuestion(id);

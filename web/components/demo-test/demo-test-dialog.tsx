@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DemoTestLobby } from "./demo-test-lobby";
 import { DemoTestRunner } from "./demo-test-runner";
 import { DemoTestScorecard } from "./demo-test-scorecard";
+import { DemoTestDialogSkeleton } from "@/components/skeletons/demo-test-skeleton";
 import { useDemoTestWorkflow } from "./use-demo-test-workflow";
 
 interface DemoTestDialogProps {
@@ -67,23 +68,7 @@ export function DemoTestDialog({
         className="w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[94vh] rounded-3xl p-0 overflow-hidden border border-slate-200/90 shadow-2xl bg-white"
       >
         {/* 01. LOADING PHASE */}
-        {phase === "loading" && (
-          <div className="flex flex-col items-center justify-center p-16 sm:p-24 text-center space-y-4">
-            <div className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-brand-red animate-pulse shadow-sm">
-              <Loader2 className="size-8 animate-spin" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900">
-                Calibrating Your Randomized NEET Test...
-              </h3>
-              <p className="text-xs text-slate-500 max-w-sm">
-                {subjectMode === "ALL"
-                  ? "Selecting balanced bilingual questions from Physics, Chemistry, and Biology banks."
-                  : `Selecting random authentic ${subjectMode.toLowerCase()} questions with step-by-step solutions.`}
-              </p>
-            </div>
-          </div>
-        )}
+        {phase === "loading" && <DemoTestDialogSkeleton />}
 
         {/* 02. LOBBY / INSTRUCTIONS PHASE */}
         {phase === "lobby" && (

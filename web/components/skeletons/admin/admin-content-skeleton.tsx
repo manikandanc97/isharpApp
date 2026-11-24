@@ -1,12 +1,13 @@
 import { skeletonItems, SkeletonLines } from "@/components/skeletons/skeleton-primitives";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QuestionCardSkeleton } from "./question-card-skeleton";
 import type { Section } from "@/components/admin/admin-types";
 
 export type AdminSkeletonSection = Section | "overview" | "students" | "courses" | "tests";
 
 function OverviewSkeleton() {
   return (
-    <div className="space-y-7">
+    <div className="space-y-7 animate-pulse">
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-7">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="max-w-xl space-y-2">
@@ -77,7 +78,7 @@ function StudentsSkeleton() {
   const columns = ["w-16", "w-20", "w-12", "w-20", "w-18", "w-14", "w-16"];
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 animate-pulse">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <SkeletonLines widths={["w-40", "w-96 max-w-full"]} lineClassName="first:h-5 last:h-3" />
         <Skeleton className="h-9 w-44 rounded-full bg-brand-red/30" />
@@ -129,7 +130,7 @@ function StudentRowSkeleton() {
 
 function CoursesSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-pulse">
       <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
         <div className="border-b border-slate-200 bg-[#fbfbfa] px-5 py-7 sm:px-7 lg:px-8">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
@@ -161,7 +162,6 @@ function CoursesSkeleton() {
           </div>
         </div>
       </section>
-      <QuestionBankSkeleton />
     </div>
   );
 }
@@ -186,22 +186,333 @@ function CourseRowSkeleton() {
   );
 }
 
-function QuestionBankSkeleton() {
+export function QuestionBankSkeleton() {
   return (
-    <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs sm:p-7">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <SkeletonLines widths={["w-48", "w-96 max-w-full"]} lineClassName="first:h-5" />
-        <Skeleton className="h-9 w-32 rounded-xl" />
-      </div>
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        {skeletonItems(3).map((item) => (
-          <div key={item} className="rounded-xl border border-slate-200 p-4">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="mt-3 h-7 w-14" />
+    <div className="space-y-6 animate-pulse">
+      {/* Question Bank Header Strip */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-32 rounded-full" />
+              <Skeleton className="h-4 w-20 rounded" />
+            </div>
+            <Skeleton className="h-8 w-72 rounded-lg" />
+            <Skeleton className="h-3.5 w-96 max-w-full" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-10 w-32 rounded-xl bg-brand-red/30" />
+            <Skeleton className="h-10 w-36 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Quick subject counters */}
+        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-5">
+          {["All", "Physics", "Chemistry", "Biology"].map((sub) => (
+            <Skeleton key={sub} className="h-9 w-28 rounded-full" />
+          ))}
+        </div>
+      </section>
+
+      {/* Filter Bar & Cards */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3.5 w-24" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-28 rounded-lg" />
+            <Skeleton className="h-8 w-20 rounded-lg" />
+          </div>
+        </div>
+
+        {/* Filter Inputs Grid */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-9 w-full rounded-lg" />
+        </div>
+
+        {/* 4 Question Card Skeletons */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <QuestionCardSkeleton key={i} />
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TestSeriesSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Header */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32 rounded-full" />
+            <Skeleton className="h-8 w-64 rounded-lg" />
+            <Skeleton className="h-3.5 w-80 max-w-full" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-10 w-36 rounded-full bg-brand-red/30" />
+            <Skeleton className="h-10 w-28 rounded-full" />
+          </div>
+        </div>
+
+        {/* 3 Metric Cards */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-3 border-t border-slate-100 pt-5">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-slate-200 p-4 bg-slate-50/50 space-y-1.5">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-7 w-16" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Series Cards Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex justify-between items-start">
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-3/4 rounded-md" />
+              <Skeleton className="h-3.5 w-full" />
+              <Skeleton className="h-3.5 w-4/5" />
+            </div>
+            <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-8 w-24 rounded-lg" />
+            </div>
           </div>
         ))}
       </div>
-    </section>
+    </div>
+  );
+}
+
+function ExamsSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Top Banner */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-36 rounded-full" />
+            <Skeleton className="h-8 w-72 rounded-lg" />
+            <Skeleton className="h-3.5 w-80 max-w-full" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-10 w-36 rounded-full bg-brand-red/30" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+          </div>
+        </div>
+
+        {/* 4 Real-time Metric Cards */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-5">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Exam Sessions Table */}
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-[#fbfbfa]">
+          <Skeleton className="h-8 w-48 rounded-lg" />
+          <Skeleton className="h-8 w-64 rounded-lg" />
+        </div>
+        <div className="divide-y divide-slate-100 p-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center justify-between p-4">
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-44 rounded" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+                <Skeleton className="h-3.5 w-64" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-8 w-24 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ResultsSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32 rounded-full" />
+            <Skeleton className="h-8 w-64 rounded-lg" />
+            <Skeleton className="h-3.5 w-80 max-w-full" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-9 w-28 rounded-full" />
+            <Skeleton className="h-9 w-32 rounded-full" />
+          </div>
+        </div>
+
+        {/* Metric Cards */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-5">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-2">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-28" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Leaderboard Table */}
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-slate-200 bg-[#fbfbfa] flex justify-between items-center">
+          <Skeleton className="h-8 w-44 rounded-lg" />
+          <Skeleton className="h-8 w-56 rounded-lg" />
+        </div>
+        <div className="divide-y divide-slate-100">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="flex items-center justify-between px-6 py-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-8 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-32 rounded" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AuditLogsSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32 rounded-full" />
+            <Skeleton className="h-8 w-60 rounded-lg" />
+            <Skeleton className="h-3.5 w-72" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-9 w-24 rounded-full" />
+            <Skeleton className="h-9 w-28 rounded-full" />
+          </div>
+        </div>
+
+        {/* Modules Filter row */}
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+          {["All", "Question Bank", "Courses", "Exams", "Roles", "Settings"].map((m) => (
+            <Skeleton key={m} className="h-7 w-24 rounded-lg" />
+          ))}
+        </div>
+      </section>
+
+      {/* Table */}
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="divide-y divide-slate-100">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="flex items-center justify-between px-6 py-3.5">
+              <Skeleton className="h-3 w-32 font-mono" />
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-5 w-24 rounded-md" />
+              <Skeleton className="h-3.5 w-20" />
+              <Skeleton className="h-3.5 w-48" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function RolesSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-36 rounded-full" />
+            <Skeleton className="h-8 w-64 rounded-lg" />
+            <Skeleton className="h-3.5 w-80 max-w-full" />
+          </div>
+          <Skeleton className="h-10 w-36 rounded-full bg-brand-red/30" />
+        </div>
+      </section>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        {["Admin", "Super Admin", "Faculty Evaluator"].map((role) => (
+          <div key={role} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+            <Skeleton className="size-10 rounded-xl" />
+            <Skeleton className="h-5 w-28 rounded" />
+            <Skeleton className="h-3.5 w-full" />
+            <div className="pt-2 border-t border-slate-100 flex justify-between">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SettingsSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32 rounded-full" />
+            <Skeleton className="h-8 w-64 rounded-lg" />
+            <Skeleton className="h-3.5 w-80 max-w-full" />
+          </div>
+          <Skeleton className="h-10 w-32 rounded-full bg-brand-red/30" />
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-40 rounded" />
+              <Skeleton className="h-3.5 w-64" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -212,5 +523,12 @@ export function AdminWorkspaceContentSkeleton({
 }) {
   if (section === "students") return <StudentsSkeleton />;
   if (section === "courses") return <CoursesSkeleton />;
+  if (section === "questions") return <QuestionBankSkeleton />;
+  if (section === "test-series" || section === "tests") return <TestSeriesSkeleton />;
+  if (section === "exams") return <ExamsSkeleton />;
+  if (section === "results") return <ResultsSkeleton />;
+  if (section === "audit-logs") return <AuditLogsSkeleton />;
+  if (section === "roles") return <RolesSkeleton />;
+  if (section === "settings") return <SettingsSkeleton />;
   return <OverviewSkeleton />;
 }

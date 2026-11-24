@@ -299,8 +299,11 @@ model Question {
   solutionEn       String?            @map("solution_en") @db.Text
   solutionTa       String?            @map("solution_ta") @db.Text
   solutionImageUrl String?            @map("solution_image_url") @db.Text
-  numericalAnswer  String?            @map("numerical_answer") @db.VarChar(100)
-  correctMarks     Int                @default(4) @map("correct_marks") @db.SmallInt
+  numericalAnswer       String?            @map("numerical_answer") @db.VarChar(100)
+  contentFingerprint    String?            @map("content_fingerprint") @db.VarChar(64)
+  equivalentFingerprint String?            @map("equivalent_fingerprint") @db.VarChar(64)
+  fingerprintVersion    Int                @default(1) @map("fingerprint_version") @db.SmallInt
+  correctMarks          Int                @default(4) @map("correct_marks") @db.SmallInt
   negativeMarks    Int                @default(1) @map("negative_marks") @db.SmallInt
   source           String?            @db.VarChar(200)
   isActive         Boolean            @default(true) @map("is_active")
@@ -321,6 +324,8 @@ model Question {
   @@index([courseSubjectId, chapterId], map: "questions_course_subject_chapter_idx")
   @@index([type, difficulty, isActive], map: "questions_type_difficulty_active_idx")
   @@index([createdById], map: "questions_created_by_id_idx")
+  @@index([contentFingerprint], map: "questions_content_fingerprint_idx")
+  @@index([equivalentFingerprint], map: "questions_equivalent_fingerprint_idx")
   @@map("questions")
 }
 

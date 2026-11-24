@@ -78,8 +78,6 @@ export function AdminDashboard({
         <AdminHeader
           section={section}
           onOpenSidebar={() => setSidebarOpen(true)}
-          refreshing={refreshing}
-          onRefresh={() => void loadAll(true)}
           pendingNotificationCount={pendingNotificationCount}
           recentPendingVerifications={recentPendingVerifications}
           onNavigate={navigateToSection}

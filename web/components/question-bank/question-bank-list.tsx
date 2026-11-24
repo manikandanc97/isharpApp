@@ -30,9 +30,12 @@ import { Stack } from "@/components/layout/layout-primitives";
 import { QuestionCard } from "./question-card";
 import { QuestionPreviewDialog } from "./question-preview-dialog";
 import { QuestionDeleteDialog } from "./question-delete-dialog";
+import { QuestionCardsSkeletonGrid } from "@/components/skeletons/admin/question-card-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Question } from "./types";
 import type { SubjectFilter } from "./use-question-bank";
 import { exportQuestionsToExcel } from "@/lib/question-export";
+import { getQuestionDuplicateKey } from "./question-duplicate-utils";
 
 interface QuestionBankListProps {
   subjectFilter: SubjectFilter;
@@ -100,23 +103,21 @@ export function QuestionBankList({
   const [pageSize, setPageSize] = useState<number>(10);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Duplicate questions detection (questions with matching normalized text in the same subject)
+  // Duplicate questions detection: content & equivalent duplicate detection
   const { duplicateIds, redundantDuplicateIds } = useMemo(() => {
-    const textMap = new Map<string, string[]>();
+    const keyToIds = new Map<string, string[]>();
+
     libraryQuestions.forEach((q) => {
-      const normText = (q.textEn || q.textTa || "").trim().toLowerCase();
-      if (normText) {
-        const key = `${q.courseSubject?.subject?.code || ""}:${normText}`;
-        const list = textMap.get(key) || [];
-        list.push(q.id);
-        textMap.set(key, list);
-      }
+      const { equivKey } = getQuestionDuplicateKey(q);
+      const list = keyToIds.get(equivKey) || [];
+      list.push(q.id);
+      keyToIds.set(equivKey, list);
     });
 
     const dupSet = new Set<string>();
     const redundantSet = new Set<string>();
 
-    for (const ids of textMap.values()) {
+    for (const ids of keyToIds.values()) {
       if (ids.length > 1) {
         ids.forEach((id) => dupSet.add(id));
         // Keep the first record as canonical, rest are redundant duplicates
@@ -273,10 +274,14 @@ export function QuestionBankList({
               Verified NEET Repository
             </span>
             <span className="text-slate-300">·</span>
-            <span className="text-xs text-slate-500 font-medium">
-              {visibleCount} records matched
-            </span>
-            {totalItems > 0 && (
+            {busy && !libraryQuestions.length ? (
+              <Skeleton className="h-3.5 w-24 inline-block align-middle" />
+            ) : (
+              <span className="text-xs text-slate-500 font-medium">
+                {visibleCount} records matched
+              </span>
+            )}
+            {totalItems > 0 && !busy && (
               <>
                 <span className="text-slate-300">·</span>
                 <span className="text-xs font-semibold text-brand-blue">
@@ -348,7 +353,7 @@ export function QuestionBankList({
               {redundantDuplicateIds.size} duplicate question {redundantDuplicateIds.size > 1 ? "copies" : "copy"} detected
             </span>
             <span className="text-amber-700 hidden sm:inline">
-              (identical question text in {subjectFilter.toLowerCase()}).
+              (matching content, diagrams, and options in {subjectFilter.toLowerCase()}).
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -572,8 +577,8 @@ export function QuestionBankList({
       {/* Question Cards Container */}
       <div className={layoutMode === "list" ? "flex flex-col gap-4 w-full" : "grid gap-4 lg:grid-cols-2"}>
         {busy && !libraryQuestions.length ? (
-          <div className="col-span-full grid h-48 w-full place-items-center">
-            <LoaderCircle className="size-8 animate-spin text-brand-blue" />
+          <div className="col-span-full w-full">
+            <QuestionCardsSkeletonGrid count={6} layoutMode={layoutMode} />
           </div>
         ) : (
           paginatedQuestions.map((question) => (

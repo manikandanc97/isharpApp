@@ -17,6 +17,8 @@ const initialProgress: ImportProgress = {
 
 type ImportProgressEvent = {
   type: "progress";
+  stage?: "uploading" | "parsing" | "deduplicating" | "images" | "persisting" | "complete";
+  message?: string;
   total: number;
   processed: number;
   imported: number;
@@ -45,11 +47,18 @@ export function useQuestionImport({
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [importBusy, setImportBusy] = useState(false);
+  const [retryExportBusy, setRetryExportBusy] = useState(false);
+  const [retryMode, setRetryMode] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importProgress, setImportProgress] =
     useState<ImportProgress>(initialProgress);
 
   const selectImportFile = (file: File | null) => {
+    setRetryMode(false);
+    selectFile(file);
+  };
+
+  const selectFile = (file: File | null) => {
     setImportReport(null);
     setImportError(null);
     setImportProgress(initialProgress);
@@ -68,6 +77,76 @@ export function useQuestionImport({
       return;
     }
     setImportFile(file);
+  };
+
+  const selectFailedRowsFile = (file: File | null) => {
+    setRetryMode(Boolean(file));
+    selectFile(file);
+  };
+
+  const downloadFailedRows = async () => {
+    if (!importFile || !importReport?.failed) return;
+    const failures = importReport.results
+      .filter((result) => result.status === "failed")
+      .map((result) => ({
+        row: result.row,
+        externalId: result.externalId,
+        error: result.error || result.reason || "Import failed",
+      }));
+    if (!failures.length) return;
+
+    setRetryExportBusy(true);
+    setImportError(null);
+    try {
+      const form = new FormData();
+      form.set("file", importFile);
+      form.set("failures", JSON.stringify(failures));
+      const response = await fetch("/api/admin/questions/import/failed-rows", {
+        method: "POST",
+        body: form,
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        throw new Error(payload.message || "Failed rows workbook could not be created");
+      }
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${importFile.name.replace(/\.xlsx$/i, "")}-failed-rows.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+      setNotice?.(
+        `${failures.length} failed row${failures.length === 1 ? "" : "s"} downloaded for correction.`,
+      );
+    } catch (cause) {
+      setImportError(
+        cause instanceof Error
+          ? cause.message
+          : "Failed rows workbook could not be created",
+      );
+    } finally {
+      setRetryExportBusy(false);
+    }
+  };
+
+  const completePartialImport = () => {
+    if (importReport) {
+      setNotice?.(
+        `${importReport.imported} imported question${importReport.imported === 1 ? " was" : "s were"} kept. ${importReport.skipped} duplicate row${importReport.skipped === 1 ? " was" : "s were"} left unchanged. ${importReport.failed} failed row${importReport.failed === 1 ? " was" : "s were"} left out.`,
+      );
+    }
+    setImportOpen(false);
+    setImportFile(null);
+    setImportReport(null);
+    setImportError(null);
+    setImportProgress(initialProgress);
+    setRetryMode(false);
   };
 
   const importExcel = async () => {
@@ -107,6 +186,8 @@ export function useQuestionImport({
           }
           setImportProgress({
             phase: "processing",
+            stage: event.stage ?? "persisting",
+            stageMessage: event.message,
             percent:
               event.total > 0
                 ? Math.round((event.processed / event.total) * 100)
@@ -142,6 +223,11 @@ export function useQuestionImport({
           const percent = total > 0 ? Math.min(100, Math.round((event.loaded / total) * 100)) : 0;
           setImportProgress({
             phase: percent >= 100 ? "processing" : "uploading",
+            stage: "uploading",
+            stageMessage:
+              percent >= 100
+                ? "Workbook received. Initializing pipeline..."
+                : `Uploading workbook (${percent}%)...`,
             percent,
             loadedBytes: event.loaded,
             totalBytes: total,
@@ -155,7 +241,9 @@ export function useQuestionImport({
         request.upload.onload = () => {
           setImportProgress({
             phase: "processing",
-            percent: 100,
+            stage: "parsing",
+            stageMessage: "Parsing workbook & extracting questions...",
+            percent: 0,
             loadedBytes: importFile.size,
             totalBytes: importFile.size,
             totalRows: 0,
@@ -216,6 +304,8 @@ export function useQuestionImport({
       setImportReport(result);
       setImportProgress({
         phase: "complete",
+        stage: "complete",
+        stageMessage: "Import complete",
         percent: 100,
         loadedBytes: importFile.size,
         totalBytes: importFile.size,
@@ -248,10 +338,15 @@ export function useQuestionImport({
     setImportReport,
     importBusy,
     setImportBusy,
+    retryExportBusy,
+    retryMode,
     importError,
     setImportError,
     importProgress,
     selectImportFile,
+    selectFailedRowsFile,
+    downloadFailedRows,
+    completePartialImport,
     importExcel,
   };
 }

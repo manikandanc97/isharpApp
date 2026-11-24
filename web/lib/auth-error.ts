@@ -32,3 +32,54 @@ export function getSignupErrorMessage(error: AuthErrorLike) {
   // Don't expose raw server error messages to users.
   return "Something went wrong. Please try again or contact I-Sharp support.";
 }
+
+export function getLoginErrorMessage(error: unknown): string {
+  if (!error || typeof error !== "object") {
+    return "Invalid email or password.";
+  }
+
+  const err = error as {
+    code?: string;
+    message?: string;
+    name?: string;
+    status?: number;
+  };
+  const message = (err.message ?? "").toLowerCase();
+
+  const isRateLimited =
+    err.status === 429 ||
+    err.code === "over_request_rate_limit" ||
+    message.includes("rate limit") ||
+    message.includes("too many requests");
+  if (isRateLimited) {
+    return "Too many sign-in attempts. Please wait a minute and try again.";
+  }
+
+  const isNetworkError =
+    err.name === "AuthRetryableFetchError" ||
+    err.status === 0 ||
+    message.includes("fetch failed") ||
+    message.includes("failed to fetch") ||
+    message.includes("network error");
+  if (isNetworkError) {
+    return "Cannot connect to the server. Please check your connection.";
+  }
+
+  const isTimeout =
+    err.status === 408 ||
+    message.includes("timed out") ||
+    message.includes("timeout");
+  if (isTimeout) {
+    return "The request timed out. Please check your connection and try again.";
+  }
+
+  const isServerError =
+    (typeof err.status === "number" && err.status >= 500) ||
+    message.includes("internal server error") ||
+    message.includes("service unavailable");
+  if (isServerError) {
+    return "Unable to sign in right now. Please try again.";
+  }
+
+  return "Invalid email or password.";
+}

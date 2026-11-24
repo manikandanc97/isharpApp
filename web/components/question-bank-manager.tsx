@@ -39,10 +39,10 @@ export function QuestionBankManager() {
     importOpen,
     setImportOpen,
     importFile,
-    setImportFile,
     importReport,
-    setImportReport,
     importBusy,
+    retryExportBusy,
+    retryMode,
     importError,
     setImportError,
     importProgress,
@@ -62,6 +62,9 @@ export function QuestionBankManager() {
     deleteQuestion,
     bulkDeleteQuestions,
     selectImportFile,
+    selectFailedRowsFile,
+    downloadFailedRows,
+    completePartialImport,
     importExcel,
     subjectCounts,
     showingExamples,
@@ -94,8 +97,7 @@ export function QuestionBankManager() {
         onCreateQuestion={createQuestion}
         onOpenImport={() => {
           setImportOpen(true);
-          setImportFile(null);
-          setImportReport(null);
+          selectImportFile(null);
           setImportError(null);
           setError("");
         }}
@@ -111,12 +113,15 @@ export function QuestionBankManager() {
         importFile={importFile}
         selectImportFile={selectImportFile}
         importReport={importReport}
-        setImportReport={setImportReport}
-        setImportFile={setImportFile}
         importBusy={importBusy}
+        retryExportBusy={retryExportBusy}
+        retryMode={retryMode}
         importError={importError}
         setImportError={setImportError}
         importProgress={importProgress}
+        selectFailedRowsFile={selectFailedRowsFile}
+        onDownloadFailedRows={downloadFailedRows}
+        onCompletePartial={completePartialImport}
         onImport={importExcel}
       />
 
@@ -191,8 +196,7 @@ export function QuestionBankManager() {
             onCreateQuestion={createQuestion}
             onOpenImport={() => {
               setImportOpen(true);
-              setImportFile(null);
-              setImportReport(null);
+              selectImportFile(null);
               setImportError(null);
               setError("");
             }}

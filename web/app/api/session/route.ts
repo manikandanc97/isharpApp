@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await retryTransientAuth(() =>
-      getNestApiClient({ timeoutMs: 10_000 }).request<AuthenticatedSession>(
+      getNestApiClient({ timeoutMs: 20_000 }).request<AuthenticatedSession>(
         '/api/auth/me',
         { accessToken, cache: 'no-store' },
       ),

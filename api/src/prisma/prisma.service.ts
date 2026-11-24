@@ -6,15 +6,16 @@ import { PrismaClient } from '../generated/prisma/client.js';
 
 export function normalizeDatabaseConnectionString(connectionString: string) {
   const url = new URL(connectionString);
-  const isSupabaseSharedPooler =
+  const isSupabase =
     url.hostname === 'pooler.supabase.com' ||
-    url.hostname.endsWith('.pooler.supabase.com');
+    url.hostname.endsWith('.pooler.supabase.com') ||
+    url.hostname.endsWith('.supabase.co');
 
   // pg-connection-string v2 treats `require` as `verify-full`, while Supabase's
   // shared pooler uses its private CA. Opt into standard libpq `require`
   // semantics: TLS remains mandatory without the misleading strict-CA error.
   if (
-    isSupabaseSharedPooler &&
+    isSupabase &&
     url.searchParams.get('sslmode') === 'require' &&
     !url.searchParams.has('uselibpqcompat')
   ) {

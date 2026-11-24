@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -201,5 +201,138 @@ describe('QuestionBankService validation', () => {
         size: 5 * 1024 * 1024 + 1,
       }),
     ).rejects.toThrow('Image must be 5 MB or smaller');
+  });
+
+  it('removes test links and updates assessment totals before deleting', async () => {
+    const tx = {
+      assessmentTestQuestion: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            assessmentTestId: 'test-1',
+            correctMarks: 4,
+            assessmentTest: { totalQuestions: 10, totalMarks: 40 },
+          },
+        ]),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      mockTestQuestion: {
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      assessmentTest: { update: vi.fn().mockResolvedValue({}) },
+      question: { delete: vi.fn().mockResolvedValue({}) },
+    };
+    const prisma = {
+      question: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'question-1',
+          externalId: 'Q-001',
+          _count: {
+            mockTests: 0,
+            assessmentQuestions: 1,
+            attemptQuestions: 0,
+            attemptAnswers: 0,
+            answerKeyAudits: 0,
+          },
+        }),
+      },
+      $transaction: vi.fn(
+        async (callback: (client: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+      ),
+    };
+    const deleteService = new QuestionBankService(
+      prisma as unknown as PrismaService,
+      new ConfigService(),
+    );
+
+    await expect(deleteService.deleteQuestion('question-1')).resolves.toEqual({
+      id: 'question-1',
+      externalId: 'Q-001',
+      deleted: true,
+      removedFromMockTests: 0,
+      removedFromAssessmentTests: 1,
+    });
+    expect(tx.assessmentTestQuestion.deleteMany).toHaveBeenCalledWith({
+      where: { questionId: 'question-1' },
+    });
+    expect(tx.mockTestQuestion.deleteMany).toHaveBeenCalledWith({
+      where: { questionId: 'question-1' },
+    });
+    expect(tx.assessmentTest.update).toHaveBeenCalledWith({
+      where: { id: 'test-1' },
+      data: { totalQuestions: 9, totalMarks: 36 },
+    });
+    expect(tx.question.delete).toHaveBeenCalledWith({
+      where: { id: 'question-1' },
+    });
+  });
+
+  it('rejects deletion when immutable exam history references a question', async () => {
+    const prisma = {
+      question: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'question-1',
+          externalId: 'Q-001',
+          _count: {
+            mockTests: 0,
+            assessmentQuestions: 0,
+            attemptQuestions: 1,
+            attemptAnswers: 1,
+            answerKeyAudits: 0,
+          },
+        }),
+        delete: vi.fn(),
+      },
+    };
+    const deleteService = new QuestionBankService(
+      prisma as unknown as PrismaService,
+      new ConfigService(),
+    );
+
+    await expect(deleteService.deleteQuestion('question-1')).rejects.toThrow(
+      'Questions with attempt or answer-key history cannot be deleted',
+    );
+    expect(prisma.question.delete).not.toHaveBeenCalled();
+  });
+
+  it('maps a concurrent foreign-key delete failure to a bad request', async () => {
+    const prisma = {
+      question: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'question-1',
+          externalId: 'Q-001',
+          _count: {
+            mockTests: 0,
+            assessmentQuestions: 0,
+            attemptQuestions: 0,
+            attemptAnswers: 0,
+            answerKeyAudits: 0,
+          },
+        }),
+      },
+      $transaction: vi.fn().mockRejectedValue({ code: 'P2003' }),
+    };
+    const deleteService = new QuestionBankService(
+      prisma as unknown as PrismaService,
+      new ConfigService(),
+    );
+
+    await expect(
+      deleteService.deleteQuestion('question-1'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('returns not found when deleting an unknown question', async () => {
+    const prisma = {
+      question: { findUnique: vi.fn().mockResolvedValue(null) },
+    };
+    const deleteService = new QuestionBankService(
+      prisma as unknown as PrismaService,
+      new ConfigService(),
+    );
+
+    await expect(
+      deleteService.deleteQuestion('missing-question'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 });

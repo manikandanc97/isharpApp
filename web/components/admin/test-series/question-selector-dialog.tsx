@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatDisplayQuestionId } from "@/lib/question-format";
 import {
   Dialog,
@@ -668,11 +669,27 @@ export function QuestionSelectorDialog({
           {/* 4. Question Cards List */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2.5">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-16 text-slate-400 space-y-2">
-                <RefreshCw className="size-6 animate-spin text-brand-red" />
-                <p className="text-xs font-semibold text-slate-600">
-                  Loading Question Bank catalog...
-                </p>
+              <div className="space-y-2.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="mt-0.5 size-4 rounded shrink-0" />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Skeleton className="h-3 w-16" />
+                          <Skeleton className="h-4 w-20 rounded-md" />
+                          <Skeleton className="h-3 w-32" />
+                          <Skeleton className="h-4 w-12 rounded" />
+                        </div>
+                        <Skeleton className="h-3.5 w-full" />
+                        <Skeleton className="h-3.5 w-4/5" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : filteredQuestions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-slate-400 space-y-2 text-center">

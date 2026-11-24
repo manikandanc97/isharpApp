@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { handleSessionExpired } from "@/lib/session-manager";
 import { ExamResultView } from "@/components/exam-runner/exam-result-view";
 import { ProductionExamRunner } from "@/components/exam-runner/production-exam-runner";
+import { ExamRunnerSkeleton } from "@/components/skeletons/exam-runner-skeleton";
 import type { ExamResultPayload, SanitizedAttemptPayload } from "@/components/exam-runner/exam.types";
 
 export default function ExamAttemptPage() {
@@ -73,19 +74,7 @@ export default function ExamAttemptPage() {
   }, [attemptId]);
 
   if (loading) {
-    return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 p-4">
-        <div className="flex flex-col items-center gap-3 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <Loader2 className="size-8 animate-spin text-brand-red" />
-          <h2 className="text-base font-bold text-slate-800">
-            Initializing CBT Assessment Engine...
-          </h2>
-          <p className="text-xs text-slate-500 max-w-xs text-center">
-            Synchronizing cryptographic paper mapping, countdown timer, and student security state.
-          </p>
-        </div>
-      </div>
-    );
+    return <ExamRunnerSkeleton />;
   }
 
   if (error || (!attempt && !result)) {

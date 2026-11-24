@@ -71,6 +71,11 @@ export function isUniqueConstraintError(error: unknown): boolean {
   return 'code' in error && error.code === 'P2002';
 }
 
+export function isForeignKeyConstraintError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  return 'code' in error && error.code === 'P2003';
+}
+
 export function isTransactionConflict(error: unknown): boolean {
   if (!error || typeof error !== 'object' || !('code' in error)) return false;
   return error.code === 'P2034';

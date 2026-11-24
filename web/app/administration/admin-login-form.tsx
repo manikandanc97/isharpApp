@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ApiClientError } from "@/lib/api-client";
+import { getLoginErrorMessage } from "@/lib/auth-error";
 import { getAuthenticatedSession } from "@/lib/auth-session";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/validation";
@@ -92,24 +93,7 @@ export function AdminLoginForm() {
       }
 
       if (error) {
-        const message = error.message?.toLowerCase() ?? "";
-        const isRateLimited =
-          error.status === 429 ||
-          message.includes("rate limit") ||
-          message.includes("too many requests");
-        const isNetworkError =
-          error.name === "AuthRetryableFetchError" ||
-          error.status === 0 ||
-          message.includes("fetch failed") ||
-          message.includes("failed to fetch");
-
-        setAuthError(
-          isRateLimited
-            ? "Too many sign-in attempts. Please wait a minute and try again."
-            : isNetworkError
-              ? "Unable to reach the authentication service. Check your connection and try again."
-              : "Invalid email or password.",
-        );
+        setAuthError(getLoginErrorMessage(error));
         return;
       }
 
@@ -132,20 +116,29 @@ export function AdminLoginForm() {
           return;
         }
       } catch (sessionError) {
-        if (
-          sessionError instanceof ApiClientError &&
-          [401, 403].includes(sessionError.status)
-        ) {
-          await supabase.auth.signOut();
-          setAuthError(
-            sessionError.status === 403
-              ? "This account does not have administrator access."
-              : "Your session could not be verified. Please sign in again.",
-          );
+        await supabase.auth.signOut();
+        if (sessionError instanceof ApiClientError) {
+          if (sessionError.status === 403) {
+            setAuthError("This account does not have administrator access.");
+          } else if (sessionError.status === 401) {
+            setAuthError("Your session could not be verified. Please sign in again.");
+          } else if (sessionError.status === 429) {
+            setAuthError("Too many sign-in attempts. Please wait a minute and try again.");
+          } else if (
+            sessionError.status === 0 ||
+            sessionError.message.toLowerCase().includes("fetch") ||
+            sessionError.message.toLowerCase().includes("network")
+          ) {
+            setAuthError("Cannot connect to the server. Please check your connection.");
+          } else if (sessionError.status === 408) {
+            setAuthError("The authorization request timed out. Please try again.");
+          } else {
+            setAuthError(
+              "The authorization service is temporarily unavailable. Please try again.",
+            );
+          }
         } else {
-          setAuthError(
-            "The authorization service is temporarily unavailable. Please try again.",
-          );
+          setAuthError(getLoginErrorMessage(sessionError));
         }
         return;
       }
@@ -154,7 +147,7 @@ export function AdminLoginForm() {
       router.refresh();
     } catch {
       setAuthError(
-        "Unable to reach the login service. Check your connection and try again.",
+        "Cannot connect to the server. Please check your connection.",
       );
     } finally {
       setIsSubmitting(false);

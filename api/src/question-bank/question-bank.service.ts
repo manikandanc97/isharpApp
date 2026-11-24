@@ -11,12 +11,17 @@ import {
 } from './mock-test.helper.js';
 import { uploadQuestionImage } from './question-media.helper.js';
 import {
+  QuestionDuplicateDetectionService,
+  type QuestionFingerprints,
+} from './question-duplicate-detection.service.js';
+import {
   persistQuestionRecord,
   type QuestionSavePolicy,
 } from './question-persistence.helper.js';
 import { runImportPreflight } from './question-preflight.helper.js';
 import {
   int,
+  isForeignKeyConstraintError,
   isUniqueConstraintError,
   obj,
   str,
@@ -31,12 +36,29 @@ export interface QuestionListOptions {
   difficulty?: string;
 }
 
+export type ImportRowResult = {
+  row: number;
+  externalId?: string;
+  status: 'imported' | 'skipped' | 'failed';
+  duplicateCategory?: 'within_excel' | 'database';
+  duplicateType?: 'exact' | 'equivalent' | 'answer_conflict' | 'id_conflict';
+  matchedId?: string | number;
+  reason?: string;
+  error?: string;
+};
+
 @Injectable()
 export class QuestionBankService {
+  private readonly duplicateService: QuestionDuplicateDetectionService;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
-  ) {}
+    duplicateService?: QuestionDuplicateDetectionService,
+  ) {
+    this.duplicateService =
+      duplicateService ?? new QuestionDuplicateDetectionService();
+  }
 
   listQuestions(filterOrQuery?: string | QuestionListOptions) {
     const filter: QuestionListOptions =
@@ -107,21 +129,21 @@ export class QuestionBankService {
     body: unknown,
     savePolicy: QuestionSavePolicy = {},
   ) {
-    return persistQuestionRecord(this.prisma, profileId, body, savePolicy);
+    return persistQuestionRecord(this.prisma, profileId, body, {
+      duplicateService: this.duplicateService,
+      ...savePolicy,
+    });
   }
 
   async importQuestions(profileId: string | null, body: unknown) {
-    const rows = obj(body).rows;
+    const envelope = obj(body);
+    const rows = envelope.rows;
     if (!Array.isArray(rows) || rows.length === 0 || rows.length > 500)
       throw new BadRequestException('Upload 1 to 500 question rows');
-    const results: {
-      row: number;
-      externalId?: string;
-      status: 'imported' | 'skipped' | 'failed';
-      reason?: string;
-      error?: string;
-    }[] = [];
-    const seen = new Set<string>();
+    const results: ImportRowResult[] = [];
+    const seenExternalIds = new Set<string>();
+    const seenContentFingerprints = new Map<string, number>();
+    const seenEquivFingerprints = new Map<string, number>();
     const courseSubjectCache = new Map<string, unknown>();
 
     const CONCURRENCY = 6;
@@ -135,44 +157,105 @@ export class QuestionBankService {
           const row = envelope.data === undefined ? envelope : obj(envelope.data);
           const externalId = str(row.externalId, 'externalId', false, 64);
           const duplicateKey = externalId?.toLocaleLowerCase('en-US');
-          if (duplicateKey && seen.has(duplicateKey)) {
+          if (duplicateKey && seenExternalIds.has(duplicateKey)) {
             results.push({
               row: rowNumber,
               externalId: externalId ?? undefined,
               status: 'skipped',
+              duplicateCategory: 'within_excel',
               reason: 'Duplicate external ID in this workbook',
             });
             return;
           }
-          if (duplicateKey) seen.add(duplicateKey);
+          if (duplicateKey) seenExternalIds.add(duplicateKey);
+
+          const rawOptions = Array.isArray(row.options) ? row.options : [];
+          const fingerprints = this.duplicateService.calculateFingerprints({
+            type: str(row.type, 'type', false) || 'SINGLE_CORRECT',
+            textEn: str(row.textEn, 'textEn'),
+            textTa: str(row.textTa, 'textTa'),
+            questionImageUrl: str(row.questionImageUrl, 'questionImageUrl'),
+            questionImageHash: str(row.questionImageHash, 'questionImageHash'),
+            options: rawOptions as any[],
+            numericalAnswer: str(row.numericalAnswer, 'numericalAnswer'),
+          });
+
+          // Check exact content duplicate within workbook
+          if (seenContentFingerprints.has(fingerprints.contentFingerprint)) {
+            const firstRow = seenContentFingerprints.get(fingerprints.contentFingerprint)!;
+            results.push({
+              row: rowNumber,
+              externalId: externalId ?? undefined,
+              status: 'skipped',
+              duplicateCategory: 'within_excel',
+              duplicateType: 'exact',
+              matchedId: firstRow,
+              reason: `Duplicate of row ${firstRow} in this workbook`,
+            });
+            return;
+          }
+          seenContentFingerprints.set(fingerprints.contentFingerprint, rowNumber);
+
+          // Check equivalent duplicate within workbook
+          if (
+            !fingerprints.hasAmbiguousOptions &&
+            seenEquivFingerprints.has(fingerprints.equivalentFingerprint)
+          ) {
+            const firstRow = seenEquivFingerprints.get(fingerprints.equivalentFingerprint)!;
+            results.push({
+              row: rowNumber,
+              externalId: externalId ?? undefined,
+              status: 'skipped',
+              duplicateCategory: 'within_excel',
+              duplicateType: 'equivalent',
+              matchedId: firstRow,
+              reason: `Duplicate of row ${firstRow} (equivalent match with reordered options)`,
+            });
+            return;
+          }
+          if (!fingerprints.hasAmbiguousOptions) {
+            seenEquivFingerprints.set(fingerprints.equivalentFingerprint, rowNumber);
+          }
+
           try {
             const saved = await this.saveQuestion(profileId, row, {
-              // Excel files generated from the blank template do not have a
-              // stable external ID. Match their existing question text so a
-              // later import can backfill diagrams instead of creating a
-              // duplicate or silently skipping the image update.
               matchExistingContent: true,
               createMissingChapter: true,
               skipReturnDetails: true,
               courseSubjectCache,
+              duplicateMode: 'SKIP_DUPLICATES',
+              precomputedFingerprints: fingerprints,
             });
-            results.push(
-              saved
-                ? {
-                    row: rowNumber,
-                    externalId: saved.externalId,
-                    status: 'imported',
-                    reason: saved.importMeta?.createdChapter
-                      ? `Imported and created chapter: ${saved.importMeta.createdChapter}`
-                      : undefined,
-                  }
-                : {
-                    row: rowNumber,
-                    externalId: externalId ?? undefined,
-                    status: 'skipped',
-                    reason: 'Question already exists',
-                  },
-            );
+
+            if (saved?.isSkipped) {
+              results.push({
+                row: rowNumber,
+                externalId: saved.externalId || externalId || undefined,
+                status: saved.status || 'skipped',
+                duplicateCategory: saved.duplicateCategory || 'database',
+                duplicateType: saved.duplicateType,
+                matchedId: saved.matchedExternalId || saved.matchedQuestionId,
+                reason: saved.reason || 'Question already exists',
+              });
+            } else {
+              results.push(
+                saved
+                  ? {
+                      row: rowNumber,
+                      externalId: saved.externalId,
+                      status: 'imported',
+                      reason: saved.importMeta?.createdChapter
+                        ? `Imported and created chapter: ${saved.importMeta.createdChapter}`
+                        : undefined,
+                    }
+                  : {
+                      row: rowNumber,
+                      externalId: externalId ?? undefined,
+                      status: 'skipped',
+                      reason: 'Question already exists',
+                    },
+              );
+            }
           } catch (error) {
             if (externalId && isUniqueConstraintError(error)) {
               results.push({
@@ -203,6 +286,74 @@ export class QuestionBankService {
     };
   }
 
+  /**
+   * Safe batch backfill process to compute and store fingerprints for existing questions.
+   */
+  async backfillFingerprints(batchSize = 100) {
+    let processed = 0;
+    let updated = 0;
+    let unresolved = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const questions = await this.prisma.question.findMany({
+        where: { contentFingerprint: null },
+        include: { options: { orderBy: { position: 'asc' } } },
+        take: batchSize,
+      });
+
+      if (!questions || questions.length === 0) break;
+
+      for (const q of questions) {
+        processed++;
+        const qImgHash = await this.duplicateService.resolveImageHash(
+          q.questionImageUrl,
+        );
+        const optHashes = await Promise.all(
+          q.options.map((opt) =>
+            this.duplicateService.resolveImageHash(opt.imageUrl),
+          ),
+        );
+        const fps = this.duplicateService.calculateFingerprints(
+          {
+            type: q.type,
+            textEn: q.textEn,
+            textTa: q.textTa,
+            questionImageUrl: q.questionImageUrl,
+            questionImageHash: qImgHash,
+            options: q.options.map((opt, i) => ({
+              label: opt.label,
+              textEn: opt.textEn,
+              textTa: opt.textTa,
+              imageUrl: opt.imageUrl,
+              imageHash: optHashes[i],
+              isCorrect: opt.isCorrect,
+              position: opt.position,
+            })),
+            numericalAnswer: q.numericalAnswer,
+          },
+          { questionImageHash: qImgHash, optionImageHashes: optHashes },
+        );
+
+        if (fps.unresolvedImages) unresolved++;
+
+        await this.prisma.question.update({
+          where: { id: q.id },
+          data: {
+            contentFingerprint: fps.contentFingerprint,
+            equivalentFingerprint: fps.equivalentFingerprint,
+            fingerprintVersion: fps.fingerprintVersion,
+          },
+        });
+        updated++;
+      }
+
+      if (questions.length < batchSize) hasMore = false;
+    }
+
+    return { processed, updated, unresolved };
+  }
+
   importPreflight(body: unknown) {
     return runImportPreflight(this.prisma, body);
   }
@@ -213,16 +364,85 @@ export class QuestionBankService {
       select: {
         id: true,
         externalId: true,
-        _count: { select: { mockTests: true } },
+        _count: {
+          select: {
+            mockTests: true,
+            assessmentQuestions: true,
+            attemptQuestions: true,
+            attemptAnswers: true,
+            answerKeyAudits: true,
+          },
+        },
       },
     });
     if (!question) throw new NotFoundException('Question not found');
-    if (question._count.mockTests > 0)
+
+    if (
+      (question._count?.attemptQuestions ?? 0) > 0 ||
+      (question._count?.attemptAnswers ?? 0) > 0 ||
+      (question._count?.answerKeyAudits ?? 0) > 0
+    ) {
       throw new BadRequestException(
-        'Remove this question from mock tests before deleting it',
+        'Questions with attempt or answer-key history cannot be deleted',
       );
-    await this.prisma.question.delete({ where: { id } });
-    return { id, externalId: question.externalId, deleted: true };
+    }
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        let removedFromAssessmentTests = 0;
+        let removedFromMockTests = 0;
+
+        if (tx.assessmentTestQuestion) {
+          const assessmentLinks =
+            await tx.assessmentTestQuestion.findMany({
+              where: { questionId: id },
+              include: { assessmentTest: true },
+            });
+          for (const link of assessmentLinks) {
+            const currentTotal = link.assessmentTest?.totalQuestions ?? 0;
+            const currentMarks = link.assessmentTest?.totalMarks ?? 0;
+            await tx.assessmentTest.update({
+              where: { id: link.assessmentTestId },
+              data: {
+                totalQuestions: Math.max(0, currentTotal - 1),
+                totalMarks: Math.max(
+                  0,
+                  currentMarks - (link.correctMarks ?? 4),
+                ),
+              },
+            });
+          }
+          const delAssessment = await tx.assessmentTestQuestion.deleteMany({
+            where: { questionId: id },
+          });
+          removedFromAssessmentTests =
+            delAssessment?.count ?? assessmentLinks.length;
+        }
+
+        if (tx.mockTestQuestion) {
+          await tx.mockTestQuestion.deleteMany({
+            where: { questionId: id },
+          });
+        }
+
+        await tx.question.delete({ where: { id } });
+
+        return {
+          id,
+          externalId: question.externalId,
+          deleted: true,
+          removedFromMockTests: question._count.mockTests,
+          removedFromAssessmentTests: question._count.assessmentQuestions,
+        };
+      });
+    } catch (error) {
+      if (isForeignKeyConstraintError(error)) {
+        throw new BadRequestException(
+          'Cannot delete question because it is referenced by other records',
+        );
+      }
+      throw error;
+    }
   }
 
   private mockTestsCache: { data: unknown; expiresAt: number } | null = null;
