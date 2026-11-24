@@ -1,9 +1,18 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { DemoTestService } from './demo-test.service.js';
+import { DemoTestConfigurationService } from './demo-test-configuration.service.js';
 
 @Controller('api/demo')
 export class DemoTestController {
-  constructor(private readonly demoTestService: DemoTestService) {}
+  constructor(
+    private readonly demoTestService: DemoTestService,
+    private readonly configuration: DemoTestConfigurationService,
+  ) {}
+
+  @Get('config')
+  getConfiguration() {
+    return this.configuration.get(false);
+  }
 
   @Get('questions')
   async getQuestions(
@@ -17,4 +26,3 @@ export class DemoTestController {
     );
   }
 }
-

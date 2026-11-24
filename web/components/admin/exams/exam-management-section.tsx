@@ -564,6 +564,13 @@ export function ExamManagementSection({
                   </tr>
                 );
               })}
+              {paginatedAttempts.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-xs text-slate-500">
+                    No student attempts logged yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

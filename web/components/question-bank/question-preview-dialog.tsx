@@ -203,7 +203,14 @@ export function QuestionPreviewDialog({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {question.options.map((option, idx) => {
-                  const displayNum = String(idx + 1);
+                  const legacy = ["A", "B", "C", "D"];
+                  const legacyIdx = option.label ? legacy.indexOf(option.label.toUpperCase()) : -1;
+                  const displayNum =
+                    legacyIdx !== -1
+                      ? String(legacyIdx + 1)
+                      : /^[0-9]+$/.test(option.label ?? "")
+                        ? String(option.label)
+                        : String(idx + 1);
                   return (
                     <div
                       key={option.label || idx}
@@ -221,7 +228,7 @@ export function QuestionPreviewDialog({
                               : "bg-slate-100 text-slate-700"
                           }`}
                         >
-                          {option.label || displayNum}
+                          {displayNum}
                         </span>
                         <div className="space-y-1 text-xs">
                           {langMode === "TA" && option.textTa ? (
@@ -246,7 +253,7 @@ export function QuestionPreviewDialog({
                         <div className="mt-3 flex justify-center rounded-lg border border-slate-100 bg-slate-50 p-2">
                           <img
                             src={option.imageUrl}
-                            alt={`Option ${option.label}`}
+                            alt={`Option ${displayNum}`}
                             className="max-h-24 object-contain"
                           />
                         </div>

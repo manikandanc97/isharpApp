@@ -13,15 +13,10 @@ import { exportQuestionsToExcel } from "@/lib/question-export";
 export function QuestionBankManager() {
   const {
     questions,
-    tests,
     draft,
     setDraft,
     query,
     setQuery,
-    selected,
-    setSelected,
-    tab,
-    setTab,
     subjectFilter,
     setSubjectFilter,
     chapterFilter,
@@ -51,14 +46,12 @@ export function QuestionBankManager() {
     setError,
     notice,
     setNotice,
-    load,
     patchOption,
     chooseCorrect,
     uploadImage,
     save,
     editQuestion,
     createQuestion,
-    applyDemoQuestion,
     deleteQuestion,
     bulkDeleteQuestions,
     selectImportFile,
@@ -92,8 +85,7 @@ export function QuestionBankManager() {
     <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_16px_45px_-36px_rgba(15,23,42,0.45)]">
       <QuestionBankHeader
         questionsCount={questions.length}
-        testsCount={tests.length}
-        selectedCount={selected.length}
+        selectedCount={visible.length}
         onCreateQuestion={createQuestion}
         onOpenImport={() => {
           setImportOpen(true);
@@ -162,10 +154,6 @@ export function QuestionBankManager() {
       <div className="bg-[#fdfdfc] p-5 sm:p-7">
         <Stack>
           <QuestionBankTabsAndSubjects
-            tab={tab}
-            onTabChange={setTab}
-            questionsCount={questions.length}
-            testsCount={tests.length}
             subjectFilter={subjectFilter}
             onSubjectChange={setSubjectFilter}
             subjectCounts={subjectCounts}

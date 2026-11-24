@@ -3,11 +3,11 @@
 import Link from "next/link";
 import {
   BookOpenCheck,
-  ClipboardCheck,
   Download,
   FileDown,
   FileQuestion,
   FileSpreadsheet,
+  Layers,
   Plus,
   Target,
 } from "lucide-react";
@@ -16,7 +16,6 @@ import { Stack } from "@/components/layout/layout-primitives";
 
 interface QuestionBankHeaderProps {
   questionsCount: number;
-  testsCount: number;
   selectedCount: number;
   onCreateQuestion: () => void;
   onOpenImport: () => void;
@@ -25,7 +24,6 @@ interface QuestionBankHeaderProps {
 
 export function QuestionBankHeader({
   questionsCount,
-  testsCount,
   selectedCount,
   onCreateQuestion,
   onOpenImport,
@@ -34,21 +32,21 @@ export function QuestionBankHeader({
   const metrics = [
     {
       label: "Total Questions",
-      detail: "Indexed in Bank",
+      detail: "Indexed in Repository",
       value: questionsCount,
       icon: FileQuestion,
       tone: "bg-indigo-50 text-indigo-700",
     },
     {
-      label: "Mock Tests",
-      detail: "Configured Papers",
-      value: testsCount,
-      icon: ClipboardCheck,
+      label: "Active Subjects",
+      detail: "Physics · Chem · Bio",
+      value: 3,
+      icon: Layers,
       tone: "bg-emerald-50 text-emerald-700",
     },
     {
-      label: "Selected Questions",
-      detail: "Active Selection",
+      label: "Filtered Questions",
+      detail: "Active View Count",
       value: selectedCount,
       icon: Target,
       tone: "bg-amber-50 text-amber-700",

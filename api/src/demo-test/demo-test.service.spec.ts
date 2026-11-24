@@ -16,8 +16,22 @@ describe('DemoTestService', () => {
         correctMarks: 4,
         negativeMarks: 1,
         options: [
-          { id: 'o1', label: 'A', textEn: 'Opt A', textTa: null, isCorrect: true, position: 1 },
-          { id: 'o2', label: 'B', textEn: 'Opt B', textTa: null, isCorrect: false, position: 2 },
+          {
+            id: 'o1',
+            label: 'A',
+            textEn: 'Opt A',
+            textTa: null,
+            isCorrect: true,
+            position: 1,
+          },
+          {
+            id: 'o2',
+            label: 'B',
+            textEn: 'Opt B',
+            textTa: null,
+            isCorrect: false,
+            position: 2,
+          },
         ],
         chapter: { title: 'Mechanics' },
         courseSubject: { subject: { code: 'PHYSICS', name: 'Physics' } },
@@ -33,8 +47,22 @@ describe('DemoTestService', () => {
         correctMarks: 4,
         negativeMarks: 1,
         options: [
-          { id: 'o3', label: 'A', textEn: 'Opt A', textTa: null, isCorrect: false, position: 1 },
-          { id: 'o4', label: 'B', textEn: 'Opt B', textTa: null, isCorrect: true, position: 2 },
+          {
+            id: 'o3',
+            label: 'A',
+            textEn: 'Opt A',
+            textTa: null,
+            isCorrect: false,
+            position: 1,
+          },
+          {
+            id: 'o4',
+            label: 'B',
+            textEn: 'Opt B',
+            textTa: null,
+            isCorrect: true,
+            position: 2,
+          },
         ],
         chapter: { title: 'Bonding' },
         courseSubject: { subject: { code: 'CHEMISTRY', name: 'Chemistry' } },
@@ -50,8 +78,22 @@ describe('DemoTestService', () => {
         correctMarks: 4,
         negativeMarks: 1,
         options: [
-          { id: 'o5', label: 'A', textEn: 'Opt A', textTa: null, isCorrect: true, position: 1 },
-          { id: 'o6', label: 'B', textEn: 'Opt B', textTa: null, isCorrect: false, position: 2 },
+          {
+            id: 'o5',
+            label: 'A',
+            textEn: 'Opt A',
+            textTa: null,
+            isCorrect: true,
+            position: 1,
+          },
+          {
+            id: 'o6',
+            label: 'B',
+            textEn: 'Opt B',
+            textTa: null,
+            isCorrect: false,
+            position: 2,
+          },
         ],
         chapter: { title: 'Cell Biology' },
         courseSubject: { subject: { code: 'BIOLOGY', name: 'Biology' } },
@@ -59,6 +101,7 @@ describe('DemoTestService', () => {
     ];
 
     const prismaMock = {
+      mockTest: { findFirst: vi.fn().mockResolvedValue(null) },
       question: {
         findMany: vi.fn().mockResolvedValue(mockQuestions),
       },
@@ -88,7 +131,14 @@ describe('DemoTestService', () => {
         correctMarks: 4,
         negativeMarks: 1,
         options: [
-          { id: 'o1', label: 'A', textEn: 'Opt A', textTa: null, isCorrect: true, position: 1 },
+          {
+            id: 'o1',
+            label: 'A',
+            textEn: 'Opt A',
+            textTa: null,
+            isCorrect: true,
+            position: 1,
+          },
         ],
         chapter: { title: 'Mechanics' },
         courseSubject: { subject: { code: 'PHYSICS', name: 'Physics' } },
@@ -104,7 +154,14 @@ describe('DemoTestService', () => {
         correctMarks: 4,
         negativeMarks: 1,
         options: [
-          { id: 'o3', label: 'A', textEn: 'Opt A', textTa: null, isCorrect: true, position: 1 },
+          {
+            id: 'o3',
+            label: 'A',
+            textEn: 'Opt A',
+            textTa: null,
+            isCorrect: true,
+            position: 1,
+          },
         ],
         chapter: { title: 'Bonding' },
         courseSubject: { subject: { code: 'CHEMISTRY', name: 'Chemistry' } },
@@ -112,6 +169,7 @@ describe('DemoTestService', () => {
     ];
 
     const prismaMock = {
+      mockTest: { findFirst: vi.fn().mockResolvedValue(null) },
       question: {
         findMany: vi.fn().mockResolvedValue(mockQuestions),
       },
@@ -127,6 +185,7 @@ describe('DemoTestService', () => {
 
   it('handles empty questions gracefully', async () => {
     const prismaMock = {
+      mockTest: { findFirst: vi.fn().mockResolvedValue(null) },
       question: {
         findMany: vi.fn().mockResolvedValue([]),
       },
@@ -139,5 +198,69 @@ describe('DemoTestService', () => {
     expect(result.questions).toEqual([]);
     expect(result.totalMarks).toBe(0);
   });
-});
 
+  it('serves the exact admin-configured login demo in its saved order', async () => {
+    const findFallbackQuestions = vi.fn();
+    const prismaMock = {
+      mockTest: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'demo-test-id',
+          code: 'LOGIN-DEMO-01',
+          title: 'Curated Login Demo',
+          durationMinutes: 12,
+          instructionsEn: 'Admin English instructions',
+          instructionsTa: 'நிர்வாக தமிழ் வழிமுறைகள்',
+          questions: [
+            {
+              position: 1,
+              correctMarks: 5,
+              negativeMarks: 2,
+              question: {
+                id: 'q-configured',
+                externalId: 'PHY-CONFIGURED',
+                isActive: true,
+                difficulty: 'HARD',
+                textEn: 'Configured question',
+                textTa: null,
+                questionImageUrl: null,
+                solutionEn: 'Configured solution',
+                solutionTa: null,
+                chapter: { title: 'Mechanics' },
+                courseSubject: {
+                  subject: { code: 'PHYSICS', name: 'Physics' },
+                },
+                options: [
+                  {
+                    id: 'configured-option',
+                    label: 'A',
+                    textEn: 'Answer',
+                    textTa: null,
+                    imageUrl: null,
+                    isCorrect: true,
+                    position: 1,
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+      },
+      question: { findMany: findFallbackQuestions },
+    } as unknown as PrismaService;
+
+    const result = await new DemoTestService(prismaMock).generateDemoTest(
+      99,
+      'BIOLOGY',
+    );
+
+    expect(result.testId).toBe('demo-test-id');
+    expect(result.title).toBe('Curated Login Demo');
+    expect(result.durationMinutes).toBe(12);
+    expect(result.totalMarks).toBe(5);
+    expect(result.questions.map((question) => question.id)).toEqual([
+      'q-configured',
+    ]);
+    expect(result.questions[0].negativeMarks).toBe(2);
+    expect(findFallbackQuestions).not.toHaveBeenCalled();
+  });
+});

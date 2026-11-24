@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
   sheet.addRow([
     'PHYSICS', 'Units and Measurements', 'SINGLE_CORRECT', 'MEDIUM',
     'English question text', 'தமிழ் கேள்வி', '',
-    'Option A', 'விருப்பம் A', '',
-    'Option B', 'விருப்பம் B', '',
-    'Option C', 'விருப்பம் C', '',
-    'Option D', 'விருப்பம் D', '',
-    'B', '', 'English solution', 'தமிழ் தீர்வு', '', 4, 1, 'NEET practice'
+    'Option 1', 'விருப்பம் 1', '',
+    'Option 2', 'விருப்பம் 2', '',
+    'Option 3', 'விருப்பம் 3', '',
+    'Option 4', 'விருப்பம் 4', '',
+    '2', '', 'English solution', 'தமிழ் தீர்வு', '', 4, 1, 'NEET practice'
   ]);
   sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
   sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF18134F' } };
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     ['subject_code', 'PHYSICS, CHEMISTRY or BIOLOGY'],
     ['question_type', 'SINGLE_CORRECT, MULTIPLE_CORRECT or NUMERICAL'],
     ['difficulty', 'EASY, MEDIUM or HARD'],
-    ['correct_options', 'A for single answer; A,C for multiple answers; blank for numerical'],
+    ['correct_options', '1 for single answer; 1,3 for multiple answers; blank for numerical (or A/B/C/D)'],
     ['image columns', 'Insert > Pictures, place one JPG/PNG completely inside the matching *_image cell. Import uploads it to Supabase automatically. Existing public HTTPS URLs also work.'],
     ['embedded image limits', 'Maximum 100 pictures per workbook, 5 MB per picture and 25 MB workbook.'],
     ['marks', 'NEET default is +4 correct and -1 wrong'],

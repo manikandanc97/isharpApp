@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { examManagementStore, type ExamStatus } from "@/lib/exam-management-store";
+import { getNestApiClient } from "@/lib/nest-api";
 import { getRequestAccessToken } from "@/lib/server-access-token";
 
 export async function GET(request: NextRequest) {
@@ -8,13 +9,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Authentication required" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get("status") as ExamStatus | undefined;
+  const search = request.nextUrl.search;
+  try {
+    const payload = await getNestApiClient().request(`/api/admin/exams${search}`, {
+      method: "GET",
+      accessToken: token,
+      cache: "no-store",
+    });
+    return NextResponse.json(payload, {
+      headers: { "Cache-Control": "no-store, private" },
+    });
+  } catch {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status") as ExamStatus | undefined;
 
-  const exams = examManagementStore.getExams(status);
-  const stats = examManagementStore.getExamStats();
+    const exams = examManagementStore.getExams(status);
+    const stats = examManagementStore.getExamStats();
 
-  return NextResponse.json({ exams, stats });
+    return NextResponse.json({ exams, stats });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -69,19 +82,29 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ message: "Exam ID is required" }, { status: 400 });
     }
 
-    let updated = examManagementStore.getExamById(id);
-    if (!updated) {
-      return NextResponse.json({ message: "Exam not found" }, { status: 404 });
-    }
+    try {
+      const payload = await getNestApiClient().request(`/api/admin/exams/${id}`, {
+        method: "PATCH",
+        accessToken: token,
+        body: { status, assignmentTarget, assignedStudentIds },
+        cache: "no-store",
+      });
+      return NextResponse.json(payload);
+    } catch {
+      let updated = examManagementStore.getExamById(id);
+      if (!updated) {
+        return NextResponse.json({ message: "Exam not found" }, { status: 404 });
+      }
 
-    if (status) {
-      updated = examManagementStore.updateExamStatus(id, status);
-    }
-    if (assignmentTarget) {
-      updated = examManagementStore.updateStudentAssignment(id, assignmentTarget, assignedStudentIds || []);
-    }
+      if (status) {
+        updated = examManagementStore.updateExamStatus(id, status);
+      }
+      if (assignmentTarget) {
+        updated = examManagementStore.updateStudentAssignment(id, assignmentTarget, assignedStudentIds || []);
+      }
 
-    return NextResponse.json(updated);
+      return NextResponse.json(updated);
+    }
   } catch (err) {
     return NextResponse.json(
       { message: err instanceof Error ? err.message : "Failed to update exam" },

@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { calculateScorecard } from "./demo-test-calculator";
 import type {
   DemoTestPackage,
+  DemoTestConfiguration,
   LanguageMode,
   ScorecardReport,
   SubjectMode,
@@ -38,15 +39,37 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
   const [report, setReport] = useState<ScorecardReport | null>(null);
   const [submittedAnswers, setSubmittedAnswers] = useState<Record<string, UserAnswerRecord>>({});
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [configuration, setConfiguration] = useState<DemoTestConfiguration | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/demo/config", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error();
+        return response.json() as Promise<DemoTestConfiguration>;
+      })
+      .then((config) => {
+        if (!active) return;
+        setConfiguration(config);
+        setSubjectMode(config.defaultSubject);
+        setLanguageMode(config.defaultLanguage);
+        setQuestionCount(config.defaultQuestionCount);
+        if (!config.isEnabled) setErrorMsg("The demo test is currently unavailable.");
+      })
+      .catch(() => active && setErrorMsg("Demo configuration could not be loaded."));
+    return () => { active = false; };
+  }, []);
 
   const handleSubjectChange = useCallback((mode: SubjectMode) => {
     setSubjectMode(mode);
-    if (mode === "ALL") {
+    if (configuration) {
+      setQuestionCount(configuration.defaultQuestionCount);
+    } else if (mode === "ALL") {
       setQuestionCount(9);
     } else {
       setQuestionCount(6);
     }
-  }, []);
+  }, [configuration]);
 
   const loadQuestions = useCallback(async (count: number, subject: SubjectMode) => {
     setPhase("loading");
@@ -69,8 +92,9 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
   }, []);
 
   const handleStartExam = useCallback(() => {
+    if (configuration && !configuration.isEnabled) return;
     void loadQuestions(questionCount, subjectMode);
-  }, [loadQuestions, questionCount, subjectMode]);
+  }, [configuration, loadQuestions, questionCount, subjectMode]);
 
   const handleExamSubmit = useCallback(
     (answers: Record<string, UserAnswerRecord>, timeSpentSeconds: number) => {
@@ -96,8 +120,12 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
     setErrorMsg("");
   }, [initialSubject]);
 
-  const countOptions: CountOption[] =
-    subjectMode === "ALL"
+  const countOptions: CountOption[] = configuration?.countOptions.map((option) => ({
+    count: option.count,
+    label: option.label,
+    time: `${option.durationMinutes} Mins`,
+    desc: option.label,
+  })) ?? (subjectMode === "ALL"
       ? [
           { count: 6, label: "Quick Drill", time: "10 Mins", desc: "2 Qs / subject" },
           { count: 9, label: "Standard NEET", time: "15 Mins", desc: "3 Qs / subject" },
@@ -107,9 +135,11 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
           { count: 4, label: "Quick Drill", time: "6 Mins", desc: "Rapid concept check" },
           { count: 6, label: "Standard Paper", time: "10 Mins", desc: "Full topic test" },
           { count: 8, label: "Complete Paper", time: "12 Mins", desc: "All 8 questions" },
-        ];
+        ]);
 
-  const estimatedMinutes = Math.ceil(questionCount * 1.5);
+  const estimatedMinutes = configuration?.countOptions.find(
+    (option) => option.count === questionCount,
+  )?.durationMinutes ?? Math.ceil(questionCount * 1.5);
   const totalPossibleMarks = questionCount * 4;
 
   const subjectMeta = {
@@ -141,5 +171,6 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
     estimatedMinutes,
     totalPossibleMarks,
     subjectMeta,
+    configuration,
   };
 }

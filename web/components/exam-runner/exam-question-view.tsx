@@ -117,7 +117,14 @@ export function ExamQuestionView({
         <div className="mt-4 space-y-2.5">
           {currentQuestion.options.map((opt, optIdx) => {
             const isSelected = currentAnswer.selectedOptionId === opt.id;
-            const displayLabel = opt.label || String.fromCharCode(65 + optIdx);
+            const legacy = ["A", "B", "C", "D"];
+            const legacyIdx = opt.label ? legacy.indexOf(opt.label.toUpperCase()) : -1;
+            const displayLabel =
+              legacyIdx !== -1
+                ? String(legacyIdx + 1)
+                : /^[0-9]+$/.test(opt.label ?? "")
+                  ? String(opt.label)
+                  : String(optIdx + 1);
 
             return (
               <label

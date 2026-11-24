@@ -29,7 +29,7 @@ export function QuestionCardSkeleton() {
 
       {/* 4 Options Grid */}
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        {["A", "B", "C", "D"].map((opt) => (
+        {["1", "2", "3", "4"].map((opt) => (
           <div
             key={opt}
             className="flex items-center gap-2.5 rounded-xl border border-slate-150 bg-slate-50/50 p-2.5"

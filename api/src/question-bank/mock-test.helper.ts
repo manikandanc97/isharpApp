@@ -17,6 +17,8 @@ export async function createMockTestRecord(
       description: str(input.description, 'description'),
       durationMinutes: int(input.durationMinutes, 180, 1, 600),
       totalMarks: int(input.totalMarks, 720, 1, 2000),
+      instructionsEn: str(input.instructionsEn, 'instructionsEn'),
+      instructionsTa: str(input.instructionsTa, 'instructionsTa'),
       createdById: profileId,
     },
   });
@@ -67,4 +69,3 @@ export async function setMockTestQuestionsRecord(
   });
   return { id, questionCount: questionIds.length };
 }
-

@@ -2,41 +2,29 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { request } from "./helpers";
-import type { MockTest, Question } from "./types";
-import { useMockTestAssignment } from "./use-mock-test-assignment";
+import type { Question } from "./types";
 import { useQuestionBankFilters } from "./use-question-bank-filters";
 import { useQuestionDraftEditor } from "./use-question-draft-editor";
 import { useQuestionImport } from "./use-question-import";
 
 export type { SubjectFilter } from "./use-question-bank-filters";
-export { useMockTestAssignment } from "./use-mock-test-assignment";
 export { useQuestionBankFilters } from "./use-question-bank-filters";
 export { useQuestionDraftEditor } from "./use-question-draft-editor";
 export { useQuestionImport } from "./use-question-import";
 
 export function useQuestionBank() {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-
-  const {
-    tests,
-    setTests,
-    selected,
-    setSelected,
-  } = useMockTestAssignment();
 
   const load = useCallback(async () => {
     setBusy(true);
     setError("");
     try {
-      const [q, t] = await Promise.all([
-        request<Question[]>("questions"),
-        request<MockTest[]>("mock-tests"),
-      ]);
-      setQuestions(q);
-      setTests(t);
+      const q = await request<Question[]>("questions");
+      setQuestions(q || []);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Question bank could not load",
@@ -44,7 +32,7 @@ export function useQuestionBank() {
     } finally {
       setBusy(false);
     }
-  }, [setTests]);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -107,9 +95,7 @@ export function useQuestionBank() {
     importOpen,
     setImportOpen,
     importFile,
-    setImportFile,
     importReport,
-    setImportReport,
     importBusy,
     retryExportBusy,
     retryMode,
@@ -147,13 +133,12 @@ export function useQuestionBank() {
 
   return {
     questions,
-    tests,
+    selected,
+    setSelected,
     draft,
     setDraft,
     query,
     setQuery,
-    selected,
-    setSelected,
     tab,
     setTab,
     subjectFilter,
@@ -174,9 +159,7 @@ export function useQuestionBank() {
     importOpen,
     setImportOpen,
     importFile,
-    setImportFile,
     importReport,
-    setImportReport,
     importBusy,
     retryExportBusy,
     retryMode,

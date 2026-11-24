@@ -210,13 +210,20 @@ export async function GET(request: NextRequest) {
       headers: { 'Cache-Control': 'no-store, private' },
     });
   } catch {
-    // High-resilience fallback: served immediately from authentic questions database bundle
-    const fallbackTest = generateLocalDemoTest(
-      Number.isNaN(count) ? 9 : count,
-      subjectParam,
+    // Never bypass the administrator's curated demo in production. The bundled
+    // question set is an explicit local-development escape hatch only.
+    if (process.env.ALLOW_LOCAL_DEMO_FALLBACK === 'true') {
+      const fallbackTest = generateLocalDemoTest(
+        Number.isNaN(count) ? 9 : count,
+        subjectParam,
+      );
+      return NextResponse.json(fallbackTest, {
+        headers: { 'Cache-Control': 'no-store, private' },
+      });
+    }
+    return NextResponse.json(
+      { message: 'The demo test is temporarily unavailable.' },
+      { status: 503, headers: { 'Cache-Control': 'no-store, private' } },
     );
-    return NextResponse.json(fallbackTest, {
-      headers: { 'Cache-Control': 'no-store, private' },
-    });
   }
 }

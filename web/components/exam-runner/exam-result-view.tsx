@@ -306,9 +306,17 @@ export function ExamResultView({ result }: ExamResultViewProps) {
 
                         {/* Options Comparison */}
                         <div className="space-y-2 pt-2">
-                          {item.options.map((opt) => {
+                          {item.options.map((opt, optIdx) => {
                             const isUserChoice = item.selectedOptionId === opt.id;
                             const isCanonicalCorrect = opt.isCorrect;
+                            const legacy = ["A", "B", "C", "D"];
+                            const legacyIdx = opt.label ? legacy.indexOf(opt.label.toUpperCase()) : -1;
+                            const displayLabel =
+                              legacyIdx !== -1
+                                ? String(legacyIdx + 1)
+                                : /^[0-9]+$/.test(opt.label ?? "")
+                                  ? String(opt.label)
+                                  : String(optIdx + 1);
 
                             let optStyle = "border-slate-200 bg-slate-50/50 text-slate-700";
                             if (isCanonicalCorrect) {
@@ -322,7 +330,7 @@ export function ExamResultView({ result }: ExamResultViewProps) {
                                 key={opt.id}
                                 className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-xs ${optStyle}`}
                               >
-                                <span className="font-mono font-bold">{opt.label}.</span>
+                                <span className="font-mono font-bold">({displayLabel})</span>
                                 <div className="flex-1">
                                   <span>{opt.textEn}</span>
                                   {opt.textTa && (

@@ -125,11 +125,12 @@ export async function persistQuestionRecord(
   const options = (Array.isArray(input.options) ? input.options : []).map(
     (value, index) => {
       const option = obj(value);
-      const label = (
-        str(option.label, `options[${index}].label`, false, 8) ||
-        ['A', 'B', 'C', 'D', 'E', 'F'][index] ||
-        String(index + 1)
-      ).toUpperCase();
+      const rawLabel = str(option.label, `options[${index}].label`, false, 8);
+      const legacy = ['A', 'B', 'C', 'D', 'E', 'F'];
+      const legacyIdx = rawLabel ? legacy.indexOf(rawLabel.toUpperCase()) : -1;
+      const label = legacyIdx !== -1
+        ? String(legacyIdx + 1)
+        : (rawLabel || String(index + 1));
       const optionTextEn = str(option.textEn, `${label} textEn`);
       const optionTextTa = str(option.textTa, `${label} textTa`);
       const imageUrl = httpUrl(option.imageUrl, `${label} imageUrl`);

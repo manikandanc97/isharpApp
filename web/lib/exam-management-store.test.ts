@@ -2,16 +2,15 @@ import { describe, expect, it } from "vitest";
 import { examManagementStore } from "./exam-management-store";
 
 describe("Exam Management Store", () => {
-  it("initializes with seeded scheduled exams", () => {
+  it("initializes cleanly without hardcoded dummy data", () => {
     const exams = examManagementStore.getExams();
-    expect(exams.length).toBeGreaterThanOrEqual(3);
+    expect(Array.isArray(exams)).toBe(true);
 
-    const live = exams.find((e) => e.status === "LIVE");
-    expect(live).toBeDefined();
-    expect(live?.testCode).toBe("NEET-11-BIO-01");
+    const attempts = examManagementStore.getAttempts();
+    expect(Array.isArray(attempts)).toBe(true);
   });
 
-  it("supports updating exam status and student eligibility", () => {
+  it("supports scheduling exams, updating exam status and student eligibility", () => {
     const scheduled = examManagementStore.scheduleExam({
       testId: "test-unit-01",
       testSeriesId: "series-unit",
@@ -48,28 +47,50 @@ describe("Exam Management Store", () => {
   });
 
   it("handles auto-submit and reattempt configurations for student attempts", () => {
-    const attempts = examManagementStore.getAttempts();
-    expect(attempts.length).toBeGreaterThanOrEqual(3);
+    const attempt = examManagementStore.recordAttempt({
+      examId: "exam-test-1",
+      testId: "test-unit-01",
+      testName: "Unit Test Exam",
+      studentId: "ISA-INT-2026-001",
+      studentName: "Real Student",
+      studentEmail: "student@isharp.edu",
+      studentCategory: "INTERNAL",
+      attemptNumber: 1,
+      maxAllowedAttempts: 1,
+      startedAt: new Date().toISOString(),
+      submittedAt: null,
+      durationSeconds: 1200,
+      score: 0,
+      totalMarks: 360,
+      percentage: 0,
+      accuracy: 0,
+      questionsAttempted: 30,
+      totalQuestions: 90,
+      status: "IN_PROGRESS",
+      subjectScores: {
+        physics: { score: 0, max: 120 },
+        chemistry: { score: 0, max: 120 },
+        biology: { score: 0, max: 120 },
+      },
+    });
 
-    const inProgress = attempts.find((a) => a.status === "IN_PROGRESS");
-    expect(inProgress).toBeDefined();
+    expect(attempt.id).toBeDefined();
+    expect(attempt.status).toBe("IN_PROGRESS");
 
-    if (inProgress) {
-      // Auto submit
-      const submitted = examManagementStore.autoSubmitAttempt(inProgress.id);
-      expect(submitted.status).toBe("SUBMITTED");
-      expect(submitted.submittedAt).toBeDefined();
+    // Auto submit
+    const submitted = examManagementStore.autoSubmitAttempt(attempt.id);
+    expect(submitted.status).toBe("SUBMITTED");
+    expect(submitted.submittedAt).toBeDefined();
 
-      // Grant reattempt
-      const initialMax = submitted.maxAllowedAttempts;
-      const granted = examManagementStore.grantReattempt(inProgress.id);
-      expect(granted.maxAllowedAttempts).toBe(initialMax + 1);
-    }
+    // Grant reattempt
+    const initialMax = submitted.maxAllowedAttempts;
+    const granted = examManagementStore.grantReattempt(attempt.id);
+    expect(granted.maxAllowedAttempts).toBe(initialMax + 1);
   });
 
-  it("calculates accurate exam statistics", () => {
+  it("calculates accurate exam statistics dynamically", () => {
     const stats = examManagementStore.getExamStats();
-    expect(stats.totalExams).toBeGreaterThanOrEqual(3);
-    expect(stats.totalAttempts).toBeGreaterThanOrEqual(3);
+    expect(stats.totalExams).toBeGreaterThanOrEqual(1);
+    expect(stats.totalAttempts).toBeGreaterThanOrEqual(1);
   });
 });

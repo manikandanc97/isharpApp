@@ -642,14 +642,23 @@ export class ExaminationEngineService {
               solutionEn: aq.question.solutionEn,
               solutionTa: aq.question.solutionTa,
               solutionImageUrl: aq.question.solutionImageUrl,
-              options: aq.question.options.map((o) => ({
-                id: o.id,
-                label: o.label,
-                textEn: o.textEn,
-                textTa: o.textTa,
-                imageUrl: o.imageUrl,
-                isCorrect: o.isCorrect,
-              })),
+              options: aq.question.options.map((o, optIdx) => {
+                const legacy = ['A', 'B', 'C', 'D', 'E', 'F'];
+                const legacyIdx = o.label ? legacy.indexOf(o.label.toUpperCase()) : -1;
+                const label = legacyIdx !== -1
+                  ? String(legacyIdx + 1)
+                  : /^[0-9]+$/.test(o.label ?? '')
+                    ? String(o.label)
+                    : String(optIdx + 1);
+                return {
+                  id: o.id,
+                  label,
+                  textEn: o.textEn,
+                  textTa: o.textTa,
+                  imageUrl: o.imageUrl,
+                  isCorrect: o.isCorrect,
+                };
+              }),
               selectedOptionId: userAns?.selectedOptionId || null,
               isCorrect: userAns?.isCorrect ?? false,
               marksAwarded: userAns?.marksAwarded ?? 0,
@@ -701,9 +710,16 @@ export class ExaminationEngineService {
 
       const mappedOptions = q.options.map((opt: any) => {
         const mapping = optMapByCanonical.get(opt.id);
+        const legacy = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const legacyIdx = opt.label ? legacy.indexOf(String(opt.label).toUpperCase()) : -1;
+        const fallbackLabel = legacyIdx !== -1
+          ? String(legacyIdx + 1)
+          : /^[0-9]+$/.test(opt.label ?? '')
+            ? String(opt.label)
+            : opt.label;
         return {
           id: opt.id,
-          label: mapping ? mapping.displayedLabel : opt.label,
+          label: mapping ? mapping.displayedLabel : fallbackLabel,
           position: mapping ? mapping.shuffledPosition : opt.position,
           textEn: opt.textEn,
           textTa: opt.textTa,

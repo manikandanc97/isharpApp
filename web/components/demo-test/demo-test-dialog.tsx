@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Loader2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DemoTestLobby } from "./demo-test-lobby";
@@ -42,6 +42,7 @@ export function DemoTestDialog({
     estimatedMinutes,
     totalPossibleMarks,
     subjectMeta,
+    configuration,
   } = useDemoTestWorkflow({
     initialSubject: "ALL",
     initialLanguage: "ta",
@@ -90,7 +91,7 @@ export function DemoTestDialog({
                     </span>
                   </div>
                   <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-tight mt-0.5">
-                    NEET Diagnostic Demo Assessment
+                    {configuration?.title ?? "NEET Diagnostic Demo Assessment"}
                   </h2>
                 </div>
               </div>
@@ -120,6 +121,9 @@ export function DemoTestDialog({
               errorMsg={errorMsg}
               onStartExam={handleStartExam}
               onCancel={handleClose}
+              allowedSubjects={configuration?.allowedSubjects}
+              allowedLanguages={configuration?.allowedLanguages}
+              testCode={configuration?.code}
             />
           </div>
         )}

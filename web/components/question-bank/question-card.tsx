@@ -204,7 +204,14 @@ export function QuestionCard({
           )}
           <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             {question.options.map((option, optIdx) => {
-              const displayLabel = String(optIdx + 1);
+              const legacy = ["A", "B", "C", "D"];
+              const legacyIdx = option.label ? legacy.indexOf(option.label.toUpperCase()) : -1;
+              const displayLabel =
+                legacyIdx !== -1
+                  ? String(legacyIdx + 1)
+                  : /^[0-9]+$/.test(option.label ?? "")
+                    ? String(option.label)
+                    : String(optIdx + 1);
               return (
                 <div
                   key={option.label || optIdx}
@@ -216,7 +223,7 @@ export function QuestionCard({
                 >
                   <div>
                     <div className="flex items-center justify-between gap-1">
-                      <span className="font-bold">({option.label || displayLabel})</span>
+                      <span className="font-bold">({displayLabel})</span>
                       {option.isCorrect && (
                         <span className="inline-flex items-center gap-0.5 rounded bg-emerald-600/10 px-1.5 py-0.5 text-3xs font-bold text-emerald-700">
                           <Check className="size-2.5" />

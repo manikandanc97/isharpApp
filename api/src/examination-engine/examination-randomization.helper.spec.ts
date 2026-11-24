@@ -37,7 +37,7 @@ describe('Examination Randomization Helper', () => {
     expect(positions.sort()).toEqual([1, 2, 3, 4]);
 
     const labels = mappings.map((m) => m.displayedLabel);
-    expect(labels).toEqual(['A', 'B', 'C', 'D']);
+    expect(labels).toEqual(['1', '2', '3', '4']);
 
     const canonicalIds = mappings.map((m) => m.canonicalOptionId);
     expect(new Set(canonicalIds).size).toBe(4);
@@ -53,9 +53,12 @@ describe('Examination Randomization Helper', () => {
 
     const mappings = createOptionMappings(options, false);
     expect(mappings[0].canonicalOptionId).toBe('opt-1');
-    expect(mappings[0].displayedLabel).toBe('A');
+    expect(mappings[0].displayedLabel).toBe('1');
     expect(mappings[1].canonicalOptionId).toBe('opt-2');
+    expect(mappings[1].displayedLabel).toBe('2');
     expect(mappings[2].canonicalOptionId).toBe('opt-3');
+    expect(mappings[2].displayedLabel).toBe('3');
     expect(mappings[3].canonicalOptionId).toBe('opt-4');
+    expect(mappings[3].displayedLabel).toBe('4');
   });
 });

@@ -1,6 +1,21 @@
 export type SubjectMode = "ALL" | "PHYSICS" | "CHEMISTRY" | "BIOLOGY";
 export type LanguageMode = "en" | "ta";
 
+export interface DemoTestConfiguration {
+  isEnabled: boolean;
+  title: string;
+  code: string;
+  instructionsEn: string;
+  instructionsTa: string;
+  allowedSubjects: SubjectMode[];
+  allowedLanguages: LanguageMode[];
+  defaultSubject: SubjectMode;
+  defaultLanguage: LanguageMode;
+  defaultQuestionCount: number;
+  countOptions: { count: number; durationMinutes: number; label: string }[];
+  selectedQuestionIds?: string[];
+}
+
 export interface DemoOption {
   id: string;
   label: string;

@@ -127,11 +127,21 @@ export async function POST(request: NextRequest) {
           "source",
           "numerical_answer",
         ]);
+        const headerMatches = (expected: string) => {
+          if (names.includes(expected)) return true;
+          if (expected.endsWith("_image") && names.includes(`${expected}_url`)) return true;
+          // Support backward compatibility for option_a/b/c/d columns
+          const matchNum = expected.match(/^option_([1-4])(_en|_ta|_image)$/);
+          if (matchNum) {
+            const letter = ['a', 'b', 'c', 'd'][parseInt(matchNum[1], 10) - 1];
+            const legacyHeader = `option_${letter}${matchNum[2]}`;
+            if (names.includes(legacyHeader)) return true;
+            if (expected.endsWith("_image") && names.includes(`${legacyHeader}_url`)) return true;
+          }
+          return false;
+        };
         const missing = TEMPLATE_HEADERS.filter(
-          (header) =>
-            !OPTIONAL_COLUMNS.has(header) &&
-            !names.includes(header) &&
-            !(header.endsWith("_image") && names.includes(`${header}_url`)),
+          (header) => !OPTIONAL_COLUMNS.has(header) && !headerMatches(header),
         );
         if (missing.length) {
           send({

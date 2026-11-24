@@ -112,7 +112,11 @@ export class QuestionBankService {
           : { AND: whereConditions };
 
     return this.prisma.question.findMany({
-      where: where as Parameters<PrismaService['question']['findMany']>[0] extends { where?: infer W } ? W : never,
+      where: where as Parameters<
+        PrismaService['question']['findMany']
+      >[0] extends { where?: infer W }
+        ? W
+        : never,
       include: {
         options: { orderBy: { position: 'asc' } },
         chapter: true,
@@ -154,7 +158,8 @@ export class QuestionBankService {
           const index = i + sliceIdx;
           const envelope = obj(rowItem);
           const rowNumber = int(envelope.rowNumber, index + 2, 2, 1_000_000);
-          const row = envelope.data === undefined ? envelope : obj(envelope.data);
+          const row =
+            envelope.data === undefined ? envelope : obj(envelope.data);
           const externalId = str(row.externalId, 'externalId', false, 64);
           const duplicateKey = externalId?.toLocaleLowerCase('en-US');
           if (duplicateKey && seenExternalIds.has(duplicateKey)) {
@@ -182,7 +187,9 @@ export class QuestionBankService {
 
           // Check exact content duplicate within workbook
           if (seenContentFingerprints.has(fingerprints.contentFingerprint)) {
-            const firstRow = seenContentFingerprints.get(fingerprints.contentFingerprint)!;
+            const firstRow = seenContentFingerprints.get(
+              fingerprints.contentFingerprint,
+            )!;
             results.push({
               row: rowNumber,
               externalId: externalId ?? undefined,
@@ -194,14 +201,19 @@ export class QuestionBankService {
             });
             return;
           }
-          seenContentFingerprints.set(fingerprints.contentFingerprint, rowNumber);
+          seenContentFingerprints.set(
+            fingerprints.contentFingerprint,
+            rowNumber,
+          );
 
           // Check equivalent duplicate within workbook
           if (
             !fingerprints.hasAmbiguousOptions &&
             seenEquivFingerprints.has(fingerprints.equivalentFingerprint)
           ) {
-            const firstRow = seenEquivFingerprints.get(fingerprints.equivalentFingerprint)!;
+            const firstRow = seenEquivFingerprints.get(
+              fingerprints.equivalentFingerprint,
+            )!;
             results.push({
               row: rowNumber,
               externalId: externalId ?? undefined,
@@ -214,7 +226,10 @@ export class QuestionBankService {
             return;
           }
           if (!fingerprints.hasAmbiguousOptions) {
-            seenEquivFingerprints.set(fingerprints.equivalentFingerprint, rowNumber);
+            seenEquivFingerprints.set(
+              fingerprints.equivalentFingerprint,
+              rowNumber,
+            );
           }
 
           try {
@@ -393,11 +408,10 @@ export class QuestionBankService {
         let removedFromMockTests = 0;
 
         if (tx.assessmentTestQuestion) {
-          const assessmentLinks =
-            await tx.assessmentTestQuestion.findMany({
-              where: { questionId: id },
-              include: { assessmentTest: true },
-            });
+          const assessmentLinks = await tx.assessmentTestQuestion.findMany({
+            where: { questionId: id },
+            include: { assessmentTest: true },
+          });
           for (const link of assessmentLinks) {
             const currentTotal = link.assessmentTest?.totalQuestions ?? 0;
             const currentMarks = link.assessmentTest?.totalMarks ?? 0;
@@ -460,7 +474,10 @@ export class QuestionBankService {
       >;
     }
     const data = await this.fetchMockTestsFromDb();
-    this.mockTestsCache = { data, expiresAt: now + this.MOCK_TESTS_CACHE_TTL_MS };
+    this.mockTestsCache = {
+      data,
+      expiresAt: now + this.MOCK_TESTS_CACHE_TTL_MS,
+    };
     return data;
   }
 

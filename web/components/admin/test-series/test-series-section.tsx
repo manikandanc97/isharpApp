@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Award, Layers, Plus, RefreshCw } from "lucide-react";
+import { Award, MonitorCog, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TestSeriesOverview } from "./test-series-overview";
 import { TestSeriesTable } from "./test-series-table";
 import { TestSeriesDialog } from "./test-series-dialog";
 import { CategoryManagerDialog } from "./category-manager-dialog";
 import { TestSeriesDetailsView } from "./test-series-details-view";
+import { MockTestsTab } from "./mock-tests-tab";
+import { LoginDemoControlTab } from "./login-demo-control-tab";
 import type {
   IndividualTest,
   TestSeries,
@@ -21,7 +23,7 @@ interface TestSeriesSectionProps {
 }
 
 export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps) {
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"series" | "mock-tests" | "login-demo">("series");
   const [categories, setCategories] = useState<TestSeriesCategory[]>([]);
   const [seriesList, setSeriesList] = useState<TestSeries[]>([]);
   const [stats, setStats] = useState<TestSeriesOverviewStats>({
@@ -39,7 +41,6 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
 
   // Load from API
   const loadData = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/admin/test-series", { cache: "no-store" });
       if (res.ok) {
@@ -55,13 +56,13 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
     } catch {
       // Keep initial seed data on error
     } finally {
-      setLoading(false);
     }
   }, [activeSeries]);
 
   useEffect(() => {
-    void loadData();
-  }, []);
+    const timer = window.setTimeout(() => void loadData(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadData]);
 
   // Category handlers
   const handleAddCategory = async (cat: { name: string; slug: string; description: string }) => {
@@ -267,59 +268,125 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
             <div>
               <div className="flex items-center gap-2">
                 <span className="rounded-md bg-rose-50 px-2 py-0.5 text-xs font-bold text-brand-red border border-rose-200">
-                  TEST CONTROL
+                  TEST & ASSESSMENT HUB
                 </span>
                 <span className="text-xs text-slate-500">
-                  Assessment Blueprint & Schedule Engine
+                  Unified Assessment Blueprint, Series & Mock Engine
                 </span>
               </div>
               <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Test Series Management
+                Tests & Test Series Management
               </h2>
               <p className="mt-1 text-xs text-slate-600">
-                Create, schedule, and orchestrate official NEET mock series across Class 11, Class 12, and Repeater cohorts.
+                All test operations in one unified workspace: curated cohort series, automated NEET mock tests, blueprints, and questions.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCategoryDialogOpen(true)}
-                className="h-9 rounded-full border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
-              >
-                Categories
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setEditingSeries(null);
-                  setSeriesDialogOpen(true);
-                }}
-                className="h-9 gap-1.5 rounded-full bg-brand-red text-xs font-semibold text-white shadow-primary hover:bg-brand-red-hover"
-              >
-                <Plus className="size-3.5" /> Create Test Series
-              </Button>
-            </div>
+            {activeTab === "series" && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCategoryDialogOpen(true)}
+                  className="h-9 rounded-full border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
+                >
+                  Categories
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingSeries(null);
+                    setSeriesDialogOpen(true);
+                  }}
+                  className="h-9 gap-1.5 rounded-full bg-brand-red text-xs font-semibold text-white shadow-primary hover:bg-brand-red-hover"
+                >
+                  <Plus className="size-3.5" /> Create Test Series
+                </Button>
+              </div>
+            )}
           </div>
 
-          {/* Metric Overview Cards */}
-          <TestSeriesOverview stats={stats} />
+          {/* Unified Test Tab Bar */}
+          <div className="flex w-full border-b border-slate-200 bg-white px-2 rounded-xl shadow-2xs">
+            <button
+              onClick={() => setActiveTab("series")}
+              className={`relative flex items-center gap-2 px-5 py-3 text-xs font-bold transition ${
+                activeTab === "series"
+                  ? "text-indigo-700"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Award className="size-4" />
+              <span>Test Series Packages</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-3xs font-bold ${
+                  activeTab === "series"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {seriesList.length}
+              </span>
+              {activeTab === "series" && (
+                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600" />
+              )}
+            </button>
 
-          {/* Filterable Table */}
-          <TestSeriesTable
-            series={seriesList}
-            categories={categories}
-            onViewSeries={(s) => setActiveSeries(s)}
-            onEditSeries={(s) => {
-              setEditingSeries(s);
-              setSeriesDialogOpen(true);
-            }}
-            onDuplicateSeries={handleDuplicateSeries}
-            onTogglePublishSeries={handleTogglePublishSeries}
-            onDeleteSeries={handleDeleteSeries}
-            onOpenCategoryManager={() => setCategoryDialogOpen(true)}
-          />
+            <button
+              onClick={() => setActiveTab("login-demo")}
+              className={`relative flex items-center gap-2 px-5 py-3 text-xs font-bold transition ${
+                activeTab === "login-demo" ? "text-indigo-700" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <MonitorCog className="size-4 text-emerald-600" />
+              <span>Login Demo Control</span>
+              {activeTab === "login-demo" && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600" />}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("mock-tests")}
+              className={`relative flex items-center gap-2 px-5 py-3 text-xs font-bold transition ${
+                activeTab === "mock-tests"
+                  ? "text-indigo-700"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Sparkles className="size-4 text-amber-500" />
+              <span>Quick Mock Tests & Auto-Builder</span>
+              {activeTab === "mock-tests" && (
+                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600" />
+              )}
+            </button>
+          </div>
+
+          {/* Tab 1: Test Series Packages */}
+          {activeTab === "series" && (
+            <div className="space-y-6">
+              <TestSeriesOverview stats={stats} />
+              <TestSeriesTable
+                series={seriesList}
+                categories={categories}
+                onViewSeries={(s) => setActiveSeries(s)}
+                onEditSeries={(s) => {
+                  setEditingSeries(s);
+                  setSeriesDialogOpen(true);
+                }}
+                onDuplicateSeries={handleDuplicateSeries}
+                onTogglePublishSeries={handleTogglePublishSeries}
+                onDeleteSeries={handleDeleteSeries}
+                onOpenCategoryManager={() => setCategoryDialogOpen(true)}
+              />
+            </div>
+          )}
+
+          {/* Tab 2: Quick Mock Tests & Builder */}
+          {activeTab === "mock-tests" && (
+            <MockTestsTab onNotice={onNotice} onError={onError} />
+          )}
+
+          {activeTab === "login-demo" && (
+            <LoginDemoControlTab onNotice={onNotice} onError={onError} />
+          )}
         </>
       )}
 

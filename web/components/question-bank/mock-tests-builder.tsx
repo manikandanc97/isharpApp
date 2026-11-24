@@ -25,6 +25,9 @@ export function MockTestsBuilder({
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [autoCount, setAutoCount] = useState(180);
+  const [durationMinutes, setDurationMinutes] = useState(15);
+  const [instructionsEn, setInstructionsEn] = useState("");
+  const [instructionsTa, setInstructionsTa] = useState("");
   const [creating, setCreating] = useState(false);
 
   const selectedQuestions = questions.filter((question) =>
@@ -67,8 +70,13 @@ export function MockTestsBuilder({
         body: JSON.stringify({
           code,
           title,
-          durationMinutes: 180,
-          totalMarks: 720,
+          durationMinutes,
+          totalMarks: selectedQuestions.reduce(
+            (total, question) => total + question.correctMarks,
+            0,
+          ),
+          instructionsEn,
+          instructionsTa,
         }),
       });
       if (selected.length) {
@@ -81,6 +89,8 @@ export function MockTestsBuilder({
       }
       setCode("");
       setTitle("");
+      setInstructionsEn("");
+      setInstructionsTa("");
       onNotice(`Mock test created with ${selected.length} selected questions.`);
       await onCreated();
     } catch (cause) {
@@ -169,6 +179,35 @@ export function MockTestsBuilder({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="NEET Full Syllabus Mock 01"
+            />
+          </Field>
+          <Field label="Demo duration (minutes)">
+            <input
+              type="number"
+              min={1}
+              max={600}
+              value={durationMinutes}
+              onChange={(event) =>
+                setDurationMinutes(
+                  Math.min(600, Math.max(1, Number(event.target.value) || 1)),
+                )
+              }
+            />
+          </Field>
+          <Field label="Instructions (English, optional)">
+            <textarea
+              rows={3}
+              value={instructionsEn}
+              onChange={(event) => setInstructionsEn(event.target.value)}
+              placeholder="Instructions shown before the login-page demo starts"
+            />
+          </Field>
+          <Field label="Instructions (Tamil, optional)">
+            <textarea
+              rows={3}
+              value={instructionsTa}
+              onChange={(event) => setInstructionsTa(event.target.value)}
+              placeholder="Login demo தொடங்கும் முன் காட்ட வேண்டிய வழிமுறைகள்"
             />
           </Field>
           <button

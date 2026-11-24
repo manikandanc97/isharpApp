@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BrandLogo } from "@/components/brand-logo";
 import { DemoTestLobby } from "./demo-test-lobby";
@@ -44,6 +44,7 @@ export function DemoTestScreen({
     estimatedMinutes,
     totalPossibleMarks,
     subjectMeta,
+    configuration,
   } = useDemoTestWorkflow({
     initialSubject,
     initialLanguage,
@@ -76,7 +77,7 @@ export function DemoTestScreen({
                     Full-Screen CBT Console
                   </Badge>
                   <span className="hidden md:inline text-xs font-semibold text-slate-600">
-                    Bilingual NEET Entrance Simulation
+                    {configuration?.title ?? "Bilingual NEET Entrance Simulation"}
                   </span>
                 </div>
               </div>
@@ -110,6 +111,9 @@ export function DemoTestScreen({
               errorMsg={errorMsg}
               onStartExam={handleStartExam}
               onCancel={handleExitToHome}
+              allowedSubjects={configuration?.allowedSubjects}
+              allowedLanguages={configuration?.allowedLanguages}
+              testCode={configuration?.code}
             />
           </main>
         </div>

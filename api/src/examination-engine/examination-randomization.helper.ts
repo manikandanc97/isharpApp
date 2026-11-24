@@ -27,7 +27,7 @@ export function secureShuffle<T>(items: T[]): T[] {
   return result;
 }
 
-const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const OPTION_LABELS = ['1', '2', '3', '4', '5', '6'];
 
 /**
  * Creates randomized option mappings for a question's options
@@ -41,6 +41,6 @@ export function createOptionMappings(
   return ordered.map((opt, index) => ({
     canonicalOptionId: opt.id,
     shuffledPosition: index + 1,
-    displayedLabel: OPTION_LABELS[index] || String.fromCharCode(65 + index),
+    displayedLabel: OPTION_LABELS[index] || String(index + 1),
   }));
 }

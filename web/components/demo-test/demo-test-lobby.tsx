@@ -33,6 +33,9 @@ export interface DemoTestLobbyProps {
   errorMsg: string;
   onStartExam: () => void;
   onCancel: () => void;
+  allowedSubjects?: SubjectMode[];
+  allowedLanguages?: LanguageMode[];
+  testCode?: string;
 }
 
 const SUBJECT_OPTIONS = [
@@ -81,6 +84,9 @@ export function DemoTestLobby({
   errorMsg,
   onStartExam,
   onCancel,
+  allowedSubjects = ["ALL", "PHYSICS", "CHEMISTRY", "BIOLOGY"],
+  allowedLanguages = ["en", "ta"],
+  testCode = "NEET-DEMO-2026",
 }: DemoTestLobbyProps) {
   const isDialog = variant === "dialog";
 
@@ -124,7 +130,7 @@ export function DemoTestLobby({
             </div>
 
             <div className={isDialog ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-2.5"}>
-              {SUBJECT_OPTIONS.map((item) => {
+              {SUBJECT_OPTIONS.filter((item) => allowedSubjects.includes(item.id)).map((item) => {
                 const isSelected = subjectMode === item.id;
                 const Icon = item.icon;
                 return (
@@ -183,7 +189,7 @@ export function DemoTestLobby({
             </div>
 
             <div className={isDialog ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-1 sm:grid-cols-2 gap-3"}>
-              <button
+              {allowedLanguages.includes("en") && <button
                 type="button"
                 onClick={() => onLanguageChange("en")}
                 className={`flex flex-col justify-between rounded-2xl border ${
@@ -206,9 +212,9 @@ export function DemoTestLobby({
                     ? "Pure English questions, options, and explanations without Tamil."
                     : "Questions, options, and step-by-step solutions purely in English without Tamil."}
                 </p>
-              </button>
+              </button>}
 
-              <button
+              {allowedLanguages.includes("ta") && <button
                 type="button"
                 onClick={() => onLanguageChange("ta")}
                 className={`flex flex-col justify-between rounded-2xl border ${
@@ -233,7 +239,7 @@ export function DemoTestLobby({
                     ? "Bilingual dual view: Tamil translation with English terminology."
                     : "Bilingual dual view: Tamil translation accompanied by standard English terminology."}
                 </p>
-              </button>
+              </button>}
             </div>
           </div>
 
@@ -312,7 +318,7 @@ export function DemoTestLobby({
                     : "text-slate-600 bg-slate-50 px-2 py-1 rounded-md"
                 } rounded border border-slate-200`}
               >
-                NEET-DEMO-2026
+                {testCode}
               </span>
             </div>
 

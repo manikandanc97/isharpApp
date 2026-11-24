@@ -2,15 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Award,
+  Atom,
   BarChart3,
-  BookOpen,
-  Calendar,
   CheckCircle2,
-  ChevronRight,
-  Download,
+  Dna,
   FileSpreadsheet,
-  FileText,
+  FlaskConical,
+  GraduationCap,
   Printer,
   RefreshCw,
   Search,
@@ -22,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TablePagination } from "@/components/admin/admin-helpers";
+import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin/admin-content-skeleton";
 import type { ResultsOverview } from "@/lib/results-store";
 import ExcelJS from "exceljs";
 
@@ -52,6 +51,8 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
       if (res.ok) {
         const payload = await res.json();
         setData(payload);
+      } else {
+        onError("Failed to load results and performance analytics");
       }
     } catch {
       onError("Failed to load results and performance analytics");
@@ -150,19 +151,29 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
     return filteredLeaderboard.slice(start, start + pageSize);
   }, [filteredLeaderboard, currentPage, pageSize]);
 
+  // Prevent flashing fake or empty data while initial fetch is pending
+  if (loading && !data) {
+    return <AdminWorkspaceContentSkeleton section="results" />;
+  }
+
+  const isFiltered = Boolean(searchQuery.trim() || categoryFilter !== "ALL");
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700">
-              <BarChart3 className="size-4" /> Academic Performance & CBT Analytics
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/70 bg-rose-50/50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700">
+              <Sparkles className="size-3 text-brand-red" />
+              <span>Academic Performance</span>
+              <span className="h-2.5 w-px bg-rose-200" />
+              <span className="font-semibold text-brand-red">CBT Analytics</span>
             </div>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
               Results & Scorecard Analytics
             </h2>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+            <p className="max-w-2xl text-xs leading-relaxed text-slate-500 sm:text-sm">
               Comprehensive NTA NEET performance benchmarking, All-India rank percentiles, and subject-wise accuracy tracking.
             </p>
           </div>
@@ -173,7 +184,7 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
               size="sm"
               disabled={refreshing}
               onClick={() => void loadData(true)}
-              className="gap-1.5 rounded-full"
+              className="gap-1.5 rounded-full border-slate-200 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition shadow-2xs"
             >
               <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
               <span>Sync</span>
@@ -182,7 +193,7 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
               variant="outline"
               size="sm"
               onClick={handleExportExcel}
-              className="gap-1.5 rounded-full"
+              className="gap-1.5 rounded-full border-slate-200 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition shadow-2xs"
             >
               <FileSpreadsheet className="size-3.5 text-emerald-600" />
               <span>Export Excel</span>
@@ -191,7 +202,7 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
               variant="outline"
               size="sm"
               onClick={handlePrintReport}
-              className="gap-1.5 rounded-full"
+              className="gap-1.5 rounded-full border-slate-200 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition shadow-2xs"
             >
               <Printer className="size-3.5 text-slate-600" />
               <span>Print / PDF</span>
@@ -199,149 +210,220 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
           </div>
         </div>
 
-        {/* Global Summary Statistics */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
-            <span className="text-3xs font-semibold uppercase tracking-wider text-indigo-700">
-              Total Attempts Evaluated
-            </span>
-            <p className="mt-2 text-3xl font-extrabold text-indigo-950">
-              {data?.totalAttempts ?? 0}
-            </p>
-            <p className="mt-0.5 text-3xs text-indigo-800 font-medium">Valid CBT test submissions</p>
+        {/* Global Summary Statistics - Themed White Luxury Metric Cards */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-5">
+          {/* Card 1: Total Attempts */}
+          <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-blue-200 hover:shadow-card sm:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Total Attempts Evaluated
+                </p>
+                <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
+                  {data?.totalAttempts ?? 0}
+                </p>
+              </div>
+              <div className="grid size-9 place-items-center rounded-xl bg-blue-50 text-brand-blue">
+                <Users className="size-4.5" />
+              </div>
+            </div>
+            <p className="text-xs font-medium text-slate-500">Valid CBT test submissions</p>
           </div>
 
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
-            <span className="text-3xs font-semibold uppercase tracking-wider text-emerald-700">
-              Academy Average Score
-            </span>
-            <p className="mt-2 text-3xl font-extrabold text-emerald-950">
-              {data?.averageMarks ?? 0} <span className="text-sm font-normal text-emerald-700">/ 720</span>
-            </p>
-            <p className="mt-0.5 text-3xs text-emerald-800 font-medium">
-              Overall Accuracy: {data?.overallAccuracy ?? 0}%
+          {/* Card 2: Average Score */}
+          <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-emerald-200 hover:shadow-card sm:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Academy Average Score
+                </p>
+                <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
+                  {data?.averageMarks ?? 0}{" "}
+                  <span className="text-sm font-normal text-slate-400">/ 720</span>
+                </p>
+              </div>
+              <div className="grid size-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+                <TrendingUp className="size-4.5" />
+              </div>
+            </div>
+            <p className="text-xs font-medium text-slate-500">
+              Overall Accuracy:{" "}
+              <span className="font-semibold text-emerald-700">{data?.overallAccuracy ?? 0}%</span>
             </p>
           </div>
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-            <span className="text-3xs font-semibold uppercase tracking-wider text-amber-700">
-              Highest Score Benchmark
-            </span>
-            <p className="mt-2 text-3xl font-extrabold text-amber-950">
-              {data?.highestMarks ?? 0} <span className="text-sm font-normal text-amber-700">/ 720</span>
+          {/* Card 3: Highest Score */}
+          <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-amber-200 hover:shadow-card sm:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Highest Score Benchmark
+                </p>
+                <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
+                  {data?.highestMarks ?? 0}{" "}
+                  <span className="text-sm font-normal text-slate-400">/ 720</span>
+                </p>
+              </div>
+              <div className="grid size-9 place-items-center rounded-xl bg-amber-50 text-amber-600">
+                <Trophy className="size-4.5" />
+              </div>
+            </div>
+            <p className="text-xs font-medium text-slate-500">
+              {data && data.totalAttempts > 0 && data.leaderboard.length > 0
+                ? `Rank 1: ${data.leaderboard[0].percentile}th percentile`
+                : "No submissions evaluated"}
             </p>
-            <p className="mt-0.5 text-3xs text-amber-800 font-medium">Rank 1: 99.8th percentile</p>
           </div>
 
-          <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
-            <span className="text-3xs font-semibold uppercase tracking-wider text-blue-700">
-              Pass / Qualification Rate
-            </span>
-            <p className="mt-2 text-3xl font-extrabold text-blue-950">
-              {data?.passPercentage ?? 0}%
-            </p>
-            <p className="mt-0.5 text-3xs text-blue-800 font-medium">Scoring ≥ 50% cutoff marks</p>
+          {/* Card 4: Pass / Qualification Rate */}
+          <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-rose-200 hover:shadow-card sm:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Pass / Qualification Rate
+                </p>
+                <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
+                  {data?.passPercentage ?? 0}%
+                </p>
+              </div>
+              <div className="grid size-9 place-items-center rounded-xl bg-rose-50 text-brand-red">
+                <GraduationCap className="size-4.5" />
+              </div>
+            </div>
+            <p className="text-xs font-medium text-slate-500">Scoring ≥ 50% cutoff marks</p>
           </div>
         </div>
       </section>
 
       {/* Subject-Wise Performance Breakdown */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+        {/* Physics */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:border-blue-200 hover:shadow-card">
           <div className="flex items-center justify-between">
-            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 uppercase">
-              Physics
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-blue-200/60 bg-blue-50 px-2 py-0.5 text-xs font-bold uppercase text-blue-700">
+              <Atom className="size-3.5" />
+              <span>Physics</span>
             </span>
-            <span className="text-xs font-semibold text-slate-500">Max 180</span>
+            <span className="text-xs font-semibold text-slate-400">Max 180</span>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <p className="text-2xl font-bold text-slate-900">
-              {data?.subjectPerformance.physics.averageScore ?? 156}
-            </p>
+          <div className="mt-4 flex items-baseline justify-between">
+            <div>
+              <span className="text-2xl font-bold text-slate-900">
+                {data?.subjectPerformance?.physics?.averageScore ?? 0}
+              </span>
+              <span className="text-xs font-normal text-slate-400"> / 180</span>
+            </div>
             <span className="text-xs font-semibold text-blue-700">
-              {data?.subjectPerformance.physics.accuracy ?? 86.6}% Acc
+              {data?.subjectPerformance?.physics?.accuracy ?? 0}% Acc
             </span>
           </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-blue-600"
-              style={{ width: `${data?.subjectPerformance.physics.accuracy ?? 86.6}%` }}
+              className="h-full rounded-full bg-blue-600 transition-all duration-500"
+              style={{
+                width: `${Math.min(
+                  100,
+                  Math.max(0, data?.subjectPerformance?.physics?.accuracy ?? 0)
+                )}%`,
+              }}
             />
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+        {/* Chemistry */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:border-emerald-200 hover:shadow-card">
           <div className="flex items-center justify-between">
-            <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 uppercase">
-              Chemistry
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 text-xs font-bold uppercase text-emerald-700">
+              <FlaskConical className="size-3.5" />
+              <span>Chemistry</span>
             </span>
-            <span className="text-xs font-semibold text-slate-500">Max 180</span>
+            <span className="text-xs font-semibold text-slate-400">Max 180</span>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <p className="text-2xl font-bold text-slate-900">
-              {data?.subjectPerformance.chemistry.averageScore ?? 160}
-            </p>
+          <div className="mt-4 flex items-baseline justify-between">
+            <div>
+              <span className="text-2xl font-bold text-slate-900">
+                {data?.subjectPerformance?.chemistry?.averageScore ?? 0}
+              </span>
+              <span className="text-xs font-normal text-slate-400"> / 180</span>
+            </div>
             <span className="text-xs font-semibold text-emerald-700">
-              {data?.subjectPerformance.chemistry.accuracy ?? 88.8}% Acc
+              {data?.subjectPerformance?.chemistry?.accuracy ?? 0}% Acc
             </span>
           </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-emerald-600"
-              style={{ width: `${data?.subjectPerformance.chemistry.accuracy ?? 88.8}%` }}
+              className="h-full rounded-full bg-emerald-600 transition-all duration-500"
+              style={{
+                width: `${Math.min(
+                  100,
+                  Math.max(0, data?.subjectPerformance?.chemistry?.accuracy ?? 0)
+                )}%`,
+              }}
             />
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+        {/* Biology */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:border-rose-200 hover:shadow-card">
           <div className="flex items-center justify-between">
-            <span className="rounded-md bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700 uppercase">
-              Biology
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-rose-200/60 bg-rose-50 px-2 py-0.5 text-xs font-bold uppercase text-rose-700">
+              <Dna className="size-3.5" />
+              <span>Biology</span>
             </span>
-            <span className="text-xs font-semibold text-slate-500">Max 360</span>
+            <span className="text-xs font-semibold text-slate-400">Max 360</span>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <p className="text-2xl font-bold text-slate-900">
-              {data?.subjectPerformance.biology.averageScore ?? 325}
-            </p>
+          <div className="mt-4 flex items-baseline justify-between">
+            <div>
+              <span className="text-2xl font-bold text-slate-900">
+                {data?.subjectPerformance?.biology?.averageScore ?? 0}
+              </span>
+              <span className="text-xs font-normal text-slate-400"> / 360</span>
+            </div>
             <span className="text-xs font-semibold text-rose-700">
-              {data?.subjectPerformance.biology.accuracy ?? 90.2}% Acc
+              {data?.subjectPerformance?.biology?.accuracy ?? 0}% Acc
             </span>
           </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-rose-600"
-              style={{ width: `${data?.subjectPerformance.biology.accuracy ?? 90.2}%` }}
+              className="h-full rounded-full bg-brand-red transition-all duration-500"
+              style={{
+                width: `${Math.min(
+                  100,
+                  Math.max(0, data?.subjectPerformance?.biology?.accuracy ?? 0)
+                )}%`,
+              }}
             />
           </div>
         </div>
       </div>
 
       {/* Student Rankings / Leaderboard Table */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+      <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
         <div className="border-b border-slate-200 bg-[#fbfbfa] p-5 sm:px-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <Trophy className="size-4 text-amber-500" />
+                <Trophy className="size-4.5 text-amber-500" />
                 <h3 className="text-base font-bold text-slate-900">
                   Student Leaderboard & Rank Registry
                 </h3>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-slate-500">
                 Official NTA scoring (+4 / -1), percentage, and percentile rankings
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {/* Category Filter */}
-              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 text-xs">
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-1 rounded-xl border border-slate-200/90 bg-white p-1 text-xs shadow-2xs">
                 {(["ALL", "INTERNAL", "EXTERNAL"] as const).map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setCategoryFilter(cat)}
-                    className={`rounded px-2.5 py-1 font-semibold transition ${
-                      categoryFilter === cat ? "bg-brand-blue text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+                    className={`rounded-lg px-3 py-1 font-semibold transition ${
+                      categoryFilter === cat
+                        ? "bg-brand-blue text-white shadow-xs"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
                     {cat === "ALL" ? "All Cohorts" : cat}
@@ -350,20 +432,20 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
               </div>
 
               {/* Search */}
-              <div className="relative w-full sm:w-60">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search student or ID..."
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-8 text-xs outline-none focus:border-indigo-400"
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-8 text-xs text-slate-900 outline-none transition placeholder-slate-400 focus:border-brand-blue focus:ring-2 focus:ring-blue-100/60"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
                     aria-label="Clear search"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition focus:outline-none"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition focus:outline-none"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -375,49 +457,49 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-slate-200 bg-slate-50 text-3xs font-semibold uppercase tracking-wider text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               <tr>
-                <th className="px-5 py-3">Rank</th>
-                <th className="px-5 py-3">Student ID & Name</th>
-                <th className="px-5 py-3">Category</th>
-                <th className="px-5 py-3">Test Paper</th>
-                <th className="px-5 py-3">Total Score</th>
-                <th className="px-5 py-3">Accuracy</th>
-                <th className="px-5 py-3">Correct / Inc</th>
-                <th className="px-5 py-3">Subject Breakdown</th>
-                <th className="px-5 py-3 text-right">Percentile</th>
+                <th className="px-5 py-3.5">Rank</th>
+                <th className="px-5 py-3.5">Student ID & Name</th>
+                <th className="px-5 py-3.5">Category</th>
+                <th className="px-5 py-3.5">Test Paper</th>
+                <th className="px-5 py-3.5">Total Score</th>
+                <th className="px-5 py-3.5">Accuracy</th>
+                <th className="px-5 py-3.5">Correct / Inc</th>
+                <th className="px-5 py-3.5">Subject Breakdown</th>
+                <th className="px-5 py-3.5 text-right">Percentile</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginatedLeaderboard.map((row) => {
                 const rankTone =
                   row.rank === 1
-                    ? "bg-amber-400 text-white"
+                    ? "bg-amber-400 text-white shadow-2xs"
                     : row.rank === 2
-                    ? "bg-slate-300 text-slate-800"
+                    ? "bg-slate-300 text-slate-800 shadow-2xs"
                     : row.rank === 3
-                    ? "bg-amber-700 text-white"
-                    : "bg-slate-100 text-slate-600";
+                    ? "bg-amber-700 text-white shadow-2xs"
+                    : "bg-slate-100 text-slate-600 font-semibold";
 
                 return (
                   <tr key={row.studentId} className="hover:bg-slate-50/70 transition">
                     <td className="px-5 py-3.5">
-                      <span className={`grid size-7 place-items-center rounded-full text-xs font-extrabold ${rankTone}`}>
+                      <span className={`grid size-7 place-items-center rounded-full text-xs font-bold ${rankTone}`}>
                         {row.rank}
                       </span>
                     </td>
                     <td className="px-5 py-3.5">
                       <div>
                         <span className="font-bold text-slate-900">{row.studentName}</span>
-                        <p className="font-mono text-3xs text-indigo-700">{row.studentId}</p>
+                        <p className="font-mono text-3xs text-slate-400">{row.studentId}</p>
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
                       <span
                         className={`rounded-md px-2 py-0.5 text-3xs font-bold ${
                           row.category === "INTERNAL"
-                            ? "bg-blue-50 text-blue-700 border border-blue-200"
-                            : "bg-purple-50 text-purple-700 border border-purple-200"
+                            ? "bg-blue-50 text-blue-700 border border-blue-200/70"
+                            : "bg-purple-50 text-purple-700 border border-purple-200/70"
                         }`}
                       >
                         {row.category}
@@ -427,13 +509,13 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
                       {row.testName}
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className="text-sm font-extrabold text-emerald-700">{row.score}</span>
-                      <span className="text-3xs text-slate-400"> / {row.totalMarks}</span>
+                      <span className="text-sm font-extrabold text-slate-900">{row.score}</span>
+                      <span className="text-3xs text-slate-400 font-normal"> / {row.totalMarks}</span>
                     </td>
                     <td className="px-5 py-3.5 font-semibold text-slate-800">
                       {row.accuracy}%
                     </td>
-                    <td className="px-5 py-3.5 text-3xs text-slate-500 font-mono">
+                    <td className="px-5 py-3.5 text-3xs font-mono">
                       <span className="text-emerald-700 font-bold">+{row.correctCount}</span> /{" "}
                       <span className="text-rose-600 font-bold">-{row.incorrectCount}</span>
                     </td>
@@ -441,7 +523,7 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
                       P: {row.physicsScore} · C: {row.chemistryScore} · B: {row.biologyScore}
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-3xs font-bold text-emerald-800 border border-emerald-200">
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-3xs font-bold text-emerald-800 border border-emerald-200/80">
                         {row.percentile} %ile
                       </span>
                     </td>
@@ -450,8 +532,32 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
               })}
               {filteredLeaderboard.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-xs text-slate-500">
-                    No leaderboard records found matching this filter.
+                  <td colSpan={9} className="py-14 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="grid size-12 place-items-center rounded-full bg-slate-100 text-slate-400">
+                        <Trophy className="size-6" />
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-800">
+                        No Leaderboard Records Found
+                      </h4>
+                      <p className="max-w-xs text-xs text-slate-500">
+                        {isFiltered
+                          ? "No leaderboard records match your current search query or filter."
+                          : "No valid CBT test submissions have been evaluated yet."}
+                      </p>
+                      {isFiltered && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery("");
+                            setCategoryFilter("ALL");
+                          }}
+                          className="mt-2 text-xs font-semibold text-brand-blue hover:text-brand-blue-hover underline cursor-pointer"
+                        >
+                          Clear all filters
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}
@@ -472,9 +578,9 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
         )}
       </section>
 
-      {/* Chapter-wise Accuracy & High Yield Insights */}
-      {data?.chapterInsights && (
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+      {/* Chapter-wise Accuracy & High Yield Insights (if available) */}
+      {data?.chapterInsights && data.chapterInsights.length > 0 && (
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
           <div className="mb-4">
             <h3 className="text-base font-bold text-slate-900">
               Chapter-Wise Accuracy & High-Yield Analysis
@@ -486,7 +592,7 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {data.chapterInsights.map((ch) => (
-              <div key={ch.chapterTitle} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+              <div key={ch.chapterTitle} className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
                 <div className="flex items-center justify-between text-3xs font-bold uppercase tracking-wider text-slate-500">
                   <span>{ch.subject}</span>
                   <span className="font-semibold text-slate-400">{ch.totalQuestionsAnswered} answered</span>

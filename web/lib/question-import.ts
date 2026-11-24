@@ -1,8 +1,8 @@
 export const QUESTION_HEADERS = [
   'external_id', 'course_code', 'subject_code', 'chapter_title', 'question_type', 'difficulty',
   'question_text_en', 'question_text_ta', 'question_image',
-  'option_a_en', 'option_a_ta', 'option_a_image', 'option_b_en', 'option_b_ta', 'option_b_image',
-  'option_c_en', 'option_c_ta', 'option_c_image', 'option_d_en', 'option_d_ta', 'option_d_image',
+  'option_1_en', 'option_1_ta', 'option_1_image', 'option_2_en', 'option_2_ta', 'option_2_image',
+  'option_3_en', 'option_3_ta', 'option_3_image', 'option_4_en', 'option_4_ta', 'option_4_image',
   'correct_options', 'numerical_answer', 'solution_en', 'solution_ta', 'solution_image',
   'correct_marks', 'negative_marks', 'source',
 ] as const;
@@ -10,8 +10,8 @@ export const QUESTION_HEADERS = [
 export const TEMPLATE_HEADERS = [
   'subject_code', 'chapter_title', 'question_type', 'difficulty',
   'question_text_en', 'question_text_ta', 'question_image',
-  'option_a_en', 'option_a_ta', 'option_a_image', 'option_b_en', 'option_b_ta', 'option_b_image',
-  'option_c_en', 'option_c_ta', 'option_c_image', 'option_d_en', 'option_d_ta', 'option_d_image',
+  'option_1_en', 'option_1_ta', 'option_1_image', 'option_2_en', 'option_2_ta', 'option_2_image',
+  'option_3_en', 'option_3_ta', 'option_3_image', 'option_4_en', 'option_4_ta', 'option_4_image',
   'correct_options', 'numerical_answer', 'solution_en', 'solution_ta', 'solution_image',
   'correct_marks', 'negative_marks', 'source',
 ] as const;
@@ -30,16 +30,20 @@ const imageHashValue = (row: CellMap, key: string) => value(row, `${key}_image_h
 
 export function mapQuestionRow(row: CellMap, index = 1) {
   const correct = new Set(value(row, 'correct_options').toUpperCase().split(',').map((item) => item.trim()).filter(Boolean));
-  const options = ['A', 'B', 'C', 'D'].map((label, idx) => {
-    const key = label.toLowerCase();
-    const numLabel = String(idx + 1);
-    const isCorrect = correct.has(label) || correct.has(numLabel);
-    const imageUrl = imageValue(row, `option_${key}`);
-    const imageHash = imageHashValue(row, `option_${key}`);
+  const options = ['1', '2', '3', '4'].map((numLabel, idx) => {
+    const legacyLetter = ['A', 'B', 'C', 'D'][idx];
+    const legacyKey = legacyLetter.toLowerCase();
+    const isCorrect = correct.has(numLabel) || correct.has(legacyLetter);
+    const imageUrl =
+      imageValue(row, `option_${numLabel}`) ||
+      imageValue(row, `option_${legacyKey}`);
+    const imageHash =
+      imageHashValue(row, `option_${numLabel}`) ||
+      imageHashValue(row, `option_${legacyKey}`);
     return {
       label: numLabel,
-      textEn: value(row, `option_${key}_en`),
-      textTa: value(row, `option_${key}_ta`),
+      textEn: value(row, `option_${numLabel}_en`) || value(row, `option_${legacyKey}_en`),
+      textTa: value(row, `option_${numLabel}_ta`) || value(row, `option_${legacyKey}_ta`),
       imageUrl,
       imageHash,
       isCorrect,
