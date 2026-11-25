@@ -31,8 +31,11 @@ export function DemoTestRunner({
   onSubmit,
   onExit,
 }: DemoTestRunnerProps) {
-  const { questions, durationMinutes } = testPackage;
-  const totalSeconds = durationMinutes * 60;
+  const { questions, durationMinutes, remainingSeconds } = testPackage;
+  const totalSeconds =
+    typeof remainingSeconds === "number" && remainingSeconds > 0
+      ? remainingSeconds
+      : durationMinutes * 60;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeSubject, setActiveSubject] = useState<string>("ALL");
@@ -42,14 +45,36 @@ export function DemoTestRunner({
     questions.forEach((q, idx) => {
       initial[q.id] = {
         questionId: q.id,
-        selectedOptionId: undefined,
-        markedForReview: false,
-        visited: idx === 0,
-        timeSpentSeconds: 0,
+        selectedOptionId: q.savedState?.selectedOptionId ?? undefined,
+        markedForReview: Boolean(q.savedState?.isMarkedForReview),
+        visited: q.savedState?.isVisited ?? idx === 0,
+        timeSpentSeconds: q.savedState?.timeSpentSeconds ?? 0,
       };
     });
     return initial;
   });
+
+  const attemptId = testPackage.attemptId || testPackage.testId;
+  const persistAnswer = useCallback(
+    (
+      questionId: string,
+      patch: {
+        selectedOptionId?: string | null;
+        isMarkedForReview?: boolean;
+        isVisited?: boolean;
+        timeSpentSeconds?: number;
+      },
+    ) => {
+      if (!attemptId) return;
+      void fetch(`/api/demo/attempts/${encodeURIComponent(attemptId)}/answer`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId, ...patch }),
+        keepalive: true,
+      }).catch(() => {});
+    },
+    [attemptId],
+  );
 
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
@@ -126,8 +151,12 @@ export function DemoTestRunner({
           visited: true,
         },
       }));
+      persistAnswer(currentQuestion.id, {
+        selectedOptionId: optionId,
+        isVisited: true,
+      });
     },
-    [currentQuestion.id]
+    [currentQuestion.id, persistAnswer]
   );
 
   const handleClearResponse = useCallback(() => {
@@ -138,7 +167,8 @@ export function DemoTestRunner({
         selectedOptionId: undefined,
       },
     }));
-  }, [currentQuestion.id]);
+    persistAnswer(currentQuestion.id, { selectedOptionId: null });
+  }, [currentQuestion.id, persistAnswer]);
 
   const handlePrev = useCallback(() => {
     setCurrentIndex((idx) => {
@@ -157,18 +187,17 @@ export function DemoTestRunner({
   }, [markVisited, questions.length]);
 
   const handleToggleMarkForReview = useCallback(() => {
-    setAnswers((prev) => {
-      const isMarked = !prev[currentQuestion.id]?.markedForReview;
-      return {
-        ...prev,
-        [currentQuestion.id]: {
-          ...prev[currentQuestion.id],
-          markedForReview: isMarked,
-        },
-      };
-    });
+    const nextMarked = !answers[currentQuestion.id]?.markedForReview;
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: {
+        ...prev[currentQuestion.id],
+        markedForReview: nextMarked,
+      },
+    }));
+    persistAnswer(currentQuestion.id, { isMarkedForReview: nextMarked });
     handleNext();
-  }, [currentQuestion.id, handleNext]);
+  }, [answers, currentQuestion.id, handleNext, persistAnswer]);
 
   const handleJumpTo = useCallback(
     (index: number) => {

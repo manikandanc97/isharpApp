@@ -23,6 +23,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (url.pathname === "/admin/tests") {
+    url.pathname = "/admin/test-series";
+    return NextResponse.redirect(url);
+  }
+
   return updateSupabaseSession(request);
 }
 

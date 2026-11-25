@@ -7,15 +7,14 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { getLoginErrorMessage } from "@/lib/auth-error";
-import { getAuthenticatedSession } from "@/lib/auth-session";
-import { getPostAuthDestination, oauthStatusMessages } from "@/lib/oauth-flow";
+import { completeLoginSession } from "@/lib/auth-session";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
@@ -42,6 +41,11 @@ export function LoginForm({
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+
+  useEffect(() => {
+    if (!initialExpiredNotice && !initialAuthError) return;
+    fetch("/api/auth/session-notice", { method: "DELETE" }).catch(() => {});
+  }, [initialExpiredNotice, initialAuthError]);
 
   function validateForm() {
     const nextErrors: FieldErrors = {};
@@ -99,8 +103,9 @@ export function LoginForm({
         return;
       }
 
-      const activeSession = await getAuthenticatedSession(data.session.access_token);
-      const destination = getPostAuthDestination(activeSession);
+      const { destination } = await completeLoginSession(
+        data.session.access_token,
+      );
       router.replace(destination);
       router.refresh();
     } catch {
@@ -112,6 +117,7 @@ export function LoginForm({
 
   async function handleForgotPassword() {
     setAuthError("");
+    setExpiredNotice("");
     setStatusMessage("");
 
     if (!isValidEmail(identifier.trim())) {
@@ -200,10 +206,13 @@ export function LoginForm({
                 setStatusMessage("");
               }}
               onBlur={() => {
-                const error = isValidEmail(identifier.trim())
-                  ? undefined
-                  : "Enter a valid email address.";
-                setErrors((current) => ({ ...current, identifier: error }));
+                const trimmed = identifier.trim();
+                if (trimmed && !isValidEmail(trimmed)) {
+                  setErrors((current) => ({
+                    ...current,
+                    identifier: "Enter a valid email address.",
+                  }));
+                }
               }}
             />
             <Mail
@@ -244,14 +253,6 @@ export function LoginForm({
               setPassword(event.target.value);
               setErrors((current) => ({ ...current, password: undefined }));
               setAuthError("");
-            }}
-            onBlur={() => {
-              if (!password) {
-                setErrors((current) => ({
-                  ...current,
-                  password: "Enter your password.",
-                }));
-              }
             }}
           />
           {errors.password && (
@@ -343,22 +344,5 @@ export function LoginForm({
 
       <LoginFooter />
     </section>
-  );
-}
-
-export function OAuthAwareLoginForm() {
-  const searchParams = useSearchParams();
-  const oauthState = searchParams.get("oauth");
-  const reason = searchParams.get("reason");
-  const initialExpiredNotice =
-    reason === "session_expired"
-      ? "Your session has expired. Please sign in again to continue."
-      : "";
-
-  return (
-    <LoginForm
-      initialAuthError={oauthState ? oauthStatusMessages[oauthState] ?? "" : ""}
-      initialExpiredNotice={initialExpiredNotice}
-    />
   );
 }

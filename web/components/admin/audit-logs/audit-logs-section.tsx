@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TablePagination } from "@/components/admin/admin-helpers";
+import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 import type { AuditLogEntry } from "@/lib/audit-logs-store";
 
 interface AuditLogsSectionProps {
@@ -100,6 +101,8 @@ export function AuditLogsSection({ onNotice, onError }: AuditLogsSectionProps) {
     URL.revokeObjectURL(url);
     onNotice("Audit logs exported to CSV successfully");
   };
+
+  if (loading) return <AdminWorkspaceContentSkeleton section="audit-logs" />;
 
   return (
     <div className="space-y-6">

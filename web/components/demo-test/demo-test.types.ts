@@ -1,5 +1,46 @@
 export type SubjectMode = "ALL" | "PHYSICS" | "CHEMISTRY" | "BIOLOGY";
 export type LanguageMode = "en" | "ta";
+export type PoolMode = "MANUAL" | "AUTOMATIC" | "HYBRID";
+export type PublishStatus = "DRAFT" | "PUBLISHED" | "UNPUBLISHED";
+export type WeightingMode = "WEIGHTED" | "EQUAL";
+
+export interface DemoBlueprint {
+  id: string;
+  label: string;
+  count: number;
+  durationMinutes: number;
+  maxMarks: number;
+  subjectDistribution: {
+    PHYSICS: number;
+    CHEMISTRY: number;
+    BIOLOGY: number;
+  };
+}
+
+export interface DemoSelectionRules {
+  autoRandomSelection: boolean;
+  visitorRepeatPrevention: boolean;
+  equivalentRepeatPrevention: boolean;
+  globalExposureBalancing: boolean;
+  recentPaperUniqueness: boolean;
+  recentPaperWindow: number;
+  maxPaperOverlapRatio: number;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  cooldownHours: number;
+  strictNoRepeat: boolean;
+  smartReuseAfterExhaustion: boolean;
+  minUniquePoolSize: number;
+  chapterDiversity: boolean;
+  questionTypeDiversity: boolean;
+  minImageQuestions: number;
+  difficultyDistribution: {
+    EASY: number;
+    MEDIUM: number;
+    HARD: number;
+  };
+  weightingMode: WeightingMode;
+}
 
 export interface DemoTestConfiguration {
   isEnabled: boolean;
@@ -13,6 +54,17 @@ export interface DemoTestConfiguration {
   defaultLanguage: LanguageMode;
   defaultQuestionCount: number;
   countOptions: { count: number; durationMinutes: number; label: string }[];
+  blueprints?: DemoBlueprint[];
+  poolMode?: PoolMode;
+  selectionRules?: DemoSelectionRules;
+  guestAccessEnabled?: boolean;
+  showResultsImmediately?: boolean;
+  showSolutionsAfterSubmit?: boolean;
+  admissionCtaEnabled?: boolean;
+  publishStatus?: PublishStatus;
+  publishedVersionId?: string | null;
+  publishedAt?: string | null;
+  hasDraftChanges?: boolean;
   selectedQuestionIds?: string[];
 }
 
@@ -29,6 +81,7 @@ export interface DemoOption {
 export interface DemoQuestion {
   id: string;
   externalId: string;
+  type?: string;
   subject: string;
   subjectCode: string;
   chapterTitle?: string | null;
@@ -38,22 +91,35 @@ export interface DemoQuestion {
   questionImageUrl?: string | null;
   solutionEn?: string | null;
   solutionTa?: string | null;
+  solutionImageUrl?: string | null;
   correctMarks: number;
   negativeMarks: number;
   options: DemoOption[];
+  savedState?: {
+    selectedOptionId?: string | null;
+    numericalAnswer?: string | null;
+    isMarkedForReview?: boolean;
+    isVisited?: boolean;
+    timeSpentSeconds?: number;
+  };
 }
 
 export interface DemoTestPackage {
+  attemptId?: string;
   testId: string;
+  status?: string;
   title: string;
   code: string;
   instructionsEn: string;
   instructionsTa: string;
   durationMinutes: number;
+  remainingSeconds?: number;
   totalMarks: number;
   questionCount: number;
+  controlledReuseUsed?: boolean;
   subjects: { name: string; code: string; count: number }[];
   questions: DemoQuestion[];
+  result?: ScorecardReport;
 }
 
 export type QuestionStatus =

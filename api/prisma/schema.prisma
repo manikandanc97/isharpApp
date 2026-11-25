@@ -307,6 +307,7 @@ model Question {
   negativeMarks         Int                @default(1) @map("negative_marks") @db.SmallInt
   source                String?            @db.VarChar(200)
   isActive              Boolean            @default(true) @map("is_active")
+  isRestrictedForDemo   Boolean            @default(false) @map("is_restricted_for_demo")
   createdById           String             @map("created_by_id") @db.Uuid
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -321,6 +322,9 @@ model Question {
   attemptAnswers      AttemptAnswer[]
   answerKeyAudits     AnswerKeyAudit[]
   demoTests           DemoTestQuestion[]
+  demoAttemptQuestions DemoAttemptQuestion[]
+  demoVisitorExposures DemoVisitorQuestionExposure[]
+  demoGlobalStat      DemoQuestionGlobalStat?
 
   @@index([courseSubjectId, chapterId], map: "questions_course_subject_chapter_idx")
   @@index([type, difficulty, isActive], map: "questions_type_difficulty_active_idx")
@@ -396,30 +400,46 @@ model MockTestQuestion {
 }
 
 model DemoTestConfiguration {
-  id                   String   @id @default("login-demo") @db.VarChar(32)
-  isEnabled            Boolean  @default(true) @map("is_enabled")
-  title                String   @default("NEET Bilingual Diagnostic Demo Test") @db.VarChar(200)
-  code                 String   @default("NEET-DEMO-2026") @db.VarChar(64)
-  instructionsEn       String?  @map("instructions_en") @db.Text
-  instructionsTa       String?  @map("instructions_ta") @db.Text
-  allowedSubjects      String[] @default(["ALL", "PHYSICS", "CHEMISTRY", "BIOLOGY"]) @map("allowed_subjects")
-  allowedLanguages     String[] @default(["en", "ta"]) @map("allowed_languages")
-  defaultSubject       String   @default("ALL") @map("default_subject") @db.VarChar(32)
-  defaultLanguage      String   @default("ta") @map("default_language") @db.VarChar(8)
-  defaultQuestionCount Int      @default(9) @map("default_question_count") @db.SmallInt
-  countOptions         Json     @map("count_options")
-  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                       String    @id @default("login-demo") @db.VarChar(32)
+  isEnabled                Boolean   @default(true) @map("is_enabled")
+  title                    String    @default("NEET Bilingual Diagnostic Demo Test") @db.VarChar(200)
+  code                     String    @default("NEET-DEMO-2026") @db.VarChar(64)
+  instructionsEn           String?   @map("instructions_en") @db.Text
+  instructionsTa           String?   @map("instructions_ta") @db.Text
+  allowedSubjects          String[]  @default(["ALL", "PHYSICS", "CHEMISTRY", "BIOLOGY"]) @map("allowed_subjects")
+  allowedLanguages         String[]  @default(["en", "ta"]) @map("allowed_languages")
+  defaultSubject           String    @default("ALL") @map("default_subject") @db.VarChar(32)
+  defaultLanguage          String    @default("ta") @map("default_language") @db.VarChar(8)
+  defaultQuestionCount     Int       @default(9) @map("default_question_count") @db.SmallInt
+  countOptions             Json      @map("count_options")
+  poolMode                 String    @default("HYBRID") @map("pool_mode") @db.VarChar(16)
+  selectionRules           Json      @default("{}") @map("selection_rules")
+  blueprints               Json      @default("[]") @map("blueprints")
+  guestAccessEnabled       Boolean   @default(true) @map("guest_access_enabled")
+  showResultsImmediately   Boolean   @default(true) @map("show_results_immediately")
+  showSolutionsAfterSubmit Boolean   @default(true) @map("show_solutions_after_submit")
+  admissionCtaEnabled      Boolean   @default(true) @map("admission_cta_enabled")
+  publishStatus            String    @default("PUBLISHED") @map("publish_status") @db.VarChar(24)
+  publishedVersionId       String?   @map("published_version_id") @db.Uuid
+  publishedAt              DateTime? @map("published_at") @db.Timestamptz(3)
+  draftSnapshot            Json?     @map("draft_snapshot")
+  updatedAt                DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   questions DemoTestQuestion[]
+  versions  DemoConfigurationVersion[]
 
   @@map("demo_test_configurations")
 }
 
 model DemoTestQuestion {
-  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  configId   String @map("config_id") @db.VarChar(32)
-  questionId String @map("question_id") @db.Uuid
-  position   Int    @db.SmallInt
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  configId   String   @map("config_id") @db.VarChar(32)
+  questionId String   @map("question_id") @db.Uuid
+  position   Int      @db.SmallInt
+  isApproved Boolean  @default(true) @map("is_approved")
+  addedById  String?  @map("added_by_id") @db.Uuid
+  addedAt    DateTime @default(now()) @map("added_at") @db.Timestamptz(3)
+  notes      String?  @db.VarChar(255)
 
   config   DemoTestConfiguration @relation(fields: [configId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   question Question              @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -427,7 +447,168 @@ model DemoTestQuestion {
   @@unique([configId, questionId], map: "demo_test_questions_config_question_key")
   @@unique([configId, position], map: "demo_test_questions_config_position_key")
   @@index([questionId], map: "demo_test_questions_question_id_idx")
+  @@index([configId, isApproved], map: "demo_test_questions_config_approved_idx")
   @@map("demo_test_questions")
+}
+
+model DemoConfigurationVersion {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  configId      String   @default("login-demo") @map("config_id") @db.VarChar(32)
+  versionNumber Int      @map("version_number")
+  status        String   @default("PUBLISHED") @db.VarChar(24)
+  snapshot      Json
+  changeSummary String?  @map("change_summary") @db.VarChar(500)
+  createdById   String?  @map("created_by_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  config   DemoTestConfiguration @relation(fields: [configId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  attempts DemoAttempt[]
+
+  @@unique([configId, versionNumber], map: "demo_config_versions_config_version_key")
+  @@index([configId, createdAt], map: "demo_config_versions_config_created_idx")
+  @@map("demo_configuration_versions")
+}
+
+model DemoVisitor {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  guestTokenHash String   @unique(map: "demo_visitors_guest_token_hash_key") @map("guest_token_hash") @db.VarChar(64)
+  userProfileId  String?  @unique(map: "demo_visitors_user_profile_id_key") @map("user_profile_id") @db.Uuid
+  firstSeenAt    DateTime @default(now()) @map("first_seen_at") @db.Timestamptz(3)
+  lastSeenAt     DateTime @updatedAt @map("last_seen_at") @db.Timestamptz(3)
+  totalAttempts  Int      @default(0) @map("total_attempts")
+
+  attempts  DemoAttempt[]
+  exposures DemoVisitorQuestionExposure[]
+
+  @@index([lastSeenAt], map: "demo_visitors_last_seen_idx")
+  @@map("demo_visitors")
+}
+
+model DemoAttempt {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  visitorId           String    @map("visitor_id") @db.Uuid
+  userProfileId       String?   @map("user_profile_id") @db.Uuid
+  configVersionId     String?   @map("config_version_id") @db.Uuid
+  isPreview           Boolean   @default(false) @map("is_preview")
+  status              String    @default("IN_PROGRESS") @db.VarChar(24)
+  subjectMode         String    @map("subject_mode") @db.VarChar(32)
+  languageMode        String    @map("language_mode") @db.VarChar(8)
+  questionCount       Int       @map("question_count") @db.SmallInt
+  durationMinutes     Int       @map("duration_minutes") @db.SmallInt
+  maxMarks            Int       @map("max_marks") @db.SmallInt
+  title               String    @db.VarChar(200)
+  code                String    @db.VarChar(64)
+  instructionsEn      String?   @map("instructions_en") @db.Text
+  instructionsTa      String?   @map("instructions_ta") @db.Text
+  paperFingerprint    String    @map("paper_fingerprint") @db.VarChar(64)
+  controlledReuseUsed Boolean   @default(false) @map("controlled_reuse_used")
+  poolExhausted       Boolean   @default(false) @map("pool_exhausted")
+  startedAt           DateTime  @default(now()) @map("started_at") @db.Timestamptz(3)
+  expiresAt           DateTime  @map("expires_at") @db.Timestamptz(3)
+  submittedAt         DateTime? @map("submitted_at") @db.Timestamptz(3)
+  timeSpentSeconds    Int       @default(0) @map("time_spent_seconds")
+  totalScore          Float?    @map("total_score")
+  correctCount        Int?      @map("correct_count") @db.SmallInt
+  incorrectCount      Int?      @map("incorrect_count") @db.SmallInt
+  unansweredCount     Int?      @map("unanswered_count") @db.SmallInt
+  accuracyPercentage  Float?    @map("accuracy_percentage")
+  resultSnapshot      Json?     @map("result_snapshot")
+  idempotencyKey      String?   @unique(map: "demo_attempts_idempotency_key_key") @map("idempotency_key") @db.VarChar(64)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  visitor       DemoVisitor               @relation(fields: [visitorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  configVersion DemoConfigurationVersion? @relation(fields: [configVersionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  questions     DemoAttemptQuestion[]
+
+  @@index([visitorId, isPreview, createdAt], map: "demo_attempts_visitor_preview_created_idx")
+  @@index([status, expiresAt], map: "demo_attempts_status_expires_idx")
+  @@index([paperFingerprint, createdAt], map: "demo_attempts_paper_fp_created_idx")
+  @@index([isPreview, createdAt], map: "demo_attempts_preview_created_idx")
+  @@map("demo_attempts")
+}
+
+model DemoAttemptQuestion {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attemptId         String   @map("attempt_id") @db.Uuid
+  questionId        String   @map("question_id") @db.Uuid
+  position          Int      @db.SmallInt
+  optionOrderJson   Json     @map("option_order_json")
+  selectedOptionId  String?  @map("selected_option_id") @db.Uuid
+  numericalAnswer   String?  @map("numerical_answer") @db.VarChar(100)
+  isMarkedForReview Boolean  @default(false) @map("is_marked_for_review")
+  isVisited         Boolean  @default(false) @map("is_visited")
+  timeSpentSeconds  Int      @default(0) @map("time_spent_seconds")
+  correctMarks      Int      @default(4) @map("correct_marks") @db.SmallInt
+  negativeMarks     Int      @default(1) @map("negative_marks") @db.SmallInt
+  isCorrect         Boolean? @map("is_correct")
+  marksAwarded      Float    @default(0) @map("marks_awarded")
+
+  attempt  DemoAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([attemptId, position], map: "demo_attempt_questions_attempt_pos_key")
+  @@unique([attemptId, questionId], map: "demo_attempt_questions_attempt_q_key")
+  @@index([questionId], map: "demo_attempt_questions_question_idx")
+  @@map("demo_attempt_questions")
+}
+
+model DemoVisitorQuestionExposure {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  visitorId             String   @map("visitor_id") @db.Uuid
+  questionId            String   @map("question_id") @db.Uuid
+  contentFingerprint    String?  @map("content_fingerprint") @db.VarChar(64)
+  equivalentFingerprint String?  @map("equivalent_fingerprint") @db.VarChar(64)
+  exposureCount         Int      @default(1) @map("exposure_count")
+  firstExposedAt        DateTime @default(now()) @map("first_exposed_at") @db.Timestamptz(3)
+  lastExposedAt         DateTime @default(now()) @map("last_exposed_at") @db.Timestamptz(3)
+
+  visitor  DemoVisitor @relation(fields: [visitorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([visitorId, questionId], map: "demo_visitor_exposures_visitor_q_key")
+  @@index([visitorId, lastExposedAt], map: "demo_visitor_exposures_visitor_last_idx")
+  @@index([visitorId, contentFingerprint], map: "demo_visitor_exposures_visitor_cfp_idx")
+  @@index([visitorId, equivalentFingerprint], map: "demo_visitor_exposures_visitor_efp_idx")
+  @@map("demo_visitor_question_exposures")
+}
+
+model DemoQuestionGlobalStat {
+  questionId    String    @id @map("question_id") @db.Uuid
+  exposureCount Int       @default(0) @map("exposure_count")
+  lastExposedAt DateTime? @map("last_exposed_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([exposureCount, lastExposedAt], map: "demo_global_stats_count_last_idx")
+  @@map("demo_question_global_stats")
+}
+
+model DemoAdminAuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  action      String   @db.VarChar(64)
+  details     Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt], map: "demo_admin_audit_logs_created_idx")
+  @@map("demo_admin_audit_logs")
+}
+
+model DemoAnalyticsEvent {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  visitorId    String?  @map("visitor_id") @db.Uuid
+  attemptId    String?  @map("attempt_id") @db.Uuid
+  eventType    String   @map("event_type") @db.VarChar(64)
+  subjectMode  String?  @map("subject_mode") @db.VarChar(32)
+  languageMode String?  @map("language_mode") @db.VarChar(8)
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([eventType, createdAt], map: "demo_analytics_events_type_created_idx")
+  @@index([createdAt], map: "demo_analytics_events_created_idx")
+  @@map("demo_analytics_events")
 }
 
 // ==========================================

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Headphones,
@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ApiClientError } from "@/lib/api-client";
 import { getLoginErrorMessage } from "@/lib/auth-error";
-import { getAuthenticatedSession } from "@/lib/auth-session";
+import { completeLoginSession } from "@/lib/auth-session";
+import { hasRequiredRole } from "@/lib/role-policy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/validation";
 import { cn } from "@/lib/utils";
@@ -27,23 +28,29 @@ import {
 const inputBaseStyle =
   "h-10.5 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs sm:text-sm font-normal text-slate-900 shadow-2xs transition-colors outline-hidden placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-blue focus:ring-3 focus:ring-brand-blue/15 aria-invalid:border-rose-500 aria-invalid:ring-3 aria-invalid:ring-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60";
 
-export function AdminLoginForm() {
+export function AdminLoginForm({
+  initialSessionNotice = "",
+  initialAuthError = "",
+}: {
+  initialSessionNotice?: string;
+  initialAuthError?: string;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const reason = searchParams.get("reason");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(
-    reason === "session_expired"
-      ? "Your administrative session has expired. Please sign in again with your credentials."
-      : "",
-  );
+  const [authError, setAuthError] = useState(initialAuthError);
+  const [sessionExpiredNotice, setSessionExpiredNotice] =
+    useState(initialSessionNotice);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const [authenticatedUser, setAuthenticatedUser] =
     useState<AuthenticatedAdminUser | null>(null);
+
+  useEffect(() => {
+    if (!initialSessionNotice && !initialAuthError) return;
+    fetch("/api/auth/session-notice", { method: "DELETE" }).catch(() => {});
+  }, [initialSessionNotice, initialAuthError]);
 
   function validate() {
     const errs: { email?: string; password?: string } = {};
@@ -102,19 +109,18 @@ export function AdminLoginForm() {
         return;
       }
 
+      let targetDestination = "/admin";
       try {
-        const activeSession = await getAuthenticatedSession(
-          data.session.access_token,
-        );
-        const hasAdminAccess = activeSession.roles.some(
-          (role) => role === "ADMIN" || role === "SUPERADMIN",
-        );
+        const { session: activeSession, destination } =
+          await completeLoginSession(data.session.access_token);
+        const hasAdminAccess = hasRequiredRole(activeSession.roles, "ADMIN");
 
         if (!hasAdminAccess) {
           await supabase.auth.signOut();
           setAuthError("This account does not have administrator access.");
           return;
         }
+        targetDestination = destination;
       } catch (sessionError) {
         await supabase.auth.signOut();
         if (sessionError instanceof ApiClientError) {
@@ -143,7 +149,7 @@ export function AdminLoginForm() {
         return;
       }
 
-      router.replace("/admin");
+      router.replace(targetDestination);
       router.refresh();
     } catch {
       setAuthError(
@@ -208,6 +214,7 @@ export function AdminLoginForm() {
               placeholder="admin@isharpacademy.in"
               value={email}
               disabled={isSubmitting}
+              aria-invalid={Boolean(errors.email)}
               className={cn(inputBaseStyle, "pl-9")}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -215,12 +222,8 @@ export function AdminLoginForm() {
                 setAuthError("");
               }}
               onBlur={() => {
-                if (!email.trim()) {
-                  setErrors((prev) => ({
-                    ...prev,
-                    email: "Email is required.",
-                  }));
-                } else if (!isValidEmail(email)) {
+                const trimmed = email.trim();
+                if (trimmed && !isValidEmail(trimmed)) {
                   setErrors((prev) => ({
                     ...prev,
                     email: "Enter a valid email address.",

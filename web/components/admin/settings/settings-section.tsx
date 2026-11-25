@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 
 interface SettingsSectionProps {
   onNotice: (msg: string) => void;
@@ -77,6 +78,8 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
       setSaving(false);
     }
   };
+
+  if (loading) return <AdminWorkspaceContentSkeleton section="settings" />;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

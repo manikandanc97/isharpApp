@@ -13,7 +13,23 @@ import {
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { PageContainer } from "@/components/layout/layout-primitives";
+import { getAuthNoticeMessage } from "@/lib/auth-redirect";
+import { readAuthRedirectCookiesFromStore } from "@/lib/auth-redirect-cookies";
 import { AdminLoginForm } from "./admin-login-form";
+
+async function ServerNoticeAdminLoginForm() {
+  const { notice } = await readAuthRedirectCookiesFromStore();
+  const { sessionExpiredNotice, authError } = getAuthNoticeMessage(
+    notice,
+    "admin",
+  );
+  return (
+    <AdminLoginForm
+      initialSessionNotice={sessionExpiredNotice}
+      initialAuthError={authError}
+    />
+  );
+}
 
 export const metadata: Metadata = {
   title: "Administration Portal | I-Sharp Academy",
@@ -159,7 +175,7 @@ export default function AdministrationPage() {
             className="flex justify-center lg:col-span-6 xl:col-span-5"
           >
             <Suspense fallback={<div className="h-72 w-full max-w-md animate-pulse rounded-2xl bg-white" />}>
-              <AdminLoginForm />
+              <ServerNoticeAdminLoginForm />
             </Suspense>
           </section>
         </PageContainer>

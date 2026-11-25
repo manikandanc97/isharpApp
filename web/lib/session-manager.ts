@@ -1,9 +1,11 @@
 /**
  * Enterprise Session & Expiration Manager
  *
- * Handles automatic logout, cross-tab synchronization, and seamless redirect to login screen
- * when a user session expires or becomes unauthorized.
+ * Handles automatic logout, cross-tab synchronization, and seamless redirect to
+ * clean canonical login screens when a user session expires or becomes unauthorized.
  */
+
+import { getLoginPathForRoute, sanitizeReturnUrl } from './auth-redirect';
 
 let isRedirecting = false;
 
@@ -16,8 +18,8 @@ export type SessionExpiredOptions = {
 const BROADCAST_CHANNEL_NAME = 'isharp_auth_broadcast';
 
 /**
- * Proactively triggers automatic session logout and redirects to the appropriate login screen.
- * Uses atomic guard to prevent cascade redirects from simultaneous failing requests.
+ * Proactively triggers automatic session logout and redirects to the canonical login screen
+ * without exposing session reason or returnUrl in browser-visible URLs.
  */
 export async function handleSessionExpired(options: SessionExpiredOptions = {}) {
   if (typeof window === 'undefined') return;
@@ -26,20 +28,17 @@ export async function handleSessionExpired(options: SessionExpiredOptions = {}) 
   isRedirecting = true;
 
   const currentPath = window.location.pathname;
+  const currentFullPath = `${currentPath}${window.location.search ?? ''}`;
 
-  // Determine target login route
-  const isAdminArea = currentPath === '/admin' || currentPath.startsWith('/admin') || currentPath.startsWith('/administration');
-  const defaultDestination = isAdminArea ? '/administration' : '/login';
-  const targetPath = options.destination ?? defaultDestination;
-
-  // Construct target URL with clean query parameters
+  const targetPath = options.destination ?? getLoginPathForRoute(currentPath);
   const targetUrl = new URL(targetPath, window.location.origin);
-  targetUrl.searchParams.set('reason', options.reason ?? 'session_expired');
 
-  const returnUrl = options.returnUrl ?? (currentPath !== '/login' && currentPath !== '/administration' ? currentPath : undefined);
-  if (returnUrl && returnUrl !== '/') {
-    targetUrl.searchParams.set('returnUrl', returnUrl);
-  }
+  const reason = options.reason ?? 'session_expired';
+  const rawReturnUrl =
+    reason === 'logged_out'
+      ? null
+      : (options.returnUrl ?? sanitizeReturnUrl(currentFullPath));
+  const safeReturnUrl = sanitizeReturnUrl(rawReturnUrl);
 
   // Cross-tab synchronization via BroadcastChannel
   try {
@@ -48,7 +47,7 @@ export async function handleSessionExpired(options: SessionExpiredOptions = {}) 
       channel.postMessage({
         type: 'SESSION_EXPIRED',
         destination: targetPath,
-        reason: options.reason ?? 'session_expired',
+        reason,
         timestamp: Date.now(),
       });
       channel.close();
@@ -74,20 +73,26 @@ export async function handleSessionExpired(options: SessionExpiredOptions = {}) 
     // Non-critical
   }
 
-  // Invalidate server session cookies
+  // Invalidate server session cookies & persist short-lived HttpOnly redirect state
   try {
-    await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' }).catch(() => {});
+    if (typeof fetch === 'function') {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason,
+          returnUrl: safeReturnUrl ?? undefined,
+        }),
+        cache: 'no-store',
+      }).catch(() => {});
+    }
   } catch {
     // Non-critical
   }
 
-  // If already on target login page, update search params if needed without reloading
+  // If already on target login page, avoid redundant reload
   if (currentPath === targetPath) {
-    if (!window.location.search.includes('reason=session_expired')) {
-      window.location.replace(targetUrl.toString());
-    } else {
-      isRedirecting = false;
-    }
+    isRedirecting = false;
     return;
   }
 
@@ -98,7 +103,9 @@ export async function handleSessionExpired(options: SessionExpiredOptions = {}) 
 /**
  * Listens for cross-tab session termination events.
  */
-export function listenCrossTabSession(onExpired: (data: { destination?: string; reason?: string }) => void): () => void {
+export function listenCrossTabSession(
+  onExpired: (data: { destination?: string; reason?: string }) => void,
+): () => void {
   if (typeof window === 'undefined' || !('BroadcastChannel' in window)) {
     return () => {};
   }

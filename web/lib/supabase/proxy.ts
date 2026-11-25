@@ -1,35 +1,94 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { isSupabaseConfigured } from '@/lib/supabase/config';
-import { authCookieOptions } from '@/lib/supabase/session-config';
+import {
+  getLoginPathForRoute,
+  isProtectedRoute,
+} from '../auth-redirect';
+import { setAuthRedirectCookies } from '../auth-redirect-cookies';
+import { isSupabaseConfigured } from './config';
+import {
+  authCookieOptions,
+  isSecureCookieContext,
+} from './session-config';
 
-function isProtectedRoute(pathname: string): boolean {
-  return (
-    pathname === '/admin' ||
-    pathname.startsWith('/admin/') ||
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/exam') ||
-    pathname === '/role-dashboard'
+function applyProtectedNoStoreHeaders(response: NextResponse): NextResponse {
+  response.headers.set(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, private',
   );
+  response.headers.set('Pragma', 'no-cache');
+  return response;
 }
 
-function getLoginRedirect(pathname: string, request: NextRequest, authCookies: ReturnType<NextRequest['cookies']['getAll']>) {
-  const isAdminArea = pathname === '/admin' || pathname.startsWith('/admin/');
-  const loginPath = isAdminArea ? '/administration' : '/login';
-
+function getLoginRedirect(
+  pathname: string,
+  request: NextRequest,
+  authCookies: ReturnType<NextRequest['cookies']['getAll']>,
+) {
+  const loginPath = getLoginPathForRoute(pathname);
   const redirectUrl = request.nextUrl.clone();
   redirectUrl.pathname = loginPath;
   redirectUrl.search = '';
-  redirectUrl.searchParams.set('reason', 'session_expired');
-  redirectUrl.searchParams.set('returnUrl', pathname);
 
   const redirectResponse = NextResponse.redirect(redirectUrl);
-  // Clear stale cookies on redirect
+  const requestedTarget = `${pathname}${request.nextUrl.search}`;
+
+  setAuthRedirectCookies(redirectResponse, {
+    returnUrl: requestedTarget,
+    notice: 'session_expired',
+    secure: isSecureCookieContext(request),
+  });
+
+  // Clear stale Supabase auth cookies on redirect
   authCookies.forEach((c) => {
     redirectResponse.cookies.delete(c.name);
   });
-  return redirectResponse;
+
+  return applyProtectedNoStoreHeaders(redirectResponse);
+}
+
+const AUTH_TOKEN_COOKIE_PATTERN = /^sb-.*-auth-token(?:\.(\d+))?$/;
+
+export function getAuthTokenCookies(
+  cookies: ReturnType<NextRequest['cookies']['getAll']>,
+) {
+  return cookies
+    .filter((c) => AUTH_TOKEN_COOKIE_PATTERN.test(c.name))
+    .sort((a, b) => {
+      const aMatch = a.name.match(AUTH_TOKEN_COOKIE_PATTERN);
+      const bMatch = b.name.match(AUTH_TOKEN_COOKIE_PATTERN);
+      const aIndex = aMatch?.[1] ? Number(aMatch[1]) : -1;
+      const bIndex = bMatch?.[1] ? Number(bMatch[1]) : -1;
+      return aIndex - bIndex;
+    });
+}
+
+export function isTransientSupabaseError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { name?: unknown; status?: unknown; message?: unknown };
+  if (err.name === 'AuthRetryableFetchError') return true;
+  if (typeof err.status === 'number') {
+    if (
+      err.status === 0 ||
+      err.status === 408 ||
+      err.status === 429 ||
+      err.status >= 500
+    ) {
+      return true;
+    }
+  }
+  if (typeof err.message === 'string') {
+    const msg = err.message.toLowerCase();
+    if (
+      msg.includes('fetch failed') ||
+      msg.includes('network') ||
+      msg.includes('timeout')
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -37,18 +96,14 @@ function getLoginRedirect(pathname: string, request: NextRequest, authCookies: R
  * If no session exists, or if the current token is fresh (> 2 minutes remaining),
  * we bypass the blocking remote network call.
  */
-function shouldRefreshSession(request: NextRequest): boolean {
-  const allCookies = request.cookies.getAll();
-  const authCookies = allCookies.filter(
-    (c) => c.name.startsWith('sb-') && c.name.includes('-auth-token'),
-  );
+export function shouldRefreshSession(request: NextRequest): boolean {
+  const authCookies = getAuthTokenCookies(request.cookies.getAll());
 
   if (authCookies.length === 0) {
     return false;
   }
 
   try {
-    authCookies.sort((a, b) => a.name.localeCompare(b.name));
     let raw = authCookies.map((c) => c.value).join('');
     if (raw.startsWith('base64-')) {
       raw = Buffer.from(raw.slice(7), 'base64').toString('utf-8');
@@ -68,15 +123,16 @@ function shouldRefreshSession(request: NextRequest): boolean {
 
 export async function updateSupabaseSession(request: NextRequest) {
   let response = NextResponse.next({ request });
-  if (!isSupabaseConfigured()) return response;
-
   const pathname = request.nextUrl.pathname;
   const isProtected = isProtectedRoute(pathname);
 
-  const allCookies = request.cookies.getAll();
-  const authCookies = allCookies.filter(
-    (c) => c.name.startsWith('sb-') && c.name.includes('-auth-token'),
-  );
+  if (isProtected) {
+    applyProtectedNoStoreHeaders(response);
+  }
+
+  if (!isSupabaseConfigured()) return response;
+
+  const authCookies = getAuthTokenCookies(request.cookies.getAll());
 
   // If visiting a protected page without any auth session cookies, redirect to login immediately
   if (isProtected && authCookies.length === 0) {
@@ -102,6 +158,9 @@ export async function updateSupabaseSession(request: NextRequest) {
             request.cookies.set(name, value),
           );
           response = NextResponse.next({ request });
+          if (isProtected) {
+            applyProtectedNoStoreHeaders(response);
+          }
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
@@ -111,7 +170,16 @@ export async function updateSupabaseSession(request: NextRequest) {
   );
 
   try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    // Allow Supabase SSR to refresh an expiring access token before verifying user
+    await supabase.auth.getSession();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error && isTransientSupabaseError(error)) {
+      return response;
+    }
 
     // If accessing a protected route and the user token is expired or invalid
     if (isProtected && (error || !user)) {

@@ -1,18 +1,29 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { resolvePostAuthDestination } from '@/lib/auth-redirect';
+import {
+  clearAuthRedirectCookies,
+  readAuthRedirectCookiesFromRequest,
+  setAuthRedirectCookies,
+} from '@/lib/auth-redirect-cookies';
 import type { AuthenticatedSession } from '@/lib/auth-session';
 import { getNestApiClient } from '@/lib/nest-api';
 import {
   getOAuthCallbackState,
-  getPostAuthDestination,
   OAUTH_POPUP_RESULT_KEY,
+  type OAuthCallbackState,
 } from '@/lib/oauth-flow';
 import { createClient } from '@/lib/supabase/server';
+import { isSecureCookieContext } from '@/lib/supabase/session-config';
 
-function loginErrorRedirect(request: NextRequest, state: string) {
+function loginErrorRedirect(request: NextRequest, state: OAuthCallbackState) {
   const url = new URL('/login', request.url);
-  url.searchParams.set('oauth', state);
-  return NextResponse.redirect(url);
+  const response = NextResponse.redirect(url);
+  setAuthRedirectCookies(response, {
+    notice: `oauth_${state}`,
+    secure: isSecureCookieContext(request),
+  });
+  return response;
 }
 
 function popupResultResponse(
@@ -44,10 +55,11 @@ function popupResultResponse(
   </body>
 </html>`;
 
-  return new Response(html, {
+  return new NextResponse(html, {
     headers: {
       'Cache-Control': 'no-store',
-      'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'",
+      'Content-Security-Policy':
+        "default-src 'none'; script-src 'unsafe-inline'",
       'Content-Type': 'text/html; charset=utf-8',
     },
   });
@@ -80,13 +92,20 @@ export async function GET(request: NextRequest) {
       '/api/auth/me',
       { accessToken: data.session.access_token, cache: 'no-store' },
     );
-    const destination = getPostAuthDestination(session);
-    return isPopup
+
+    const { returnUrl } = readAuthRedirectCookiesFromRequest(request);
+    const destination = resolvePostAuthDestination(session, returnUrl);
+    const secure = isSecureCookieContext(request);
+
+    const response = isPopup
       ? popupResultResponse(request, {
           type: 'isharp:oauth-complete',
           destination,
         })
       : NextResponse.redirect(new URL(destination, request.url));
+
+    clearAuthRedirectCookies(response, secure);
+    return response;
   } catch {
     return isPopup
       ? popupResultResponse(request, {

@@ -12,11 +12,19 @@ export async function getRequestAccessToken(request: NextRequest) {
 
   try {
     const supabase = await createClient();
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData.user) return null;
-
     const { data, error } = await supabase.auth.getSession();
     if (error || !data.session?.access_token) return null;
+
+    const expiresAt = data.session.expires_at;
+    const now = Math.floor(Date.now() / 1000);
+    if (typeof expiresAt === 'number' && expiresAt <= now) {
+      const { data: refreshed, error: refreshError } =
+        await supabase.auth.refreshSession();
+      if (refreshError || !refreshed.session?.access_token) return null;
+      return selectAccessToken({
+        supabaseToken: refreshed.session.access_token,
+      });
+    }
 
     return selectAccessToken({ supabaseToken: data.session.access_token });
   } catch {

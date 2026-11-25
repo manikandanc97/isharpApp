@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TablePagination } from "@/components/admin/admin-helpers";
+import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 import type { RoleDefinition } from "@/app/api/admin/roles/route";
 
 interface RolesSectionProps {
@@ -69,6 +70,8 @@ export function RolesSection({ onNotice, onError }: RolesSectionProps) {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  if (loading) return <AdminWorkspaceContentSkeleton section="roles" />;
 
   return (
     <div className="space-y-6">

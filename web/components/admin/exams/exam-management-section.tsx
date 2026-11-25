@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TablePagination } from "@/components/admin/admin-helpers";
+import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 import {
   Dialog,
   DialogContent,
@@ -188,6 +189,8 @@ export function ExamManagementSection({
     const start = (currentAttemptPage - 1) * attemptPageSize;
     return attempts.slice(start, start + attemptPageSize);
   }, [attempts, currentAttemptPage, attemptPageSize]);
+
+  if (loading) return <AdminWorkspaceContentSkeleton section="exams" />;
 
   return (
     <div className="space-y-6">

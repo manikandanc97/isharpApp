@@ -16,7 +16,23 @@ import {
   PageContainer,
   Stack,
 } from "@/components/layout/layout-primitives";
-import { LoginForm, OAuthAwareLoginForm } from "./login-form";
+import { getAuthNoticeMessage } from "@/lib/auth-redirect";
+import { readAuthRedirectCookiesFromStore } from "@/lib/auth-redirect-cookies";
+import { LoginForm } from "./login-form";
+
+async function ServerNoticeLoginForm() {
+  const { notice } = await readAuthRedirectCookiesFromStore();
+  const { authError, sessionExpiredNotice } = getAuthNoticeMessage(
+    notice,
+    "student",
+  );
+  return (
+    <LoginForm
+      initialAuthError={authError}
+      initialExpiredNotice={sessionExpiredNotice}
+    />
+  );
+}
 
 export const metadata: Metadata = {
   title: "Student LMS Login | I-Sharp Academy",
@@ -181,7 +197,7 @@ export default function LoginPage() {
           {/* Right Column: Refined LoginForm */}
           <div className="flex w-full min-w-0 flex-col items-center lg:col-span-6 lg:items-end xl:col-span-5">
             <Suspense fallback={<LoginForm />}>
-              <OAuthAwareLoginForm />
+              <ServerNoticeLoginForm />
             </Suspense>
           </div>
         </PageContainer>

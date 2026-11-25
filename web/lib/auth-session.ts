@@ -36,3 +36,14 @@ export function getAuthenticatedSession(accessToken: string) {
     cache: 'no-store',
   });
 }
+
+export function completeLoginSession(accessToken: string) {
+  return frontendApi.request<{
+    session: AuthenticatedSession;
+    destination: string;
+  }>('/api/auth/complete-login', {
+    method: 'POST',
+    accessToken,
+    cache: 'no-store',
+  });
+}

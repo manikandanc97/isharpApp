@@ -10,6 +10,7 @@ import { CategoryManagerDialog } from "./category-manager-dialog";
 import { TestSeriesDetailsView } from "./test-series-details-view";
 import { MockTestsTab } from "./mock-tests-tab";
 import { LoginDemoControlTab } from "./login-demo-control-tab";
+import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 import type {
   IndividualTest,
   TestSeries,
@@ -23,6 +24,7 @@ interface TestSeriesSectionProps {
 }
 
 export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps) {
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"series" | "mock-tests" | "login-demo">("series");
   const [categories, setCategories] = useState<TestSeriesCategory[]>([]);
   const [seriesList, setSeriesList] = useState<TestSeries[]>([]);
@@ -41,6 +43,7 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
 
   // Load from API
   const loadData = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await fetch("/api/admin/test-series", { cache: "no-store" });
       if (res.ok) {
@@ -56,6 +59,7 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
     } catch {
       // Keep initial seed data on error
     } finally {
+      setLoading(false);
     }
   }, [activeSeries]);
 
@@ -239,6 +243,8 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
     }
     await loadData();
   };
+
+  if (loading) return <AdminWorkspaceContentSkeleton section="test-series" />;
 
   return (
     <div className="space-y-6">

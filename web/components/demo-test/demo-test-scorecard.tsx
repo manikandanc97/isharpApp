@@ -18,21 +18,21 @@ interface DemoTestScorecardProps {
 export function getRankCategory(pct: number) {
   if (pct >= 85)
     return {
-      label: "Top 1% Percentile - Elite NEET Readiness",
+      label: "Strong Demo Performance — Keep Practicing Full-Length Papers",
       color: "text-emerald-700 bg-emerald-50 border-emerald-200",
     };
   if (pct >= 65)
     return {
-      label: "Strong Concept Grasp - On Track for Medical Seat",
+      label: "Good Concept Accuracy — Continue Daily Practice",
       color: "text-blue-700 bg-blue-50 border-blue-200",
     };
   if (pct >= 40)
     return {
-      label: "Moderate Foundation - Daily DPP Practice Recommended",
+      label: "Developing Foundation — Review Solutions Below",
       color: "text-amber-700 bg-amber-50 border-amber-200",
     };
   return {
-    label: "Foundation Building Needed - Join 2026 Batch",
+    label: "Early Stage Practice — Strengthen Core Concepts",
     color: "text-rose-700 bg-rose-50 border-rose-200",
   };
 }

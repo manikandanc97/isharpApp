@@ -124,7 +124,7 @@ export function DemoTestLobby({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                 <Layers className="size-3.5 text-brand-red" />
-                <span>1. Select Subject (பாடத் தேர்வு)</span>
+                <span>1. Select Subject</span>
               </label>
               <span className="text-2xs font-semibold text-slate-400">Separate or Mixed</span>
             </div>
@@ -183,7 +183,7 @@ export function DemoTestLobby({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                 <Languages className="size-3.5 text-brand-blue" />
-                <span>2. Language Preference (மொழித் தேர்வு)</span>
+                <span>2. Select Language</span>
               </label>
               <span className="text-2xs font-semibold text-slate-400">Strictly English vs Dual</span>
             </div>
@@ -248,7 +248,7 @@ export function DemoTestLobby({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                 <Clock className="size-3.5 text-emerald-600" />
-                <span>3. Paper Length &amp; Time (வினாக்கள் &amp; நேரம்)</span>
+                <span>3. Choose Test Duration</span>
               </label>
             </div>
 
@@ -304,10 +304,10 @@ export function DemoTestLobby({
                 <ShieldCheck className={isDialog ? "size-4.5 text-brand-red" : "size-5 text-brand-red"} />
                 <div>
                   <span className="text-xs font-extrabold uppercase tracking-wide text-slate-900">
-                    Exam Admit Blueprint
+                    Your Test Summary
                   </span>
                   {!isDialog && (
-                    <p className="text-2xs text-slate-400">Authentic NTA NEET Standards</p>
+                    <p className="text-2xs text-slate-400">Free NEET Demo Test</p>
                   )}
                 </div>
               </div>
@@ -397,7 +397,7 @@ export function DemoTestLobby({
             >
               <Play className="size-4 mr-2 fill-current" />
               <span>
-                {isDialog ? "Start Timed Demo Test Now" : "Start Full-Screen Demo Test Now"}
+                Start Free Demo Test
               </span>
             </Button>
             <Button

@@ -1,23 +1,31 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { LogoutConfirmationDialog } from '@/components/logout-confirmation-dialog';
+import { getLoginPathForRoute } from '@/lib/auth-redirect';
+import { handleSessionExpired } from '@/lib/session-manager';
 
-export function SignOutButton({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }) {
-  const router = useRouter();
+export function SignOutButton({
+  children,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
     setIsLoggingOut(true);
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
       setShowConfirm(false);
-      router.replace('/login');
-      router.refresh();
+      const destination =
+        typeof window !== 'undefined'
+          ? getLoginPathForRoute(window.location.pathname)
+          : '/login';
+      await handleSessionExpired({
+        destination,
+        reason: 'logged_out',
+      });
     } finally {
       setIsLoggingOut(false);
     }

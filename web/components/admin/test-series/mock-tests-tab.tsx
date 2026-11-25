@@ -10,6 +10,7 @@ import {
   Shuffle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MockTestsTabSkeleton } from "@/components/skeletons/admin/test-series-tab-skeletons";
 import type { Question } from "@/components/question-bank/types";
 import { buildBalancedAutoSelection, Field, request } from "@/components/question-bank/helpers";
 
@@ -144,6 +145,8 @@ export function MockTestsTab({ onNotice, onError }: MockTestsTabProps) {
       setCreating(false);
     }
   };
+
+  if (loading) return <MockTestsTabSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -349,11 +352,7 @@ export function MockTestsTab({ onNotice, onError }: MockTestsTabProps) {
             </span>
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-12">
-              <LoaderCircle className="size-6 animate-spin text-slate-400" />
-            </div>
-          ) : tests.length === 0 ? (
+          {tests.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
               <ClipboardCheck className="mx-auto size-8 text-slate-300" />
               <p className="mt-2 text-xs font-semibold text-slate-700">No mock tests created yet</p>

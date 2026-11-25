@@ -286,7 +286,7 @@ export default function RegisterPage() {
                             Sign in here
                           </Link>
                           , or use{" "}
-                          <Link href="/login?forgot=1" className="font-semibold underline hover:no-underline">
+                          <Link href="/login" className="font-semibold underline hover:no-underline">
                             Forgot password
                           </Link>
                           .
