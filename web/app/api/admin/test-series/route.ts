@@ -46,7 +46,6 @@ export async function POST(request: NextRequest) {
         academicYear: body.academicYear,
         coverImageUrl: body.coverImage || body.coverImageUrl,
         courseId: body.courseId,
-        status: body.status,
         isActive: body.isActive,
         startDate: body.startDate,
         endDate: body.endDate,

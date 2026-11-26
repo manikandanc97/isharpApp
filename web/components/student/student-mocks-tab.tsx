@@ -83,19 +83,11 @@ export function StudentMocksTab({ data }: StudentMocksTabProps) {
       <section className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-2xs sm:p-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-700">
-                OFFICIAL NEET TEST SERIES
-              </span>
-              <span className="text-xs text-slate-500">
-                Class 11, Class 12 & Repeater Cohorts
-              </span>
-            </div>
-            <h2 className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">
-              Assessment Series & Mock Papers
+            <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
+              Test Series &amp; Mock Tests
             </h2>
             <p className="mt-1 text-xs text-slate-600 max-w-xl">
-              Experience the pressure, pacing, and negative marking of real NTA examinations. All papers feature authentic bilingual questions.
+              Take available and upcoming NEET tests with bilingual English and Tamil support.
             </p>
           </div>
 

@@ -51,18 +51,11 @@ export function OverviewSection({
       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
         <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/70 bg-rose-50/50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700">
-              <Sparkles className="size-3 text-brand-red" />
-              <span>Admin Console</span>
-              <span className="h-2.5 w-px bg-rose-200" />
-              <span className="font-semibold text-brand-red">Live Operations</span>
-            </div>
             <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
-              Good to see you, Admin
+              Admin Dashboard
             </h2>
             <p className="max-w-xl text-xs leading-relaxed text-slate-500 sm:text-[13px]">
-              Here is what is happening across i-SHARP today. Review pending
-              student identity claims and supervise institutional courses.
+              Review pending student verifications and manage courses, tests, and results.
             </p>
           </div>
 
@@ -71,7 +64,7 @@ export function OverviewSection({
               onClick={() => onNavigate("students")}
               className="inline-flex items-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-hover px-4 py-2 text-xs font-semibold text-white shadow-primary transition active:scale-95 cursor-pointer"
             >
-              <span>Review Verification Queue</span>
+              <span>Review Students</span>
               <ArrowRight className="size-3.5" />
             </button>
           </div>
@@ -104,21 +97,15 @@ export function OverviewSection({
           </div>
         </div>
 
-        {/* Card 2: Pending Reviews */}
+        {/* Card 2: Pending Verifications */}
         <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-amber-200 hover:shadow-sm sm:p-5">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Internal students
+                Pending verifications
               </p>
               <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[26px]">
-                {
-                  users.filter(
-                    (user) =>
-                      user.institutionMembership?.studentCategory ===
-                      "INTERNAL",
-                  ).length
-                }
+                {overview.metrics.pendingVerifications}
               </p>
             </div>
             <div className="grid size-9 place-items-center rounded-xl bg-amber-50 text-amber-700">
@@ -126,12 +113,9 @@ export function OverviewSection({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {users.some(
-              (user) =>
-                user.institutionMembership?.studentCategory === "INTERNAL",
-            ) ? (
+            {overview.metrics.pendingVerifications > 0 ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-                Requires attention
+                Requires review
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
@@ -139,7 +123,7 @@ export function OverviewSection({
               </span>
             )}
             <span className="text-[11px] text-slate-400">
-              automatic free access
+              student accounts
             </span>
           </div>
         </div>

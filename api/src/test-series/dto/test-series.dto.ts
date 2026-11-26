@@ -1,8 +1,4 @@
-import {
-  AssessmentTestStatus,
-  AssessmentTestType,
-  TestSeriesStatus,
-} from '../../generated/prisma/client.js';
+import { AssessmentTestType } from '../../generated/prisma/client.js';
 
 export interface CreateCategoryDto {
   name: string;
@@ -28,7 +24,6 @@ export interface CreateTestSeriesDto {
   academicYear?: string;
   coverImageUrl?: string;
   courseId?: string;
-  status?: TestSeriesStatus;
   isActive?: boolean;
   startDate?: string | null;
   endDate?: string | null;
@@ -42,7 +37,6 @@ export interface UpdateTestSeriesDto {
   academicYear?: string;
   coverImageUrl?: string;
   courseId?: string;
-  status?: TestSeriesStatus;
   isActive?: boolean;
   startDate?: string | null;
   endDate?: string | null;
@@ -56,7 +50,8 @@ export interface CreateAssessmentTestDto {
   instructionsEn?: string;
   instructionsTa?: string;
   testType?: AssessmentTestType;
-  status?: AssessmentTestStatus;
+  isActive?: boolean;
+  isCancelled?: boolean;
   durationMinutes?: number;
   totalQuestions?: number;
   totalMarks?: number;
@@ -81,7 +76,8 @@ export interface UpdateAssessmentTestDto {
   instructionsEn?: string;
   instructionsTa?: string;
   testType?: AssessmentTestType;
-  status?: AssessmentTestStatus;
+  isActive?: boolean;
+  isCancelled?: boolean;
   durationMinutes?: number;
   totalQuestions?: number;
   totalMarks?: number;

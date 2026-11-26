@@ -104,7 +104,7 @@ describe('StudentPortalService', () => {
     expect(result.recentQuestions[0]).not.toHaveProperty('solutionEn');
     expect(prisma.mockTest.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ status: 'PUBLISHED' }),
+        where: expect.objectContaining({ isActive: true }),
       }),
     );
     expect(prisma.question.findMany).toHaveBeenCalledWith(

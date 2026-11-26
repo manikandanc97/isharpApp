@@ -279,12 +279,6 @@ enum QuestionLanguage {
   BILINGUAL
 }
 
-enum MockTestStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
 model Question {
   id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   externalId            String             @unique(map: "questions_external_id_key") @map("external_id") @db.VarChar(64)
@@ -356,26 +350,26 @@ model QuestionOption {
 }
 
 model MockTest {
-  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code            String         @unique(map: "mock_tests_code_key") @db.VarChar(64)
-  title           String         @db.VarChar(200)
-  description     String?        @db.Text
-  durationMinutes Int            @default(180) @map("duration_minutes") @db.SmallInt
-  totalMarks      Int            @default(720) @map("total_marks") @db.SmallInt
-  status          MockTestStatus @default(DRAFT)
-  isLoginDemo     Boolean        @default(false) @map("is_login_demo")
-  instructionsEn  String?        @map("instructions_en") @db.Text
-  instructionsTa  String?        @map("instructions_ta") @db.Text
-  scheduledAt     DateTime?      @map("scheduled_at") @db.Timestamptz(3)
-  availableUntil  DateTime?      @map("available_until") @db.Timestamptz(3)
-  createdById     String         @map("created_by_id") @db.Uuid
-  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String   @unique(map: "mock_tests_code_key") @db.VarChar(64)
+  title           String   @db.VarChar(200)
+  description     String?  @db.Text
+  durationMinutes Int      @default(180) @map("duration_minutes") @db.SmallInt
+  totalMarks      Int      @default(720) @map("total_marks") @db.SmallInt
+  isActive        Boolean  @default(true) @map("is_active")
+  isLoginDemo     Boolean  @default(false) @map("is_login_demo")
+  instructionsEn  String?  @map("instructions_en") @db.Text
+  instructionsTa  String?  @map("instructions_ta") @db.Text
+  scheduledAt     DateTime? @map("scheduled_at") @db.Timestamptz(3)
+  availableUntil  DateTime? @map("available_until") @db.Timestamptz(3)
+  createdById     String   @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   createdBy UserProfile        @relation("MockTestCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
   questions MockTestQuestion[]
 
-  @@index([status, scheduledAt], map: "mock_tests_status_scheduled_at_idx")
+  @@index([isActive, scheduledAt], map: "mock_tests_active_scheduled_at_idx")
   @@index([createdById], map: "mock_tests_created_by_id_idx")
   @@map("mock_tests")
 }
@@ -419,10 +413,6 @@ model DemoTestConfiguration {
   showResultsImmediately   Boolean   @default(true) @map("show_results_immediately")
   showSolutionsAfterSubmit Boolean   @default(true) @map("show_solutions_after_submit")
   admissionCtaEnabled      Boolean   @default(true) @map("admission_cta_enabled")
-  publishStatus            String    @default("PUBLISHED") @map("publish_status") @db.VarChar(24)
-  publishedVersionId       String?   @map("published_version_id") @db.Uuid
-  publishedAt              DateTime? @map("published_at") @db.Timestamptz(3)
-  draftSnapshot            Json?     @map("draft_snapshot")
   updatedAt                DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   questions DemoTestQuestion[]
@@ -455,7 +445,6 @@ model DemoConfigurationVersion {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   configId      String   @default("login-demo") @map("config_id") @db.VarChar(32)
   versionNumber Int      @map("version_number")
-  status        String   @default("PUBLISHED") @db.VarChar(24)
   snapshot      Json
   changeSummary String?  @map("change_summary") @db.VarChar(500)
   createdById   String?  @map("created_by_id") @db.Uuid
@@ -615,12 +604,6 @@ model DemoAnalyticsEvent {
 // ENTERPRISE NEET TEST SERIES & EXAM ENGINE
 // ==========================================
 
-enum TestSeriesStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
 model TestSeriesCategory {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String   @db.VarChar(150)
@@ -638,29 +621,28 @@ model TestSeriesCategory {
 }
 
 model TestSeries {
-  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title         String           @db.VarChar(200)
-  slug          String           @unique(map: "test_series_slug_key") @db.VarChar(200)
-  description   String?          @db.Text
-  categoryId    String           @map("category_id") @db.Uuid
-  academicYear  String           @default("2026-2027") @map("academic_year") @db.VarChar(32)
-  coverImageUrl String?          @map("cover_image_url") @db.Text
-  courseId      String?          @map("course_id") @db.Uuid
-  status        TestSeriesStatus @default(DRAFT)
-  isActive      Boolean          @default(true) @map("is_active")
-  startDate     DateTime?        @map("start_date") @db.Timestamptz(3)
-  endDate       DateTime?        @map("end_date") @db.Timestamptz(3)
-  createdById   String           @map("created_by_id") @db.Uuid
-  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String    @db.VarChar(200)
+  slug          String    @unique(map: "test_series_slug_key") @db.VarChar(200)
+  description   String?   @db.Text
+  categoryId    String    @map("category_id") @db.Uuid
+  academicYear  String    @default("2026-2027") @map("academic_year") @db.VarChar(32)
+  coverImageUrl String?   @map("cover_image_url") @db.Text
+  courseId      String?   @map("course_id") @db.Uuid
+  isActive      Boolean   @default(true) @map("is_active")
+  startDate     DateTime? @map("start_date") @db.Timestamptz(3)
+  endDate       DateTime? @map("end_date") @db.Timestamptz(3)
+  createdById   String    @map("created_by_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   category  TestSeriesCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   course    Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdBy UserProfile        @relation("TestSeriesCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
   tests     AssessmentTest[]
 
-  @@index([categoryId, status], map: "test_series_category_status_idx")
-  @@index([status, academicYear], map: "test_series_status_academic_year_idx")
+  @@index([categoryId, isActive], map: "test_series_category_active_idx")
+  @@index([isActive, academicYear], map: "test_series_active_academic_year_idx")
   @@map("test_series")
 }
 
@@ -675,42 +657,35 @@ enum AssessmentTestType {
   CUSTOM_TEST
 }
 
-enum AssessmentTestStatus {
-  DRAFT
-  PUBLISHED
-  SCHEDULED
-  COMPLETED
-  ARCHIVED
-}
-
 model AssessmentTest {
-  id                     String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  testSeriesId           String               @map("test_series_id") @db.Uuid
-  code                   String               @unique(map: "assessment_tests_code_key") @db.VarChar(64)
-  title                  String               @db.VarChar(200)
-  description            String?              @db.Text
-  instructionsEn         String?              @map("instructions_en") @db.Text
-  instructionsTa         String?              @map("instructions_ta") @db.Text
-  testType               AssessmentTestType   @default(FULL_SYLLABUS) @map("test_type")
-  status                 AssessmentTestStatus @default(DRAFT)
-  durationMinutes        Int                  @default(180) @map("duration_minutes") @db.SmallInt
-  totalQuestions         Int                  @default(180) @map("total_questions") @db.SmallInt
-  totalMarks             Int                  @default(720) @map("total_marks") @db.SmallInt
-  passingMarks           Int?                 @map("passing_marks") @db.SmallInt
-  hasNegativeMarking     Boolean              @default(true) @map("has_negative_marking")
-  correctMarks           Int                  @default(4) @map("correct_marks") @db.SmallInt
-  negativeMarks          Int                  @default(1) @map("negative_marks") @db.SmallInt
-  maxAttempts            Int                  @default(1) @map("max_attempts") @db.SmallInt
-  randomizeQuestions     Boolean              @default(true) @map("randomize_questions")
-  randomizeOptions       Boolean              @default(true) @map("randomize_options")
-  showResultsImmediately Boolean              @default(false) @map("show_results_immediately")
-  isOfflineAvailable     Boolean              @default(true) @map("is_offline_available")
-  orderIndex             Int                  @default(0) @map("order_index") @db.SmallInt
-  scheduledAt            DateTime?            @map("scheduled_at") @db.Timestamptz(3)
-  availableUntil         DateTime?            @map("available_until") @db.Timestamptz(3)
-  createdById            String               @map("created_by_id") @db.Uuid
-  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt              DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                     String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  testSeriesId           String             @map("test_series_id") @db.Uuid
+  code                   String             @unique(map: "assessment_tests_code_key") @db.VarChar(64)
+  title                  String             @db.VarChar(200)
+  description            String?            @db.Text
+  instructionsEn         String?            @map("instructions_en") @db.Text
+  instructionsTa         String?            @map("instructions_ta") @db.Text
+  testType               AssessmentTestType @default(FULL_SYLLABUS) @map("test_type")
+  isActive               Boolean            @default(true) @map("is_active")
+  isCancelled            Boolean            @default(false) @map("is_cancelled")
+  durationMinutes        Int                @default(180) @map("duration_minutes") @db.SmallInt
+  totalQuestions         Int                @default(180) @map("total_questions") @db.SmallInt
+  totalMarks             Int                @default(720) @map("total_marks") @db.SmallInt
+  passingMarks           Int?               @map("passing_marks") @db.SmallInt
+  hasNegativeMarking     Boolean            @default(true) @map("has_negative_marking")
+  correctMarks           Int                @default(4) @map("correct_marks") @db.SmallInt
+  negativeMarks          Int                @default(1) @map("negative_marks") @db.SmallInt
+  maxAttempts            Int                @default(1) @map("max_attempts") @db.SmallInt
+  randomizeQuestions     Boolean            @default(true) @map("randomize_questions")
+  randomizeOptions       Boolean            @default(true) @map("randomize_options")
+  showResultsImmediately Boolean            @default(false) @map("show_results_immediately")
+  isOfflineAvailable     Boolean            @default(true) @map("is_offline_available")
+  orderIndex             Int                @default(0) @map("order_index") @db.SmallInt
+  scheduledAt            DateTime?          @map("scheduled_at") @db.Timestamptz(3)
+  availableUntil         DateTime?          @map("available_until") @db.Timestamptz(3)
+  createdById            String             @map("created_by_id") @db.Uuid
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   testSeries      TestSeries               @relation(fields: [testSeriesId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdBy       UserProfile              @relation("AssessmentTestCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -723,7 +698,7 @@ model AssessmentTest {
   answerKeyAudits AnswerKeyAudit[]
 
   @@index([testSeriesId, orderIndex], map: "assessment_tests_series_order_idx")
-  @@index([status, scheduledAt], map: "assessment_tests_status_scheduled_idx")
+  @@index([isActive, isCancelled, scheduledAt], map: "assessment_tests_active_scheduled_idx")
   @@map("assessment_tests")
 }
 

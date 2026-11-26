@@ -160,7 +160,7 @@ export class DemoTestService {
     }
 
     const config = await this.configuration.get(isPreview);
-    if (!isPreview && (!config.isEnabled || config.publishStatus === 'UNPUBLISHED')) {
+    if (!isPreview && !config.isEnabled) {
       throw new ServiceUnavailableException('The demo test is currently disabled');
     }
     if (!isPreview && !config.guestAccessEnabled && !userProfileId) {
@@ -281,7 +281,7 @@ export class DemoTestService {
         data: {
           visitorId,
           userProfileId: userProfileId ?? null,
-          configVersionId: isPreview ? null : config.publishedVersionId,
+          configVersionId: null,
           isPreview,
           status: 'IN_PROGRESS',
           subjectMode,

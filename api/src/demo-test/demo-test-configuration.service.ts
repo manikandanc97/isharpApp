@@ -19,7 +19,6 @@ import {
   type DemoTestConfigurationPayload,
   type LanguageMode,
   type PoolMode,
-  type PublishStatus,
   type SubjectMode,
 } from './demo-test.types.js';
 
@@ -202,24 +201,14 @@ export class DemoTestConfigurationService {
       showResultsImmediately?: boolean;
       showSolutionsAfterSubmit?: boolean;
       admissionCtaEnabled?: boolean;
-      publishStatus?: string;
-      publishedVersionId?: string | null;
-      publishedAt?: Date | null;
-      draftSnapshot?: unknown;
       questions?: { questionId: string; isApproved?: boolean }[];
     } | null,
-    preferDraft = false,
   ): DemoTestConfigurationPayload {
     if (!record) return { ...DEFAULT_DEMO_CONFIG };
 
-    const source =
-      preferDraft && record.draftSnapshot && typeof record.draftSnapshot === 'object'
-        ? (record.draftSnapshot as Record<string, unknown>)
-        : null;
-
     const blueprints = this.parseBlueprints(
-      source?.blueprints ?? record.blueprints,
-      source?.countOptions ?? record.countOptions,
+      record.blueprints,
+      record.countOptions,
     );
     const countOptions = blueprints.map((bp) => ({
       count: bp.count,
@@ -227,80 +216,37 @@ export class DemoTestConfigurationService {
       label: bp.label,
     }));
 
-    const poolModeRaw = String(source?.poolMode ?? record.poolMode ?? 'HYBRID').toUpperCase();
+    const poolModeRaw = String(record.poolMode ?? 'HYBRID').toUpperCase();
     const poolMode: PoolMode =
       poolModeRaw === 'MANUAL' || poolModeRaw === 'AUTOMATIC' ? poolModeRaw : 'HYBRID';
 
-    const publishStatusRaw = String(record.publishStatus ?? 'PUBLISHED').toUpperCase();
-    const publishStatus: PublishStatus =
-      publishStatusRaw === 'DRAFT' || publishStatusRaw === 'UNPUBLISHED'
-        ? publishStatusRaw
-        : 'PUBLISHED';
-
-    const allowedSubjects = (
-      Array.isArray(source?.allowedSubjects)
-        ? source.allowedSubjects.map(String)
-        : record.allowedSubjects
-    ).filter((s): s is SubjectMode =>
+    const allowedSubjects = record.allowedSubjects.filter((s): s is SubjectMode =>
       ['ALL', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY'].includes(s),
     );
 
-    const allowedLanguages = (
-      Array.isArray(source?.allowedLanguages)
-        ? source.allowedLanguages.map(String)
-        : record.allowedLanguages
-    ).filter((l): l is LanguageMode => ['en', 'ta'].includes(l));
+    const allowedLanguages = record.allowedLanguages.filter((l): l is LanguageMode =>
+      ['en', 'ta'].includes(l),
+    );
 
     return {
-      isEnabled:
-        source && typeof source.isEnabled === 'boolean'
-          ? source.isEnabled
-          : record.isEnabled,
-      title: String(source?.title ?? record.title ?? DEFAULT_DEMO_CONFIG.title),
-      code: String(source?.code ?? record.code ?? DEFAULT_DEMO_CONFIG.code),
-      instructionsEn: String(
-        source?.instructionsEn ?? record.instructionsEn ?? DEFAULT_DEMO_CONFIG.instructionsEn,
-      ),
-      instructionsTa: String(
-        source?.instructionsTa ?? record.instructionsTa ?? DEFAULT_DEMO_CONFIG.instructionsTa,
-      ),
+      isEnabled: record.isEnabled,
+      title: record.title ?? DEFAULT_DEMO_CONFIG.title,
+      code: record.code ?? DEFAULT_DEMO_CONFIG.code,
+      instructionsEn: record.instructionsEn ?? DEFAULT_DEMO_CONFIG.instructionsEn,
+      instructionsTa: record.instructionsTa ?? DEFAULT_DEMO_CONFIG.instructionsTa,
       allowedSubjects: allowedSubjects.length ? allowedSubjects : DEFAULT_DEMO_CONFIG.allowedSubjects,
       allowedLanguages: allowedLanguages.length ? allowedLanguages : DEFAULT_DEMO_CONFIG.allowedLanguages,
-      defaultSubject: String(
-        source?.defaultSubject ?? record.defaultSubject ?? 'ALL',
-      ) as SubjectMode,
-      defaultLanguage: String(
-        source?.defaultLanguage ?? record.defaultLanguage ?? 'ta',
-      ) as LanguageMode,
-      defaultQuestionCount: Number(
-        source?.defaultQuestionCount ?? record.defaultQuestionCount ?? 9,
-      ),
+      defaultSubject: (record.defaultSubject ?? 'ALL') as SubjectMode,
+      defaultLanguage: (record.defaultLanguage ?? 'ta') as LanguageMode,
+      defaultQuestionCount: Number(record.defaultQuestionCount ?? 9),
       countOptions,
       blueprints,
       poolMode,
-      selectionRules: this.parseSelectionRules(
-        source?.selectionRules ?? record.selectionRules,
-      ),
-      guestAccessEnabled:
-        source && typeof source.guestAccessEnabled === 'boolean'
-          ? source.guestAccessEnabled
-          : (record.guestAccessEnabled ?? true),
-      showResultsImmediately:
-        source && typeof source.showResultsImmediately === 'boolean'
-          ? source.showResultsImmediately
-          : (record.showResultsImmediately ?? true),
-      showSolutionsAfterSubmit:
-        source && typeof source.showSolutionsAfterSubmit === 'boolean'
-          ? source.showSolutionsAfterSubmit
-          : (record.showSolutionsAfterSubmit ?? true),
-      admissionCtaEnabled:
-        source && typeof source.admissionCtaEnabled === 'boolean'
-          ? source.admissionCtaEnabled
-          : (record.admissionCtaEnabled ?? true),
-      publishStatus,
-      publishedVersionId: record.publishedVersionId ?? null,
-      publishedAt: record.publishedAt ? record.publishedAt.toISOString() : null,
-      hasDraftChanges: Boolean(record.draftSnapshot),
+      selectionRules: this.parseSelectionRules(record.selectionRules),
+      guestAccessEnabled: record.guestAccessEnabled ?? true,
+      showResultsImmediately: record.showResultsImmediately ?? true,
+      showSolutionsAfterSubmit: record.showSolutionsAfterSubmit ?? true,
+      admissionCtaEnabled: record.admissionCtaEnabled ?? true,
       selectedQuestionIds:
         record.questions
           ?.filter((item) => item.isApproved !== false)
@@ -319,13 +265,9 @@ export class DemoTestConfigurationService {
         },
       },
     });
-    const result = this.normalizeRecord(record, isAdmin);
+    const result = this.normalizeRecord(record);
     if (!isAdmin) {
       delete result.selectedQuestionIds;
-      // If unpublished, mark disabled for public
-      if (result.publishStatus === 'UNPUBLISHED') {
-        result.isEnabled = false;
-      }
     }
     return result;
   }
@@ -409,28 +351,6 @@ export class DemoTestConfigurationService {
     };
   }
 
-  async saveDraft(body: unknown, actorUserId?: string | null) {
-    const sanitized = this.sanitizeConfigInput(body);
-    await this.prisma.demoTestConfiguration.upsert({
-      where: { id: 'login-demo' },
-      create: {
-        id: 'login-demo',
-        countOptions: DEFAULT_DEMO_COUNT_OPTIONS as never,
-        blueprints: DEFAULT_DEMO_BLUEPRINTS as never,
-        selectionRules: DEFAULT_DEMO_SELECTION_RULES as never,
-        draftSnapshot: sanitized as never,
-      },
-      update: {
-        draftSnapshot: sanitized as never,
-      },
-    });
-    await this.logAdminAction(actorUserId, 'SAVE_DRAFT', {
-      title: sanitized.title,
-      poolMode: sanitized.poolMode,
-    });
-    return this.get(true);
-  }
-
   async update(body: unknown, actorUserId?: string | null) {
     const sanitized = this.sanitizeConfigInput(body);
     await this.prisma.demoTestConfiguration.upsert({
@@ -441,14 +361,12 @@ export class DemoTestConfigurationService {
         countOptions: sanitized.countOptions as never,
         blueprints: sanitized.blueprints as never,
         selectionRules: sanitized.selectionRules as never,
-        draftSnapshot: null as never,
       },
       update: {
         ...sanitized,
         countOptions: sanitized.countOptions as never,
         blueprints: sanitized.blueprints as never,
         selectionRules: sanitized.selectionRules as never,
-        draftSnapshot: null as never,
       },
     });
     await this.logAdminAction(actorUserId, 'UPDATE_CONFIG', {
@@ -517,134 +435,6 @@ export class DemoTestConfigurationService {
       warnings,
       eligiblePoolCount: candidates.length,
     };
-  }
-
-  async publish(actorUserId?: string | null, changeSummary?: string) {
-    const current = await this.get(true);
-    const validation = await this.validateConfiguration(current);
-    if (!validation.valid) {
-      throw new BadRequestException({
-        message: 'Configuration validation failed before publish',
-        errors: validation.errors,
-        warnings: validation.warnings,
-      });
-    }
-
-    const sanitized = this.sanitizeConfigInput(current);
-    const published = await this.prisma.$transaction(async (tx) => {
-      const lastVersion = await tx.demoConfigurationVersion.findFirst({
-        where: { configId: 'login-demo' },
-        orderBy: { versionNumber: 'desc' },
-        select: { versionNumber: true },
-      });
-      const nextVersion = (lastVersion?.versionNumber ?? 0) + 1;
-
-      await tx.demoConfigurationVersion.updateMany({
-        where: { configId: 'login-demo', status: 'PUBLISHED' },
-        data: { status: 'ARCHIVED' },
-      });
-
-      const version = await tx.demoConfigurationVersion.create({
-        data: {
-          configId: 'login-demo',
-          versionNumber: nextVersion,
-          status: 'PUBLISHED',
-          snapshot: sanitized as never,
-          changeSummary: changeSummary?.trim().slice(0, 500) || `Published v${nextVersion}`,
-          createdById: actorUserId ?? null,
-        },
-      });
-
-      await tx.demoTestConfiguration.upsert({
-        where: { id: 'login-demo' },
-        create: {
-          id: 'login-demo',
-          ...sanitized,
-          countOptions: sanitized.countOptions as never,
-          blueprints: sanitized.blueprints as never,
-          selectionRules: sanitized.selectionRules as never,
-          publishStatus: 'PUBLISHED',
-          publishedVersionId: version.id,
-          publishedAt: new Date(),
-          draftSnapshot: null as never,
-        },
-        update: {
-          ...sanitized,
-          countOptions: sanitized.countOptions as never,
-          blueprints: sanitized.blueprints as never,
-          selectionRules: sanitized.selectionRules as never,
-          publishStatus: 'PUBLISHED',
-          publishedVersionId: version.id,
-          publishedAt: new Date(),
-          draftSnapshot: null as never,
-        },
-      });
-
-      return version;
-    });
-
-    await this.logAdminAction(actorUserId, 'PUBLISH', {
-      versionNumber: published.versionNumber,
-      versionId: published.id,
-      changeSummary: published.changeSummary,
-    });
-
-    return {
-      configuration: await this.get(true),
-      version: published,
-      warnings: validation.warnings,
-    };
-  }
-
-  async unpublish(actorUserId?: string | null) {
-    await this.prisma.demoTestConfiguration.upsert({
-      where: { id: 'login-demo' },
-      create: {
-        id: 'login-demo',
-        isEnabled: false,
-        publishStatus: 'UNPUBLISHED',
-        countOptions: DEFAULT_DEMO_COUNT_OPTIONS as never,
-        blueprints: DEFAULT_DEMO_BLUEPRINTS as never,
-        selectionRules: DEFAULT_DEMO_SELECTION_RULES as never,
-      },
-      update: {
-        isEnabled: false,
-        publishStatus: 'UNPUBLISHED',
-      },
-    });
-    await this.logAdminAction(actorUserId, 'UNPUBLISH', {});
-    return this.get(true);
-  }
-
-  async listVersions() {
-    return this.prisma.demoConfigurationVersion.findMany({
-      where: { configId: 'login-demo' },
-      orderBy: { versionNumber: 'desc' },
-      take: 30,
-    });
-  }
-
-  async rollback(versionId: string, actorUserId?: string | null) {
-    const target = await this.prisma.demoConfigurationVersion.findUnique({
-      where: { id: versionId },
-    });
-    if (!target || target.configId !== 'login-demo') {
-      throw new NotFoundException('Configuration version not found');
-    }
-    const sanitized = this.sanitizeConfigInput(target.snapshot);
-    await this.prisma.demoTestConfiguration.update({
-      where: { id: 'login-demo' },
-      data: { draftSnapshot: sanitized as never },
-    });
-    const result = await this.publish(
-      actorUserId,
-      `Rolled back to v${target.versionNumber}`,
-    );
-    await this.logAdminAction(actorUserId, 'ROLLBACK', {
-      targetVersionId: versionId,
-      targetVersionNumber: target.versionNumber,
-    });
-    return result;
   }
 
   async fetchPoolCandidates(poolMode: PoolMode): Promise<CandidateQuestionRecord[]> {
@@ -1130,7 +920,6 @@ export class DemoTestConfigurationService {
       frequentlyExposedCount: globalStats.filter((s) => s.exposureCount >= 10).length,
       warnings,
       poolMode: config.poolMode,
-      publishStatus: config.publishStatus,
     };
   }
 

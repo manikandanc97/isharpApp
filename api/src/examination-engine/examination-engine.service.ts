@@ -5,10 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  AssessmentTestStatus,
   ExamDeliveryMode,
   TestAttemptStatus,
-  TestSeriesStatus,
 } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type {
@@ -50,7 +48,6 @@ export class ExaminationEngineService {
           select: {
             id: true,
             title: true,
-            status: true,
             isActive: true,
             courseId: true,
           },
@@ -73,18 +70,16 @@ export class ExaminationEngineService {
       throw new NotFoundException('Assessment test not found');
     }
 
-    if (
-      test.testSeries &&
-      (test.testSeries.status !== TestSeriesStatus.PUBLISHED || !test.testSeries.isActive)
-    ) {
-      throw new BadRequestException('The test series containing this examination is not currently published');
+    if (test.testSeries && !test.testSeries.isActive) {
+      throw new BadRequestException('The test series containing this examination is not currently active');
     }
 
-    if (
-      test.status !== AssessmentTestStatus.PUBLISHED &&
-      test.status !== AssessmentTestStatus.SCHEDULED
-    ) {
-      throw new BadRequestException('This test is not currently open for examination');
+    if (!test.isActive || test.isCancelled) {
+      throw new BadRequestException(
+        test.isCancelled
+          ? 'This examination has been cancelled'
+          : 'This test is not currently open for examination',
+      );
     }
 
     const now = new Date();

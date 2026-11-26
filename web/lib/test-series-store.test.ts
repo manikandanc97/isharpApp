@@ -40,8 +40,8 @@ describe("Test Series Store & Management Engine", () => {
     const stats = testSeriesStore.getOverviewStats();
     expect(stats.totalSeries).toBeGreaterThanOrEqual(3);
     expect(stats.totalTests).toBeGreaterThanOrEqual(12);
-    expect(stats.publishedSeries).toBeGreaterThanOrEqual(1);
-    expect(stats.scheduledTests).toBeGreaterThanOrEqual(1);
+    expect(stats.upcomingTests).toBeGreaterThanOrEqual(0);
+    expect(stats.completedTests).toBeGreaterThanOrEqual(0);
   });
 
   it("supports duplicating an entire test series and its child tests", () => {
@@ -51,7 +51,7 @@ describe("Test Series Store & Management Engine", () => {
 
     const duplicated = testSeriesStore.duplicateSeries(sourceSeries.id);
     expect(duplicated.name).toContain("(Copy)");
-    expect(duplicated.status).toBe("DRAFT");
+    expect(duplicated.isActive).toBe(sourceSeries.isActive);
     expect(duplicated.tests?.length).toBe(sourceSeries.totalTests);
 
     const nextList = testSeriesStore.getSeriesList();

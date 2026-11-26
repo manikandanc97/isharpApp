@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import type { TestSeries, TestSeriesCategory, TestSeriesStatus } from "./types";
+import type { TestSeries, TestSeriesCategory } from "./types";
 
 interface TestSeriesTableProps {
   series: TestSeries[];
@@ -43,7 +43,6 @@ interface TestSeriesTableProps {
   onViewSeries: (series: TestSeries) => void;
   onEditSeries: (series: TestSeries) => void;
   onDuplicateSeries: (id: string) => Promise<void>;
-  onTogglePublishSeries: (series: TestSeries) => Promise<void>;
   onDeleteSeries: (id: string) => Promise<void>;
   onOpenCategoryManager: () => void;
 }
@@ -54,13 +53,11 @@ export function TestSeriesTable({
   onViewSeries,
   onEditSeries,
   onDuplicateSeries,
-  onTogglePublishSeries,
   onDeleteSeries,
   onOpenCategoryManager,
 }: TestSeriesTableProps) {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState("ALL");
   const [yearFilter, setYearFilter] = useState("ALL");
   const [sortField, setSortField] = useState<"name" | "createdAt" | "totalTests">("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -71,7 +68,7 @@ export function TestSeriesTable({
   // Reset page when search or filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, categoryFilter, statusFilter, yearFilter, sortField, sortOrder]);
+  }, [search, categoryFilter, yearFilter, sortField, sortOrder]);
 
   // Extract unique academic years
   const academicYears = useMemo(() => {
@@ -87,7 +84,6 @@ export function TestSeriesTable({
     return series
       .filter((s) => {
         if (categoryFilter !== "ALL" && s.categoryId !== categoryFilter) return false;
-        if (statusFilter !== "ALL" && s.status !== statusFilter) return false;
         if (yearFilter !== "ALL" && s.academicYear !== yearFilter) return false;
         if (search.trim()) {
           const q = search.toLowerCase();
@@ -115,7 +111,7 @@ export function TestSeriesTable({
           ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
-  }, [series, categoryFilter, statusFilter, yearFilter, search, sortField, sortOrder]);
+  }, [series, categoryFilter, yearFilter, search, sortField, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSeries.length / pageSize));
   const validPage = Math.min(currentPage, totalPages);
@@ -187,33 +183,6 @@ export function TestSeriesTable({
                   {c.name}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-
-          {/* Status Filter */}
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => {
-              if (val) setStatusFilter(val);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-9 w-[130px] text-xs font-medium bg-white">
-              <SelectValue placeholder="Status">
-                {statusFilter === "ALL"
-                  ? "All Statuses"
-                  : statusFilter === "PUBLISHED"
-                  ? "Published"
-                  : statusFilter === "DRAFT"
-                  ? "Draft"
-                  : "Archived"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" label="All Statuses" className="text-xs">All Statuses</SelectItem>
-              <SelectItem value="PUBLISHED" label="Published" className="text-xs">Published</SelectItem>
-              <SelectItem value="DRAFT" label="Draft" className="text-xs">Draft</SelectItem>
-              <SelectItem value="ARCHIVED" label="Archived" className="text-xs">Archived</SelectItem>
             </SelectContent>
           </Select>
 
@@ -338,14 +307,12 @@ export function TestSeriesTable({
                       <td className="whitespace-nowrap px-3 py-3.5">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-3xs font-bold ${
-                            s.status === "PUBLISHED"
+                            s.isActive
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : s.status === "DRAFT"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
                               : "bg-slate-100 text-slate-600 border border-slate-200"
                           }`}
                         >
-                          {s.status}
+                          {s.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-3 py-3.5 text-3xs text-slate-500">
@@ -387,20 +354,6 @@ export function TestSeriesTable({
                                 className="cursor-pointer text-xs font-medium"
                               >
                                 <Edit2 className="mr-2 size-3.5 text-slate-700" /> Edit Series
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={async () => {
-                                  setProcessingId(s.id);
-                                  try {
-                                    await onTogglePublishSeries(s);
-                                  } finally {
-                                    setProcessingId(null);
-                                  }
-                                }}
-                                className="cursor-pointer text-xs font-medium"
-                              >
-                                <CheckCircle2 className="mr-2 size-3.5 text-emerald-600" />
-                                {s.status === "PUBLISHED" ? "Unpublish Series" : "Publish Series"}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={async () => {

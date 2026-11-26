@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { TestSeries, TestSeriesCategory, TestSeriesStatus } from "./types";
+import type { TestSeries, TestSeriesCategory } from "./types";
 
 interface TestSeriesDialogProps {
   open: boolean;
@@ -51,7 +51,7 @@ export function TestSeriesDialog({
   const [endDate, setEndDate] = useState("");
   const [totalMarks, setTotalMarks] = useState("720");
   const [durationMinutes, setDurationMinutes] = useState("180");
-  const [status, setStatus] = useState<TestSeriesStatus>("DRAFT");
+  const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export function TestSeriesDialog({
       setEndDate(initialData.endDate ? initialData.endDate.substring(0, 10) : "");
       setTotalMarks(String(initialData.totalMarks || 720));
       setDurationMinutes(String(initialData.durationMinutes || 180));
-      setStatus(initialData.status || "DRAFT");
+      setIsActive(initialData.isActive !== false);
     } else {
       setName("");
       setDescription("");
@@ -76,7 +76,7 @@ export function TestSeriesDialog({
       setEndDate("");
       setTotalMarks("720");
       setDurationMinutes("180");
-      setStatus("DRAFT");
+      setIsActive(true);
     }
   }, [initialData, categories, open]);
 
@@ -103,7 +103,7 @@ export function TestSeriesDialog({
         endDate: endDate ? new Date(endDate).toISOString() : null,
         totalMarks: Number(totalMarks) || 720,
         durationMinutes: Number(durationMinutes) || 180,
-        status,
+        isActive,
       });
       onNotice(initialData ? "Test series updated successfully" : "Test series created successfully");
       onOpenChange(false);
@@ -230,17 +230,16 @@ export function TestSeriesDialog({
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Status</Label>
-                <Select value={status} onValueChange={(val) => { if (val) setStatus(val as TestSeriesStatus); }}>
+                <Label className="text-xs font-semibold text-slate-700">Visibility</Label>
+                <Select value={isActive ? "ACTIVE" : "INACTIVE"} onValueChange={(val) => setIsActive(val === "ACTIVE")}>
                   <SelectTrigger className="h-8 text-xs font-medium">
-                    <SelectValue placeholder="Select Status">
-                      {status === "PUBLISHED" ? "Published (Available to students)" : status === "ARCHIVED" ? "Archived (Read-only historical)" : "Draft (Hidden from students)"}
+                    <SelectValue placeholder="Select Visibility">
+                      {isActive ? "Active (Available to eligible students)" : "Inactive (Hidden from students)"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DRAFT" label="Draft (Hidden from students)" className="text-xs">Draft (Hidden from students)</SelectItem>
-                    <SelectItem value="PUBLISHED" label="Published (Available to students)" className="text-xs">Published (Available to students)</SelectItem>
-                    <SelectItem value="ARCHIVED" label="Archived (Read-only historical)" className="text-xs">Archived (Read-only historical)</SelectItem>
+                    <SelectItem value="ACTIVE" label="Active (Available to eligible students)" className="text-xs">Active (Available to eligible students)</SelectItem>
+                    <SelectItem value="INACTIVE" label="Inactive (Hidden from students)" className="text-xs">Inactive (Hidden from students)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

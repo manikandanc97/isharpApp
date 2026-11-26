@@ -56,25 +56,13 @@ export function DemoOverviewTab({
               <Badge
                 variant="outline"
                 className={
-                  config.publishStatus === "PUBLISHED" && config.isEnabled
+                  config.isEnabled
                     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                     : "border-amber-200 bg-amber-50 text-amber-700"
                 }
               >
-                {config.publishStatus === "PUBLISHED" && config.isEnabled
-                  ? "Live & Published"
-                  : config.publishStatus === "UNPUBLISHED"
-                    ? "Unpublished"
-                    : "Disabled"}
+                {config.isEnabled ? "Active" : "Disabled"}
               </Badge>
-              {config.hasDraftChanges && (
-                <Badge
-                  variant="outline"
-                  className="border-indigo-200 bg-indigo-50 text-indigo-700"
-                >
-                  Unpublished Draft Changes
-                </Badge>
-              )}
               {health && (
                 <Badge variant="outline" className={riskBadge}>
                   Exhaustion Risk: {health.exhaustionRisk}

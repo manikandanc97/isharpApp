@@ -6,7 +6,6 @@ import {
   Check,
   Copy,
   ShieldCheck,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -60,10 +59,6 @@ export function StudentOverviewTab({
         <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/80 bg-rose-50/80 px-3 py-1 text-xs font-semibold text-brand-red">
-                <Sparkles className="size-3.5" />
-                <span>i-SHARP Academy Portal</span>
-              </span>
               <Badge
                 variant="outline"
                 className={`gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
@@ -73,7 +68,7 @@ export function StudentOverviewTab({
                 }`}
               >
                 <ShieldCheck className="size-3.5" />
-                <span>{data.student.category} SCHOLAR</span>
+                <span>{isInternal ? "Internal Student" : "External Student"}</span>
               </Badge>
             </div>
 
@@ -82,7 +77,7 @@ export function StudentOverviewTab({
             </h1>
 
             <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-600">
-              Welcome to your dedicated NEET/JEE learning dashboard. Access daily practice problems, official mock assessments, and verified syllabus modules crafted by top faculty.
+              Access your daily practice problems, scheduled tests, results, and study materials.
             </p>
 
             {/* Quick Metadata Chips */}

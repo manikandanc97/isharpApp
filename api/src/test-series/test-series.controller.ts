@@ -68,11 +68,16 @@ export class TestSeriesController {
   @Get()
   listSeries(
     @Query('categoryId') categoryId?: string,
-    @Query('status') status?: any,
+    @Query('isActive') isActive?: string,
     @Query('academicYear') academicYear?: string,
     @Query('search') search?: string,
   ) {
-    return this.service.listSeries({ categoryId, status, academicYear, search });
+    return this.service.listSeries({
+      categoryId,
+      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      academicYear,
+      search,
+    });
   }
 
   @Get(':id')

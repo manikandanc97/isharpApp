@@ -30,10 +30,9 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
   const [seriesList, setSeriesList] = useState<TestSeries[]>([]);
   const [stats, setStats] = useState<TestSeriesOverviewStats>({
     totalSeries: 0,
-    publishedSeries: 0,
-    draftSeries: 0,
     totalTests: 0,
-    scheduledTests: 0,
+    upcomingTests: 0,
+    completedTests: 0,
   });
 
   const [activeSeries, setActiveSeries] = useState<TestSeries | null>(null);
@@ -130,22 +129,6 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
       }
     }
     await loadData();
-  };
-
-  const handleTogglePublishSeries = async (series: TestSeries) => {
-    const nextStatus = series.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
-    try {
-      const res = await fetch(`/api/admin/test-series/${series.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      if (!res.ok) throw new Error("Failed to toggle publish status");
-      onNotice(`Test Series "${series.name}" marked as ${nextStatus}`);
-      await loadData();
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to toggle status");
-    }
   };
 
   const handleDuplicateSeries = async (id: string) => {
@@ -272,19 +255,11 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
           {/* Header & Overview Stats */}
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-md bg-rose-50 px-2 py-0.5 text-xs font-bold text-brand-red border border-rose-200">
-                  TEST & ASSESSMENT HUB
-                </span>
-                <span className="text-xs text-slate-500">
-                  Unified Assessment Blueprint, Series & Mock Engine
-                </span>
-              </div>
-              <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Tests & Test Series Management
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                Test Series & Tests
               </h2>
               <p className="mt-1 text-xs text-slate-600">
-                All test operations in one unified workspace: curated cohort series, automated NEET mock tests, blueprints, and questions.
+                Create test series, schedule tests, assign questions, and manage the login demo test.
               </p>
             </div>
 
@@ -378,7 +353,6 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
                   setSeriesDialogOpen(true);
                 }}
                 onDuplicateSeries={handleDuplicateSeries}
-                onTogglePublishSeries={handleTogglePublishSeries}
                 onDeleteSeries={handleDeleteSeries}
                 onOpenCategoryManager={() => setCategoryDialogOpen(true)}
               />

@@ -1,8 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  AssessmentTestStatus,
-  TestAttemptStatus,
-} from '../generated/prisma/client.js';
+import { TestAttemptStatus } from '../generated/prisma/client.js';
 import { ExaminationEngineService } from './examination-engine.service.js';
 
 describe('ExaminationEngineService', () => {
@@ -13,11 +10,11 @@ describe('ExaminationEngineService', () => {
     durationMinutes: 180,
     totalMarks: 720,
     maxAttempts: 1,
-    status: AssessmentTestStatus.PUBLISHED,
+    isActive: true,
+    isCancelled: false,
     testSeries: {
       id: 'series-uuid-1',
       title: 'NEET 2026 Test Series',
-      status: 'PUBLISHED',
       isActive: true,
       courseId: null,
     },

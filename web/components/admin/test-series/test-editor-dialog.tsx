@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { IndividualTest, IndividualTestStatus, TestType } from "./types";
+import type { IndividualTest, TestType } from "./types";
 
 interface TestEditorDialogProps {
   open: boolean;
@@ -62,7 +62,7 @@ export function TestEditorDialog({
   const [randomizeOptions, setRandomizeOptions] = useState(true);
   const [showResultsImmediately, setShowResultsImmediately] = useState(false);
   const [isOfflineAvailable, setIsOfflineAvailable] = useState(true);
-  const [status, setStatus] = useState<IndividualTestStatus>("DRAFT");
+  const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export function TestEditorDialog({
       setRandomizeOptions(initialData.randomizeOptions !== false);
       setShowResultsImmediately(Boolean(initialData.showResultsImmediately));
       setIsOfflineAvailable(initialData.isOfflineAvailable !== false);
-      setStatus(initialData.status || "DRAFT");
+      setIsActive(initialData.isActive !== false);
     } else {
       setName("");
       setCode(`NEET-${Date.now().toString().slice(-4)}`);
@@ -107,7 +107,7 @@ export function TestEditorDialog({
       setRandomizeOptions(true);
       setShowResultsImmediately(false);
       setIsOfflineAvailable(true);
-      setStatus("DRAFT");
+      setIsActive(true);
     }
   }, [initialData, open]);
 
@@ -172,7 +172,7 @@ export function TestEditorDialog({
         randomizeOptions,
         showResultsImmediately,
         isOfflineAvailable,
-        status,
+        isActive,
       });
       onNotice(initialData ? "Test updated successfully" : "New test added to series");
       onOpenChange(false);
@@ -247,17 +247,16 @@ export function TestEditorDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Status</Label>
-                <Select value={status} onValueChange={(val) => setStatus(val as IndividualTestStatus)}>
+                <Label className="text-xs font-semibold text-slate-700">Availability</Label>
+                <Select value={isActive ? "ACTIVE" : "INACTIVE"} onValueChange={(val) => setIsActive(val === "ACTIVE")}>
                   <SelectTrigger className="h-8 text-xs bg-white">
-                    <SelectValue placeholder="Select Status" />
+                    <SelectValue placeholder="Select Availability">
+                      {isActive ? "Active (Available per schedule)" : "Inactive (Hidden from students)"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DRAFT">Draft (Hidden from students)</SelectItem>
-                    <SelectItem value="PUBLISHED">Published (Available to students)</SelectItem>
-                    <SelectItem value="SCHEDULED">Scheduled (Future timetable)</SelectItem>
-                    <SelectItem value="COMPLETED">Completed (Archived test)</SelectItem>
-                    <SelectItem value="ARCHIVED">Archived (Read-only)</SelectItem>
+                    <SelectItem value="ACTIVE">Active (Available per schedule)</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive (Hidden from students)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

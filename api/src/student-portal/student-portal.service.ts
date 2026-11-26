@@ -1,10 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import {
-  AssessmentTestStatus,
-  MockTestStatus,
-  TestAttemptStatus,
-  TestSeriesStatus,
-} from '../generated/prisma/client.js';
+import { TestAttemptStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
@@ -73,7 +68,7 @@ export class StudentPortalService {
         }),
         this.prisma.mockTest.findMany({
           where: {
-            status: MockTestStatus.PUBLISHED,
+            isActive: true,
             OR: [{ availableUntil: null }, { availableUntil: { gte: now } }],
           },
           select: {
@@ -155,7 +150,7 @@ export class StudentPortalService {
           }),
           this.prisma.mockTest.count({
             where: {
-              status: MockTestStatus.PUBLISHED,
+              isActive: true,
               OR: [{ availableUntil: null }, { availableUntil: { gte: now } }],
             },
           }),
@@ -279,9 +274,9 @@ export class StudentPortalService {
     const now = new Date();
     const tests = await this.prisma.assessmentTest.findMany({
       where: {
-        status: { in: [AssessmentTestStatus.PUBLISHED, AssessmentTestStatus.SCHEDULED] },
+        isActive: true,
+        isCancelled: false,
         testSeries: {
-          status: TestSeriesStatus.PUBLISHED,
           isActive: true,
           OR: [{ courseId: null }, { course: { isActive: true } }],
         },
@@ -428,7 +423,6 @@ export class StudentPortalService {
 
     const seriesList = await this.prisma.testSeries.findMany({
       where: {
-        status: TestSeriesStatus.PUBLISHED,
         isActive: true,
         OR: [{ courseId: null }, { course: { isActive: true } }],
       },

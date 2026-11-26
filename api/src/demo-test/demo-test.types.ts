@@ -1,5 +1,4 @@
 export type PoolMode = 'MANUAL' | 'AUTOMATIC' | 'HYBRID';
-export type PublishStatus = 'DRAFT' | 'PUBLISHED' | 'UNPUBLISHED';
 export type SubjectMode = 'ALL' | 'PHYSICS' | 'CHEMISTRY' | 'BIOLOGY';
 export type LanguageMode = 'en' | 'ta';
 export type WeightingMode = 'WEIGHTED' | 'EQUAL';
@@ -67,10 +66,6 @@ export interface DemoTestConfigurationPayload {
   showResultsImmediately: boolean;
   showSolutionsAfterSubmit: boolean;
   admissionCtaEnabled: boolean;
-  publishStatus: PublishStatus;
-  publishedVersionId: string | null;
-  publishedAt: string | null;
-  hasDraftChanges: boolean;
   selectedQuestionIds?: string[];
 }
 
@@ -154,10 +149,6 @@ export const DEFAULT_DEMO_CONFIG: DemoTestConfigurationPayload = {
   showResultsImmediately: true,
   showSolutionsAfterSubmit: true,
   admissionCtaEnabled: true,
-  publishStatus: 'PUBLISHED',
-  publishedVersionId: null,
-  publishedAt: null,
-  hasDraftChanges: false,
 };
 
 export interface ShuffledOptionMapping {

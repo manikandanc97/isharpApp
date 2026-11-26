@@ -28,7 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { IndividualTest, IndividualTestStatus, TestSeries, TestSeriesCategory } from "./types";
+import type { IndividualTest, TestSeries, TestSeriesCategory } from "./types";
 import { TestEditorDialog } from "./test-editor-dialog";
 import { QuestionSelectorDialog } from "./question-selector-dialog";
 import { TestSeriesDialog } from "./test-series-dialog";
@@ -112,20 +112,6 @@ export function TestSeriesDetailsView({
     }
   };
 
-  const handleTogglePublishTest = async (test: IndividualTest) => {
-    const nextStatus: IndividualTestStatus =
-      test.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
-    setMutatingTestId(test.id);
-    try {
-      await onUpdateTest(test.id, { status: nextStatus });
-      onNotice(`Test "${test.name}" marked as ${nextStatus}`);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to update test status");
-    } finally {
-      setMutatingTestId(null);
-    }
-  };
-
   const handleSaveQuestions = async (
     questionIds: string[]
   ) => {
@@ -165,14 +151,12 @@ export function TestSeriesDetailsView({
               </span>
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-3xs font-bold ${
-                  series.status === "PUBLISHED"
+                  series.isActive
                     ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : series.status === "DRAFT"
-                    ? "bg-amber-50 text-amber-700 border border-amber-200"
                     : "bg-slate-100 text-slate-600 border border-slate-200"
                 }`}
               >
-                {series.status}
+                {series.isActive ? "Active" : "Inactive"}
               </span>
             </div>
 
@@ -221,9 +205,9 @@ export function TestSeriesDetailsView({
             <p className="text-lg font-bold text-slate-900">{series.durationMinutes} Mins</p>
           </div>
           <div>
-            <span className="text-3xs font-semibold uppercase text-slate-500">Published Status</span>
+            <span className="text-3xs font-semibold uppercase text-slate-500">Active Papers</span>
             <p className="text-lg font-bold text-emerald-700">
-              {tests.filter((t) => t.status === "PUBLISHED").length} / {tests.length} Active
+              {tests.filter((t) => t.isActive && !t.isCancelled).length} / {tests.length} Active
             </p>
           </div>
         </div>
@@ -303,16 +287,18 @@ export function TestSeriesDetailsView({
                           </span>
                           <span
                             className={`rounded-full px-2 py-0.5 text-3xs font-bold ${
-                              test.status === "PUBLISHED"
+                              test.lifecycleStatus === "ONGOING"
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : test.status === "SCHEDULED"
+                                : test.lifecycleStatus === "UPCOMING"
                                 ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                : test.status === "COMPLETED"
+                                : test.lifecycleStatus === "COMPLETED"
                                 ? "bg-slate-100 text-slate-600 border border-slate-200"
+                                : test.lifecycleStatus === "CANCELLED"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
                                 : "bg-amber-50 text-amber-700 border border-amber-200"
                             }`}
                           >
-                            {test.status}
+                            {test.lifecycleStatus || (test.isActive ? "ONGOING" : "INACTIVE")}
                           </span>
                         </div>
 
@@ -380,13 +366,6 @@ export function TestSeriesDetailsView({
                             className="cursor-pointer text-xs font-medium"
                           >
                             <Layers className="mr-2 size-3.5 text-purple-600" /> Paper Blueprint
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleTogglePublishTest(test)}
-                            className="cursor-pointer text-xs font-medium"
-                          >
-                            <CheckCircle2 className="mr-2 size-3.5 text-emerald-600" />
-                            {test.status === "PUBLISHED" ? "Unpublish Test" : "Publish Test"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={async () => {

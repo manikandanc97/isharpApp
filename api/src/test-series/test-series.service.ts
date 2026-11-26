@@ -4,11 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  AssessmentTestStatus,
-  AssessmentTestType,
-  TestSeriesStatus,
-} from '../generated/prisma/client.js';
+import { AssessmentTestType } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type {
   CreateAssessmentTestDto,
@@ -20,6 +16,29 @@ import type {
   UpdateCategoryDto,
   UpdateTestSeriesDto,
 } from './dto/test-series.dto.js';
+
+export type DerivedTestLifecycleStatus =
+  | 'UPCOMING'
+  | 'ONGOING'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'INACTIVE';
+
+export function deriveTestLifecycleStatus(
+  test: {
+    isActive: boolean;
+    isCancelled: boolean;
+    scheduledAt: Date | null;
+    availableUntil: Date | null;
+  },
+  now = new Date(),
+): DerivedTestLifecycleStatus {
+  if (!test.isActive) return 'INACTIVE';
+  if (test.isCancelled) return 'CANCELLED';
+  if (test.scheduledAt && test.scheduledAt > now) return 'UPCOMING';
+  if (test.availableUntil && test.availableUntil < now) return 'COMPLETED';
+  return 'ONGOING';
+}
 
 @Injectable()
 export class TestSeriesService {
@@ -138,7 +157,7 @@ export class TestSeriesService {
 
   async listSeries(filters: {
     categoryId?: string;
-    status?: TestSeriesStatus;
+    isActive?: boolean;
     academicYear?: string;
     search?: string;
   }) {
@@ -148,8 +167,8 @@ export class TestSeriesService {
     if (filters.categoryId && filters.categoryId !== 'ALL') {
       where.categoryId = filters.categoryId;
     }
-    if (filters.status && (filters.status as string) !== 'ALL') {
-      where.status = filters.status;
+    if (filters.isActive !== undefined) {
+      where.isActive = filters.isActive;
     }
     if (filters.academicYear && filters.academicYear !== 'ALL') {
       where.academicYear = filters.academicYear;
@@ -161,6 +180,7 @@ export class TestSeriesService {
       ];
     }
 
+    const now = new Date();
     const [series, stats, categories] = await Promise.all([
       this.prisma.testSeries.findMany({
         where,
@@ -174,7 +194,8 @@ export class TestSeriesService {
               code: true,
               title: true,
               testType: true,
-              status: true,
+              isActive: true,
+              isCancelled: true,
               durationMinutes: true,
               totalQuestions: true,
               totalMarks: true,
@@ -207,7 +228,6 @@ export class TestSeriesService {
         academicYear: s.academicYear,
         courseId: s.courseId,
         course: s.course,
-        status: s.status,
         isActive: s.isActive,
         startDate: s.startDate?.toISOString() ?? null,
         endDate: s.endDate?.toISOString() ?? null,
@@ -223,7 +243,9 @@ export class TestSeriesService {
           title: t.title,
           code: t.code,
           testType: t.testType,
-          status: t.status,
+          isActive: t.isActive,
+          isCancelled: t.isCancelled,
+          lifecycleStatus: deriveTestLifecycleStatus(t, now),
           durationMinutes: t.durationMinutes,
           totalQuestions: t.totalQuestions,
           totalMarks: t.totalMarks,
@@ -240,6 +262,7 @@ export class TestSeriesService {
   }
 
   async getSeriesById(id: string) {
+    const now = new Date();
     const s = await this.prisma.testSeries.findUnique({
       where: { id },
       include: {
@@ -266,7 +289,6 @@ export class TestSeriesService {
       academicYear: s.academicYear,
       coverImage: s.coverImageUrl,
       courseId: s.courseId,
-      status: s.status,
       isActive: s.isActive,
       startDate: s.startDate?.toISOString() ?? null,
       endDate: s.endDate?.toISOString() ?? null,
@@ -282,7 +304,9 @@ export class TestSeriesService {
         instructions: t.instructionsEn,
         instructionsTa: t.instructionsTa,
         testType: t.testType,
-        status: t.status,
+        isActive: t.isActive,
+        isCancelled: t.isCancelled,
+        lifecycleStatus: deriveTestLifecycleStatus(t, now),
         durationMinutes: t.durationMinutes,
         totalQuestions: t.totalQuestions,
         totalMarks: t.totalMarks,
@@ -331,7 +355,6 @@ export class TestSeriesService {
         academicYear: dto.academicYear?.trim() || '2026-2027',
         coverImageUrl: dto.coverImageUrl?.trim() || null,
         courseId: dto.courseId || null,
-        status: dto.status || TestSeriesStatus.DRAFT,
         isActive: dto.isActive !== false,
         startDate: dto.startDate ? new Date(dto.startDate) : null,
         endDate: dto.endDate ? new Date(dto.endDate) : null,
@@ -355,7 +378,6 @@ export class TestSeriesService {
         ...(dto.academicYear ? { academicYear: dto.academicYear.trim() } : {}),
         ...(dto.coverImageUrl !== undefined ? { coverImageUrl: dto.coverImageUrl } : {}),
         ...(dto.courseId !== undefined ? { courseId: dto.courseId || null } : {}),
-        ...(dto.status ? { status: dto.status } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
         ...(dto.startDate !== undefined
           ? { startDate: dto.startDate ? new Date(dto.startDate) : null }
@@ -406,7 +428,6 @@ export class TestSeriesService {
           academicYear: source.academicYear,
           coverImageUrl: source.coverImageUrl,
           courseId: source.courseId,
-          status: TestSeriesStatus.DRAFT,
           isActive: source.isActive,
           startDate: source.startDate,
           endDate: source.endDate,
@@ -424,7 +445,8 @@ export class TestSeriesService {
             instructionsEn: t.instructionsEn,
             instructionsTa: t.instructionsTa,
             testType: t.testType,
-            status: AssessmentTestStatus.DRAFT,
+            isActive: t.isActive,
+            isCancelled: false,
             durationMinutes: t.durationMinutes,
             totalQuestions: t.totalQuestions,
             totalMarks: t.totalMarks,
@@ -509,7 +531,8 @@ export class TestSeriesService {
         instructionsEn: dto.instructionsEn?.trim() || null,
         instructionsTa: dto.instructionsTa?.trim() || null,
         testType: dto.testType || AssessmentTestType.FULL_SYLLABUS,
-        status: dto.status || AssessmentTestStatus.DRAFT,
+        isActive: dto.isActive !== false,
+        isCancelled: dto.isCancelled ?? false,
         durationMinutes: dto.durationMinutes ?? 180,
         totalQuestions: dto.totalQuestions ?? 180,
         totalMarks: dto.totalMarks ?? 720,
@@ -570,7 +593,8 @@ export class TestSeriesService {
         ...(dto.instructionsEn !== undefined ? { instructionsEn: dto.instructionsEn } : {}),
         ...(dto.instructionsTa !== undefined ? { instructionsTa: dto.instructionsTa } : {}),
         ...(dto.testType ? { testType: dto.testType } : {}),
-        ...(dto.status ? { status: dto.status } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+        ...(dto.isCancelled !== undefined ? { isCancelled: dto.isCancelled } : {}),
         ...(dto.durationMinutes !== undefined ? { durationMinutes: dto.durationMinutes } : {}),
         ...(dto.totalQuestions !== undefined ? { totalQuestions: dto.totalQuestions } : {}),
         ...(dto.totalMarks !== undefined ? { totalMarks: dto.totalMarks } : {}),
@@ -633,7 +657,8 @@ export class TestSeriesService {
           instructionsEn: source.instructionsEn,
           instructionsTa: source.instructionsTa,
           testType: source.testType,
-          status: AssessmentTestStatus.DRAFT,
+          isActive: source.isActive,
+          isCancelled: false,
           durationMinutes: source.durationMinutes,
           totalQuestions: source.totalQuestions,
           totalMarks: source.totalMarks,
@@ -796,28 +821,32 @@ export class TestSeriesService {
   // --------------------------------------------------------------------------
 
   private async getOverviewStats() {
-    const [totalSeries, publishedSeries, draftSeries, totalTests, scheduledTests] =
+    const now = new Date();
+    const [totalSeries, totalTests, upcomingTests, completedTests] =
       await Promise.all([
         this.prisma.testSeries.count(),
-        this.prisma.testSeries.count({ where: { status: TestSeriesStatus.PUBLISHED } }),
-        this.prisma.testSeries.count({ where: { status: TestSeriesStatus.DRAFT } }),
         this.prisma.assessmentTest.count(),
         this.prisma.assessmentTest.count({
           where: {
-            OR: [
-              { status: AssessmentTestStatus.SCHEDULED },
-              { status: AssessmentTestStatus.PUBLISHED },
-            ],
+            isActive: true,
+            isCancelled: false,
+            scheduledAt: { gt: now },
+          },
+        }),
+        this.prisma.assessmentTest.count({
+          where: {
+            isActive: true,
+            isCancelled: false,
+            availableUntil: { lt: now },
           },
         }),
       ]);
 
     return {
       totalSeries,
-      publishedSeries,
-      draftSeries,
       totalTests,
-      scheduledTests,
+      upcomingTests,
+      completedTests,
     };
   }
 }

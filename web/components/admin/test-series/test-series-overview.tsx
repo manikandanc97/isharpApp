@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, BookCheck, Clock, FileCheck, Layers } from "lucide-react";
+import { CheckCircle2, Clock, FileCheck, Layers } from "lucide-react";
 import type { TestSeriesOverviewStats } from "./types";
 
 interface TestSeriesOverviewProps {
@@ -18,22 +18,6 @@ export function TestSeriesOverview({ stats }: TestSeriesOverviewProps) {
       bgColor: "bg-blue-50 border-blue-200/80",
     },
     {
-      title: "Published Series",
-      value: stats.publishedSeries,
-      subtext: "Live & accessible to students",
-      icon: Award,
-      color: "text-emerald-700",
-      bgColor: "bg-emerald-50 border-emerald-200/80",
-    },
-    {
-      title: "Draft Series",
-      value: stats.draftSeries,
-      subtext: "In preparation / unpublished",
-      icon: BookCheck,
-      color: "text-amber-700",
-      bgColor: "bg-amber-50 border-amber-200/80",
-    },
-    {
       title: "Total Tests",
       value: stats.totalTests,
       subtext: "Chapter, subject & grand papers",
@@ -42,17 +26,25 @@ export function TestSeriesOverview({ stats }: TestSeriesOverviewProps) {
       bgColor: "bg-purple-50 border-purple-200/80",
     },
     {
-      title: "Scheduled Tests",
-      value: stats.scheduledTests,
-      subtext: "Ready with timetable & questions",
+      title: "Upcoming Tests",
+      value: stats.upcomingTests,
+      subtext: "Scheduled for future dates",
       icon: Clock,
-      color: "text-rose-700",
-      bgColor: "bg-rose-50 border-rose-200/80",
+      color: "text-amber-700",
+      bgColor: "bg-amber-50 border-amber-200/80",
+    },
+    {
+      title: "Completed Tests",
+      value: stats.completedTests,
+      subtext: "Past examination window",
+      icon: CheckCircle2,
+      color: "text-emerald-700",
+      bgColor: "bg-emerald-50 border-emerald-200/80",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
       {cards.map((c) => {
         const Icon = c.icon;
         return (

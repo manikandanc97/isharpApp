@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import {
   BarChart3,
   Database,
+  ExternalLink,
   LayoutDashboard,
   LoaderCircle,
   MonitorCog,
-  Rocket,
   Save,
   Settings,
   Shuffle,
@@ -26,7 +26,6 @@ import { DemoGeneralConfigTab } from "./demo-management/demo-general-config-tab"
 import { DemoQuestionPoolTab } from "./demo-management/demo-question-pool-tab";
 import { DemoBlueprintsTab } from "./demo-management/demo-blueprints-tab";
 import { DemoRandomizationTab } from "./demo-management/demo-randomization-tab";
-import { DemoPublishTab } from "./demo-management/demo-publish-tab";
 import { DemoAnalyticsTab } from "./demo-management/demo-analytics-tab";
 
 type SubTab =
@@ -35,7 +34,6 @@ type SubTab =
   | "pool"
   | "blueprints"
   | "randomization"
-  | "publish"
   | "analytics";
 
 const TABS: {
@@ -48,7 +46,6 @@ const TABS: {
   { id: "pool", label: "Question Pool", icon: Database },
   { id: "blueprints", label: "Exam Blueprints", icon: Sliders },
   { id: "randomization", label: "Randomization Rules", icon: Shuffle },
-  { id: "publish", label: "Preview & Publish", icon: Rocket },
   { id: "analytics", label: "Demo Analytics", icon: BarChart3 },
 ];
 
@@ -92,18 +89,18 @@ export function LoginDemoControlTab({ onNotice, onError }: Props) {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  const saveDraft = async () => {
+  const saveConfig = async () => {
     if (!config) return;
     setSaving(true);
     try {
-      const updated = await request<DemoTestConfiguration>("demo-test/draft", {
-        method: "POST",
+      const updated = await request<DemoTestConfiguration>("demo-test", {
+        method: "PATCH",
         body: JSON.stringify(config),
       });
       setConfig(updated);
-      onNotice("Draft saved. Go to Preview & Publish to push changes live.");
+      onNotice("Demo test configuration saved.");
     } catch (error) {
-      onError(error instanceof Error ? error.message : "Failed to save draft");
+      onError(error instanceof Error ? error.message : "Failed to save configuration");
     } finally {
       setSaving(false);
     }
@@ -121,32 +118,33 @@ export function LoginDemoControlTab({ onNotice, onError }: Props) {
           </span>
           <div>
             <h3 className="font-bold text-slate-950">
-              Enterprise Demo Test Management
+              Demo Test Management
             </h3>
             <p className="mt-1 text-xs text-slate-500">
-              Manage the curated Question Pool, exam blueprints, randomization rules, versioning, and live analytics for /demo-test.
+              Manage the question pool, exam blueprints, randomization rules, and analytics for /demo-test.
             </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="/demo-test"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-slate-200 px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <ExternalLink className="size-3.5" /> View Demo Page
+          </a>
           <Button
-            variant="outline"
-            onClick={() => void saveDraft()}
+            onClick={() => void saveConfig()}
             disabled={saving}
-            className="gap-2 rounded-full text-xs font-semibold"
+            className="gap-2 rounded-full bg-brand-red text-xs font-bold text-white hover:bg-brand-red-hover"
           >
             {saving ? (
               <LoaderCircle className="size-4 animate-spin" />
             ) : (
               <Save className="size-4" />
             )}
-            Save Draft
-          </Button>
-          <Button
-            onClick={() => setActiveTab("publish")}
-            className="gap-2 rounded-full bg-brand-red text-xs font-bold text-white hover:bg-brand-red-hover"
-          >
-            <Rocket className="size-4" /> Preview &amp; Publish
+            Save Changes
           </Button>
         </div>
       </section>
@@ -202,14 +200,6 @@ export function LoginDemoControlTab({ onNotice, onError }: Props) {
       )}
       {activeTab === "randomization" && (
         <DemoRandomizationTab config={config} onChange={setConfig} />
-      )}
-      {activeTab === "publish" && (
-        <DemoPublishTab
-          config={config}
-          onNotice={onNotice}
-          onError={onError}
-          onReloadConfig={load}
-        />
       )}
       {activeTab === "analytics" && <DemoAnalyticsTab onError={onError} />}
     </div>

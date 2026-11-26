@@ -9,8 +9,6 @@ export type TestSeriesCategory = {
   updatedAt: string;
 };
 
-export type TestSeriesStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
-
 export type TestType =
   | "CHAPTER_WISE"
   | "SUBJECT_WISE"
@@ -21,12 +19,12 @@ export type TestType =
   | "GRAND_TEST"
   | "CUSTOM_TEST";
 
-export type IndividualTestStatus =
-  | "DRAFT"
-  | "PUBLISHED"
-  | "SCHEDULED"
+export type DerivedTestLifecycleStatus =
+  | "UPCOMING"
+  | "ONGOING"
   | "COMPLETED"
-  | "ARCHIVED";
+  | "CANCELLED"
+  | "INACTIVE";
 
 export type IndividualTest = {
   id: string;
@@ -53,7 +51,9 @@ export type IndividualTest = {
   randomizeOptions?: boolean;
   showResultsImmediately?: boolean;
   isOfflineAvailable?: boolean;
-  status: IndividualTestStatus;
+  isActive: boolean;
+  isCancelled?: boolean;
+  lifecycleStatus?: DerivedTestLifecycleStatus;
   orderIndex: number;
   questionIds?: string[];
   questionCount?: number;
@@ -81,7 +81,6 @@ export type TestSeries = {
   totalTests: number;
   totalMarks: number;
   durationMinutes: number;
-  status: TestSeriesStatus;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -90,10 +89,9 @@ export type TestSeries = {
 
 export type TestSeriesOverviewStats = {
   totalSeries: number;
-  publishedSeries: number;
-  draftSeries: number;
   totalTests: number;
-  scheduledTests: number;
+  upcomingTests: number;
+  completedTests: number;
 };
 
 export type TestBlueprintItem = {

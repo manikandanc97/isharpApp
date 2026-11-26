@@ -373,30 +373,14 @@ export class AdminService {
 
     const exams = tests.map((t) => {
       let mappedStatus: 'LIVE' | 'UPCOMING' | 'COMPLETED' | 'CANCELLED' = 'UPCOMING';
-      if (t.status === 'ARCHIVED') {
+      if (!t.isActive || t.isCancelled) {
         mappedStatus = 'CANCELLED';
-      } else if (t.status === 'COMPLETED') {
-        mappedStatus = 'COMPLETED';
-      } else if (t.status === 'PUBLISHED') {
-        if (t.scheduledAt && t.availableUntil) {
-          if (now >= t.scheduledAt && now <= t.availableUntil) {
-            mappedStatus = 'LIVE';
-          } else if (now > t.availableUntil) {
-            mappedStatus = 'COMPLETED';
-          } else {
-            mappedStatus = 'UPCOMING';
-          }
-        } else {
-          mappedStatus = 'LIVE';
-        }
-      } else if (t.status === 'SCHEDULED') {
-        if (t.scheduledAt && t.availableUntil && now >= t.scheduledAt && now <= t.availableUntil) {
-          mappedStatus = 'LIVE';
-        } else {
-          mappedStatus = 'UPCOMING';
-        }
-      } else {
+      } else if (t.scheduledAt && t.scheduledAt > now) {
         mappedStatus = 'UPCOMING';
+      } else if (t.availableUntil && t.availableUntil < now) {
+        mappedStatus = 'COMPLETED';
+      } else {
+        mappedStatus = 'LIVE';
       }
 
       const startTime = t.scheduledAt ? t.scheduledAt.toISOString() : t.createdAt.toISOString();
@@ -473,16 +457,17 @@ export class AdminService {
     const data: Record<string, unknown> = {};
     if (updates.status) {
       if (updates.status === 'LIVE') {
-        data.status = 'PUBLISHED';
+        data.isActive = true;
+        data.isCancelled = false;
         data.scheduledAt = new Date();
         data.availableUntil = new Date(Date.now() + test.durationMinutes * 60 * 1000);
       } else if (updates.status === 'COMPLETED') {
-        data.status = 'COMPLETED';
         data.availableUntil = new Date();
       } else if (updates.status === 'CANCELLED') {
-        data.status = 'ARCHIVED';
+        data.isCancelled = true;
       } else if (updates.status === 'UPCOMING') {
-        data.status = 'SCHEDULED';
+        data.isActive = true;
+        data.isCancelled = false;
       }
     }
 

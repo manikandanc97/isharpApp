@@ -107,8 +107,7 @@ export function MockTestsBuilder({
       <div className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h3 className="font-semibold text-slate-950">Build NEET mock test</h3>
         <p className="mt-1 text-xs text-slate-500">
-          Automatically choose a balanced set of questions, then create a
-          180-minute / 720-mark draft.
+          Automatically choose a balanced set of questions to create a 180-minute / 720-mark mock test.
         </p>
         <div className="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">

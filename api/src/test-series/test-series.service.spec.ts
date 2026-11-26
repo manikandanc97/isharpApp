@@ -68,7 +68,7 @@ describe('TestSeriesService', () => {
       slug: 'neet-2026-repeater',
       categoryId: 'cat-repeater',
       academicYear: '2026-2027',
-      status: 'DRAFT',
+      isActive: true,
     });
 
     const created = await service.createSeries('user-admin-1', {

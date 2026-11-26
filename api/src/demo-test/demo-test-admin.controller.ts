@@ -45,40 +45,9 @@ export class DemoTestAdminController {
     return this.configuration.update(body, req.user.profileId);
   }
 
-  @Post('draft')
-  saveDraft(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
-    return this.configuration.saveDraft(body, req.user.profileId);
-  }
-
   @Post('validate')
   validateConfiguration(@Body() body?: unknown) {
     return this.configuration.validateConfiguration(body);
-  }
-
-  @Post('publish')
-  publish(
-    @Req() req: AuthenticatedRequest,
-    @Body() body?: { changeSummary?: string },
-  ) {
-    return this.configuration.publish(req.user.profileId, body?.changeSummary);
-  }
-
-  @Post('unpublish')
-  unpublish(@Req() req: AuthenticatedRequest) {
-    return this.configuration.unpublish(req.user.profileId);
-  }
-
-  @Get('versions')
-  listVersions() {
-    return this.configuration.listVersions();
-  }
-
-  @Post('versions/:versionId/rollback')
-  rollback(
-    @Param('versionId', new ParseUUIDPipe({ version: '4' })) versionId: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.configuration.rollback(versionId, req.user.profileId);
   }
 
   @Post('preview')
