@@ -77,16 +77,7 @@ export function QuestionPreviewDialog({
                   langMode === "BILINGUAL" ? "bg-white font-bold text-brand-blue shadow-2xs" : "text-slate-500"
                 }`}
               >
-                Bilingual
-              </button>
-              <button
-                type="button"
-                onClick={() => setLangMode("EN")}
-                className={`rounded px-2 py-0.5 transition ${
-                  langMode === "EN" ? "bg-white font-bold text-brand-blue shadow-2xs" : "text-slate-500"
-                }`}
-              >
-                English
+                தமிழ் + English
               </button>
               <button
                 type="button"
@@ -96,6 +87,15 @@ export function QuestionPreviewDialog({
                 }`}
               >
                 தமிழ்
+              </button>
+              <button
+                type="button"
+                onClick={() => setLangMode("EN")}
+                className={`rounded px-2 py-0.5 transition ${
+                  langMode === "EN" ? "bg-white font-bold text-brand-blue shadow-2xs" : "text-slate-500"
+                }`}
+              >
+                English
               </button>
             </div>
           </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowRight,
   BarChart3,
   BookOpen,
   Check,
@@ -47,28 +46,16 @@ export function OverviewSection({
 
   return (
     <div className="space-y-6">
-      {/* Executive Welcome Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
-        <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="space-y-1.5">
-            <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
-              Admin Dashboard
-            </h2>
-            <p className="max-w-xl text-xs leading-relaxed text-slate-500 sm:text-[13px]">
-              Review pending student verifications and manage courses, tests, and results.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={() => onNavigate("students")}
-              className="inline-flex items-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-hover px-4 py-2 text-xs font-semibold text-white shadow-primary transition active:scale-95 cursor-pointer"
-            >
-              <span>Review Students</span>
-              <ArrowRight className="size-3.5" />
-            </button>
-          </div>
-        </div>
+      <div className="flex flex-col gap-1">
+        <p className="text-3xs font-semibold uppercase tracking-wider text-brand-blue">
+          Platform Overview
+        </p>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Overview
+        </h2>
+        <p className="text-xs text-slate-500">
+          Real-time student metrics, enrollments &amp; quick administrative controls.
+        </p>
       </div>
 
       {/* 4 Metric Cards - Refined Luxury Dashboard Cards */}
@@ -213,7 +200,34 @@ export function OverviewSection({
                       </p>
                     </div>
                   </div>
-                  <LightStatusBadge status={item.status} />
+                  {item.studentCategory === "EXTERNAL" ? (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${
+                        item.paymentStatus === "PAID"
+                          ? "bg-emerald-50 text-emerald-700 ring-emerald-200/80"
+                          : item.paymentStatus === "PENDING"
+                            ? "bg-slate-100 text-slate-600 ring-slate-200/80"
+                            : "bg-red-50 text-red-700 ring-red-200/80"
+                      }`}
+                    >
+                      <span
+                        className={`size-1.5 rounded-full ${
+                          item.paymentStatus === "PAID"
+                            ? "bg-emerald-500"
+                            : item.paymentStatus === "PENDING"
+                              ? "bg-slate-400"
+                              : "bg-red-500"
+                        }`}
+                      />
+                      {item.paymentStatus === "PAID"
+                        ? "Paid"
+                        : item.paymentStatus === "PENDING"
+                          ? "Unpaid"
+                          : item.paymentStatus.toLowerCase()}
+                    </span>
+                  ) : (
+                    <LightStatusBadge status={item.status} />
+                  )}
                 </div>
               ))
             ) : (

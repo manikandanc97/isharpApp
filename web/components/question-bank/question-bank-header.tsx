@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  BookOpenCheck,
   Download,
   FileDown,
   FileQuestion,
@@ -54,22 +53,22 @@ export function QuestionBankHeader({
   ];
 
   return (
-    <div className="border-b border-slate-200 bg-[#fbfbfa] px-5 py-6 sm:px-7 sm:py-7">
+    <div className="border-b border-slate-200 bg-[#fbfbfa] px-5 py-5 sm:px-7 sm:py-6">
       <Stack gap="lg">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <Stack gap="xs" className="min-w-0 flex-1 max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-700">
-              <BookOpenCheck className="size-3.5" /> NEET Question Repository
-            </div>
-            <h2 className="type-page-title text-slate-950">
-              Question Bank Management
-            </h2>
-            <p className="max-w-xl text-sm leading-6 text-slate-500">
-              Author, import, export, and categorize bilingual NEET questions across Physics, Chemistry, and Biology with verified solutions.
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-3xs font-semibold uppercase tracking-wider text-indigo-600">
+              NEET Question Repository
             </p>
-          </Stack>
+            <h2 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Question Bank
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Manage bilingual Tamil &amp; English questions, chapter tagging &amp; Excel imports.
+            </p>
+          </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 lg:flex-nowrap lg:shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
             <button
               type="button"
               onClick={onCreateQuestion}

@@ -126,7 +126,11 @@ export function useAdminDashboard() {
   const recentPendingVerifications = useMemo(
     () =>
       overview?.recentVerifications
-        .filter((membership) => membership.status === "PENDING")
+        .filter(
+          (membership) =>
+            membership.status === "PENDING" &&
+            membership.studentCategory === "INTERNAL",
+        )
         .slice(0, 4) ?? [],
     [overview],
   );

@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { LoaderCircle, LogOut, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { initials } from "@/components/admin/admin-helpers";
 import {
   platformOperationSections,
   sectionMeta,
+  sectionPaths,
   systemConfigurationSections,
   type Section,
 } from "@/components/admin/admin-types";
@@ -52,12 +54,11 @@ export function AdminSidebar({
         const badgeCount =
           key === "students" ? pendingNotificationCount : 0;
         return (
-          <button
+          <Link
             key={key}
-            onClick={() => {
-              onNavigate(key);
-              onCloseSidebar();
-            }}
+            href={sectionPaths[key]}
+            scroll={false}
+            onClick={onCloseSidebar}
             className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition-all ${
               isActive
                 ? "bg-brand-blue text-white shadow-xs"
@@ -89,7 +90,7 @@ export function AdminSidebar({
                 {badgeCount}
               </span>
             )}
-          </button>
+          </Link>
         );
       })}
     </div>

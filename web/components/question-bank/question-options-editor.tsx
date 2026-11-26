@@ -45,15 +45,15 @@ export function QuestionOptionsEditor({
             </button>
             <input
               className="flex-1"
-              placeholder={`Option (${displayLabel}) English`}
-              value={option.textEn}
-              onChange={(e) => patchOption(index, { textEn: e.target.value })}
-            />
-            <input
-              className="flex-1"
               placeholder={`Option (${displayLabel}) தமிழ்`}
               value={option.textTa}
               onChange={(e) => patchOption(index, { textTa: e.target.value })}
+            />
+            <input
+              className="flex-1"
+              placeholder={`Option (${displayLabel}) English`}
+              value={option.textEn}
+              onChange={(e) => patchOption(index, { textEn: e.target.value })}
             />
             <label
               className="grid shrink-0 cursor-pointer place-items-center rounded-lg border border-dashed border-slate-300 px-3 py-2 text-slate-500"

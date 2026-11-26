@@ -38,7 +38,7 @@ export function MockInstructionsDialog({
   onOpenChange,
 }: MockInstructionsDialogProps) {
   const router = useRouter();
-  const [langTab, setLangTab] = useState<"en" | "ta">("en");
+  const [langTab, setLangTab] = useState<"en" | "ta">("ta");
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -145,17 +145,6 @@ export function MockInstructionsDialog({
             <div className="inline-flex rounded-full bg-slate-100 p-0.5 text-xs font-medium">
               <button
                 type="button"
-                onClick={() => setLangTab("en")}
-                className={`rounded-full px-3 py-0.5 transition ${
-                  langTab === "en"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                English
-              </button>
-              <button
-                type="button"
                 onClick={() => setLangTab("ta")}
                 className={`rounded-full px-3 py-0.5 transition ${
                   langTab === "ta"
@@ -164,6 +153,17 @@ export function MockInstructionsDialog({
                 }`}
               >
                 தமிழ்
+              </button>
+              <button
+                type="button"
+                onClick={() => setLangTab("en")}
+                className={`rounded-full px-3 py-0.5 transition ${
+                  langTab === "en"
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                English
               </button>
             </div>
           </div>

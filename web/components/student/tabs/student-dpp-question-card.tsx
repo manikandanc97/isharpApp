@@ -57,8 +57,8 @@ export function StudentDppQuestionCard({
       ? question.textTa
       : activeCardLang === "en"
         ? question.textEn
-        : question.textEn ?? question.textTa;
-  const secondaryText = activeCardLang === "bilingual" ? question.textTa : null;
+        : question.textTa ?? question.textEn;
+  const secondaryText = activeCardLang === "bilingual" ? question.textEn : null;
 
   return (
     <article
@@ -175,7 +175,7 @@ export function StudentDppQuestionCard({
                     : "text-slate-400 hover:text-slate-700"
                 }`}
               >
-                {l === "bilingual" ? "EN+தமிழ்" : l}
+                {l === "bilingual" ? "தமிழ்+EN" : l}
               </button>
             ))}
           </div>

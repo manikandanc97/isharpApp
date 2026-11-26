@@ -41,22 +41,22 @@ export interface DemoTestLobbyProps {
 const SUBJECT_OPTIONS = [
   {
     id: "PHYSICS" as SubjectMode,
-    title: "Physics Only",
-    desc: "இயற்பியல்",
+    title: "இயற்பியல்",
+    desc: "Physics Only",
     icon: Atom,
     badge: "Subject Drill",
   },
   {
     id: "CHEMISTRY" as SubjectMode,
-    title: "Chemistry Only",
-    desc: "வேதியியல்",
+    title: "வேதியியல்",
+    desc: "Chemistry Only",
     icon: FlaskConical,
     badge: "Subject Drill",
   },
   {
     id: "BIOLOGY" as SubjectMode,
-    title: "Biology Only",
-    desc: "உயிரியல்",
+    title: "உயிரியல்",
+    desc: "Biology Only",
     icon: Dna,
     badge: "Subject Drill",
   },
@@ -189,31 +189,6 @@ export function DemoTestLobby({
             </div>
 
             <div className={isDialog ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-1 sm:grid-cols-2 gap-3"}>
-              {allowedLanguages.includes("en") && <button
-                type="button"
-                onClick={() => onLanguageChange("en")}
-                className={`flex flex-col justify-between rounded-2xl border ${
-                  isDialog ? "p-3.5" : "p-4"
-                } text-left transition-all ${
-                  languageMode === "en"
-                    ? "border-brand-red bg-rose-50/40 ring-2 ring-brand-red/30 shadow-xs"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Globe className="size-4 text-brand-blue" />
-                    <span className="font-bold text-xs sm:text-sm text-slate-900">English Only</span>
-                  </div>
-                  {languageMode === "en" && <Check className="size-4 text-brand-red" />}
-                </div>
-                <p className={`${isDialog ? "mt-1.5" : "mt-2"} text-2xs text-slate-500 leading-relaxed`}>
-                  {isDialog
-                    ? "Pure English questions, options, and explanations without Tamil."
-                    : "Questions, options, and step-by-step solutions purely in English without Tamil."}
-                </p>
-              </button>}
-
               {allowedLanguages.includes("ta") && <button
                 type="button"
                 onClick={() => onLanguageChange("ta")}
@@ -240,6 +215,31 @@ export function DemoTestLobby({
                     : "Bilingual dual view: Tamil translation accompanied by standard English terminology."}
                 </p>
               </button>}
+
+              {allowedLanguages.includes("en") && <button
+                type="button"
+                onClick={() => onLanguageChange("en")}
+                className={`flex flex-col justify-between rounded-2xl border ${
+                  isDialog ? "p-3.5" : "p-4"
+                } text-left transition-all ${
+                  languageMode === "en"
+                    ? "border-brand-red bg-rose-50/40 ring-2 ring-brand-red/30 shadow-xs"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="size-4 text-brand-blue" />
+                    <span className="font-bold text-xs sm:text-sm text-slate-900">English Only</span>
+                  </div>
+                  {languageMode === "en" && <Check className="size-4 text-brand-red" />}
+                </div>
+                <p className={`${isDialog ? "mt-1.5" : "mt-2"} text-2xs text-slate-500 leading-relaxed`}>
+                  {isDialog
+                    ? "Pure English questions, options, and explanations without Tamil."
+                    : "Questions, options, and step-by-step solutions purely in English without Tamil."}
+                </p>
+              </button>}
             </div>
           </div>
 
@@ -250,11 +250,18 @@ export function DemoTestLobby({
                 <Clock className="size-3.5 text-emerald-600" />
                 <span>3. Choose Test Duration</span>
               </label>
+              <span className="text-2xs font-semibold text-slate-400">
+                {countOptions.length > 1 ? `${countOptions.length} Formats` : "Configured"}
+              </span>
             </div>
 
-            <div className={isDialog ? "grid grid-cols-3 gap-2" : "grid grid-cols-3 gap-2.5"}>
+            <div className={isDialog ? "grid grid-cols-2 sm:grid-cols-3 gap-2" : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5"}>
               {countOptions.map((item) => {
                 const isChosen = questionCount === item.count;
+                const hasCustomLabel =
+                  item.label &&
+                  item.label.toLowerCase() !== `${item.count} questions` &&
+                  item.label.toLowerCase() !== `${item.count} qs`;
                 return (
                   <button
                     key={item.count}
@@ -280,7 +287,9 @@ export function DemoTestLobby({
                         {item.time}
                       </span>
                     </div>
-                    <p className="mt-1 text-2xs text-slate-500 font-medium truncate">{item.desc}</p>
+                    <p className="mt-1 text-2xs text-slate-500 font-medium truncate">
+                      {hasCustomLabel ? item.label : item.desc}
+                    </p>
                   </button>
                 );
               })}

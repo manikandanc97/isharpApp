@@ -397,23 +397,23 @@ export function TestEditorDialog({
 
             {/* Instructions */}
             <div className="space-y-2">
+              <Label className="text-xs font-semibold text-slate-700">தமிழ் தேர்வர் வழிமுறைகள் (Candidate Instructions)</Label>
+              <Textarea
+                rows={2}
+                value={instructionsTa}
+                onChange={(e) => setInstructionsTa(e.target.value)}
+                placeholder="தேர்வு விதிகள்: சரியான பதிலுக்கு +4, தவறான பதிலுக்கு -1."
+                className="text-xs resize-none"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label className="text-xs font-semibold text-slate-700">Candidate Instructions (English)</Label>
               <Textarea
                 rows={2}
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
                 placeholder="e.g. +4 marks for correct, -1 for wrong. No penalty for unanswered."
-                className="text-xs resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-slate-700">Candidate Instructions (தமிழ்)</Label>
-              <Textarea
-                rows={2}
-                value={instructionsTa}
-                onChange={(e) => setInstructionsTa(e.target.value)}
-                placeholder="தேர்வு விதிகள்: சரியான பதிலுக்கு +4, தவறான பதிலுக்கு -1."
                 className="text-xs resize-none"
               />
             </div>

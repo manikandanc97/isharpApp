@@ -1,6 +1,5 @@
-import { AdminLayoutSkeleton } from "@/components/skeletons/admin-layout-skeleton";
+import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 
 export default function AdminStudentsLoading() {
-  return <AdminLayoutSkeleton section="students" />;
+  return <AdminWorkspaceContentSkeleton section="students" />;
 }
-

@@ -78,11 +78,11 @@ export function QuestionDeleteDialog({
                 )}
               </div>
               <p className="text-xs font-medium text-slate-800 line-clamp-2 leading-relaxed">
-                {singleQuestion.textEn || singleQuestion.textTa || "Image-based question"}
+                {singleQuestion.textTa || singleQuestion.textEn || "Image-based question"}
               </p>
               {singleQuestion.textTa && singleQuestion.textEn && (
-                <p className="text-xs text-slate-600 font-serif line-clamp-1">
-                  {singleQuestion.textTa}
+                <p className="text-xs text-slate-600 line-clamp-1">
+                  {singleQuestion.textEn}
                 </p>
               )}
             </div>

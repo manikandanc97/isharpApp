@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatDate, initials, LightStatusBadge } from "./admin-helpers";
 import {
-  sectionMeta,
   type Membership,
   type Section,
 } from "./admin-types";
@@ -69,9 +68,14 @@ export function AdminHeader({
               Admin Console
             </span>
           </div>
-          <h1 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
-            {sectionMeta[section].label}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
+              I-SHARP Control Center
+            </h1>
+            <span className="hidden rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500 sm:inline-flex">
+              NEET Academic Suite
+            </span>
+          </div>
         </div>
       </div>
 

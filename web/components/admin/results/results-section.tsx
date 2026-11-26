@@ -12,7 +12,6 @@ import {
   Printer,
   RefreshCw,
   Search,
-  Sparkles,
   TrendingUp,
   Trophy,
   Users,
@@ -160,24 +159,20 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
+      {/* Actions & Global Summary Statistics */}
       <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/70 bg-rose-50/50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700">
-              <Sparkles className="size-3 text-brand-red" />
-              <span>Academic Performance</span>
-              <span className="h-2.5 w-px bg-rose-200" />
-              <span className="font-semibold text-brand-red">CBT Analytics</span>
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Results & Scorecard Analytics
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-3xs font-semibold uppercase tracking-wider text-brand-blue">
+              Performance &amp; Rankings
+            </p>
+            <h2 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Results &amp; Analytics
             </h2>
-            <p className="max-w-2xl text-xs leading-relaxed text-slate-500 sm:text-sm">
-              Comprehensive NTA NEET performance benchmarking, All-India rank percentiles, and subject-wise accuracy tracking.
+            <p className="mt-0.5 text-xs text-slate-500">
+              Scorecards, percentiles, subject accuracy &amp; student leaderboard.
             </p>
           </div>
-
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
@@ -211,7 +206,7 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
         </div>
 
         {/* Global Summary Statistics - Themed White Luxury Metric Cards */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-5">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Card 1: Total Attempts */}
           <div className="group relative flex flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-xs transition duration-200 hover:border-blue-200 hover:shadow-card sm:p-5">
             <div className="flex items-start justify-between">

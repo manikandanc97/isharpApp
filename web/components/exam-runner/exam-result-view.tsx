@@ -288,12 +288,14 @@ export function ExamResultView({ result }: ExamResultViewProps) {
 
                     {isExpanded && (
                       <div className="space-y-3 pt-2">
-                        <p className="text-sm font-medium text-slate-900 whitespace-pre-line leading-relaxed">
-                          {item.textEn}
-                        </p>
                         {item.textTa && (
-                          <p className="text-xs text-slate-700 font-sans italic border-l-2 border-brand-red/30 pl-2">
+                          <p className="text-sm font-bold text-slate-900 font-sans whitespace-pre-line leading-relaxed">
                             {item.textTa}
+                          </p>
+                        )}
+                        {item.textEn && (
+                          <p className={`whitespace-pre-line leading-relaxed ${item.textTa ? "text-xs text-slate-700 italic border-l-2 border-brand-red/30 pl-2" : "text-sm font-medium text-slate-900"}`}>
+                            {item.textEn}
                           </p>
                         )}
                         {item.questionImageUrl && (
@@ -332,9 +334,11 @@ export function ExamResultView({ result }: ExamResultViewProps) {
                               >
                                 <span className="font-mono font-bold">({displayLabel})</span>
                                 <div className="flex-1">
-                                  <span>{opt.textEn}</span>
                                   {opt.textTa && (
-                                    <span className="block text-3xs opacity-80">{opt.textTa}</span>
+                                    <span className="block font-semibold">{opt.textTa}</span>
+                                  )}
+                                  {opt.textEn && (
+                                    <span className={`block ${opt.textTa ? "text-3xs opacity-80" : ""}`}>{opt.textEn}</span>
                                   )}
                                 </div>
                                 {isCanonicalCorrect && (
@@ -359,9 +363,11 @@ export function ExamResultView({ result }: ExamResultViewProps) {
                               <BookOpen className="size-3.5" />
                               Official Solution &amp; Key Explanation
                             </p>
-                            {item.solutionEn && <p className="leading-relaxed">{item.solutionEn}</p>}
                             {item.solutionTa && (
-                              <p className="text-3xs text-indigo-900 font-sans italic pt-1">{item.solutionTa}</p>
+                              <p className="leading-relaxed font-sans font-semibold">{item.solutionTa}</p>
+                            )}
+                            {item.solutionEn && (
+                              <p className={`leading-relaxed ${item.solutionTa ? "text-3xs text-indigo-900 border-t border-indigo-100 pt-1" : ""}`}>{item.solutionEn}</p>
                             )}
                           </div>
                         )}

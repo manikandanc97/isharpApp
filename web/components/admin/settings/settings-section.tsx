@@ -8,7 +8,6 @@ import {
   Globe,
   LoaderCircle,
   Save,
-  Settings,
   Shield,
   Sparkles,
 } from "lucide-react";
@@ -83,31 +82,28 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Header */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700">
-              <Settings className="size-4" /> Global Administration
-            </div>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              System Settings & Assessment Defaults
-            </h2>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Configure academy branding, default NTA scoring guidelines, CBT timeouts, and result release policies.
-            </p>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={saving}
-            className="gap-2 rounded-full bg-brand-red font-semibold text-white shadow-primary hover:bg-brand-red-hover active:scale-95"
-          >
-            {saving ? <LoaderCircle className="size-4 animate-spin" /> : <Save className="size-4" />}
-            <span>Save Settings</span>
-          </Button>
+      {/* Header & Actions */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div>
+          <p className="text-3xs font-semibold uppercase tracking-wider text-brand-blue">
+            Platform Configuration
+          </p>
+          <h2 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Settings
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Academy branding, academic year &amp; default test policies.
+          </p>
         </div>
-      </section>
+        <Button
+          type="submit"
+          disabled={saving}
+          className="gap-2 rounded-full bg-brand-red font-semibold text-white shadow-primary hover:bg-brand-red-hover active:scale-95"
+        >
+          {saving ? <LoaderCircle className="size-4 animate-spin" /> : <Save className="size-4" />}
+          <span>Save Settings</span>
+        </Button>
+      </div>
 
       {/* Academy Identity & Branding */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
@@ -245,7 +241,7 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
               onCheckedChange={(c) => setForm({ ...form, bilingualDefault: Boolean(c) })}
             />
             <span className="text-xs font-medium text-slate-800">
-              Default CBT Question Display to Bilingual Mode (English + தமிழ் side-by-side)
+              Default CBT Question Display to Bilingual Mode (தமிழ் + English side-by-side)
             </span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">

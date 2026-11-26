@@ -28,21 +28,19 @@ export interface UseDemoTestWorkflowOptions {
 const ACTIVE_ATTEMPT_KEY = "isharp_active_demo_attempt_id";
 
 const AUTHORITATIVE_DEFAULT_OPTIONS = [
-  { count: 6, durationMinutes: 10, label: "Quick Demo" },
-  { count: 9, durationMinutes: 15, label: "Standard Demo" },
-  { count: 12, durationMinutes: 20, label: "Extended Demo" },
+  { count: 15, durationMinutes: 20, label: "15 Questions" },
 ];
 
 export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
   const {
     initialSubject = "ALL",
     initialLanguage = "ta",
-    initialQuestionCount = 9,
+    initialQuestionCount = 15,
   } = options;
 
   const [phase, setPhase] = useState<
-    "lobby" | "loading" | "runner" | "scorecard"
-  >("lobby");
+    "otp" | "lobby" | "loading" | "runner" | "scorecard"
+  >("loading");
   const [subjectMode, setSubjectMode] = useState<SubjectMode>(initialSubject);
   const [languageMode, setLanguageMode] =
     useState<LanguageMode>(initialLanguage);
@@ -74,61 +72,90 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
   useEffect(() => {
     let active = true;
 
-    const resumeIfPresent = async () => {
+    const initDemo = async () => {
       try {
-        const storedAttemptId =
-          typeof window !== "undefined"
-            ? window.sessionStorage.getItem(ACTIVE_ATTEMPT_KEY)
-            : null;
-        if (storedAttemptId) {
-          const res = await fetch(
-            `/api/demo/attempts/${encodeURIComponent(storedAttemptId)}`,
-            { cache: "no-store" },
-          );
-          if (res.ok && active) {
-            const pkg = (await res.json()) as DemoTestPackage;
-            if (pkg.status === "IN_PROGRESS" && (pkg.remainingSeconds ?? 0) > 0) {
-              setTestPackage(pkg);
-              setPhase("runner");
-              return;
-            } else if (
-              (pkg.status === "SUBMITTED" || pkg.status === "EXPIRED") &&
-              pkg.result
-            ) {
-              setTestPackage(pkg);
-              setSubmittedAnswers(hydrateAnswersFromPackage(pkg));
-              setReport(pkg.result);
-              setPhase("scorecard");
-              return;
-            }
+        const [configRes, sessionRes] = await Promise.all([
+          fetch("/api/demo/config", { cache: "no-store" }),
+          fetch("/api/demo/session", { cache: "no-store" }),
+        ]);
+
+        if (!active) return;
+
+        if (configRes.ok) {
+          const config = (await configRes.json()) as DemoTestConfiguration;
+          setConfiguration(config);
+          setSubjectMode(config.defaultSubject);
+          setLanguageMode(config.defaultLanguage);
+          setQuestionCount(config.defaultQuestionCount);
+          if (!config.isEnabled) {
+            setErrorMsg("The demo test is currently unavailable.");
           }
+        } else {
+          setErrorMsg("Demo configuration could not be loaded.");
+        }
+
+        const sessionData = sessionRes.ok
+          ? ((await sessionRes.json()) as { authenticated?: boolean })
+          : { authenticated: false };
+
+        if (!sessionData.authenticated) {
           if (typeof window !== "undefined") {
             window.sessionStorage.removeItem(ACTIVE_ATTEMPT_KEY);
           }
+          setPhase("otp");
+          return;
+        }
+
+        const resumed = await (async () => {
+          try {
+            const storedAttemptId =
+              typeof window !== "undefined"
+                ? window.sessionStorage.getItem(ACTIVE_ATTEMPT_KEY)
+                : null;
+            if (storedAttemptId) {
+              const res = await fetch(
+                `/api/demo/attempts/${encodeURIComponent(storedAttemptId)}`,
+                { cache: "no-store" },
+              );
+              if (res.ok && active) {
+                const pkg = (await res.json()) as DemoTestPackage;
+                if (pkg.status === "IN_PROGRESS" && (pkg.remainingSeconds ?? 0) > 0) {
+                  setTestPackage(pkg);
+                  setPhase("runner");
+                  return true;
+                } else if (
+                  (pkg.status === "SUBMITTED" || pkg.status === "EXPIRED") &&
+                  pkg.result
+                ) {
+                  setTestPackage(pkg);
+                  setSubmittedAnswers(hydrateAnswersFromPackage(pkg));
+                  setReport(pkg.result);
+                  setPhase("scorecard");
+                  return true;
+                }
+              }
+              if (typeof window !== "undefined") {
+                window.sessionStorage.removeItem(ACTIVE_ATTEMPT_KEY);
+              }
+            }
+          } catch {
+            // Ignore resume failure
+          }
+          return false;
+        })();
+
+        if (!resumed && active) {
+          setPhase("lobby");
         }
       } catch {
-        // Ignore resume failure and show lobby
+        if (active) {
+          setErrorMsg("Demo configuration could not be loaded.");
+          setPhase("otp");
+        }
       }
     };
 
-    void fetch("/api/demo/config", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error();
-        return response.json() as Promise<DemoTestConfiguration>;
-      })
-      .then((config) => {
-        if (!active) return;
-        setConfiguration(config);
-        setSubjectMode(config.defaultSubject);
-        setLanguageMode(config.defaultLanguage);
-        setQuestionCount(config.defaultQuestionCount);
-        if (!config.isEnabled) {
-          setErrorMsg("The demo test is currently unavailable.");
-        }
-      })
-      .catch(() => active && setErrorMsg("Demo configuration could not be loaded."));
-
-    void resumeIfPresent();
+    void initDemo();
 
     return () => {
       active = false;
@@ -138,11 +165,14 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
   const handleSubjectChange = useCallback(
     (mode: SubjectMode) => {
       setSubjectMode(mode);
-      if (configuration) {
+      if (
+        configuration &&
+        !configuration.countOptions.some((opt) => opt.count === questionCount)
+      ) {
         setQuestionCount(configuration.defaultQuestionCount);
       }
     },
-    [configuration],
+    [configuration, questionCount],
   );
 
   const startNewAttempt = useCallback(
@@ -168,6 +198,14 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
         });
 
         const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          if (typeof window !== "undefined") {
+            window.sessionStorage.removeItem(ACTIVE_ATTEMPT_KEY);
+          }
+          setErrorMsg(data?.message || "Please verify your mobile number to continue.");
+          setPhase("otp");
+          return;
+        }
         if (!res.ok) {
           throw new Error(
             data?.message || "Failed to start demo test. Please try again.",
@@ -259,6 +297,11 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
     [testPackage],
   );
 
+  const handleOtpVerified = useCallback(() => {
+    setErrorMsg("");
+    setPhase("lobby");
+  }, []);
+
   const handleRetake = useCallback(() => {
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem(ACTIVE_ATTEMPT_KEY);
@@ -333,6 +376,7 @@ export function useDemoTestWorkflow(options: UseDemoTestWorkflowOptions = {}) {
     handleSubjectChange,
     handleStartExam,
     handleExamSubmit,
+    handleOtpVerified,
     handleRetake,
     resetWorkflow,
     countOptions,

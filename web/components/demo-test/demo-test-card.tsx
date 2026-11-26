@@ -1,13 +1,18 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Award,
   Clock,
   Languages,
   Play,
+  X,
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { DemoOtpGate, type DemoOtpPublicStatus } from "./demo-otp-gate";
 
 interface DemoTestCardProps {
   className?: string;
@@ -15,103 +20,166 @@ interface DemoTestCardProps {
 }
 
 export function DemoTestCard({ className = "", compact = false }: DemoTestCardProps) {
+  const router = useRouter();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [otpStatus, setOtpStatus] = useState<DemoOtpPublicStatus | null>(null);
+
+  const handleOpenDemo = async () => {
+    setChecking(true);
+    try {
+      const res = await fetch("/api/demo/session", { cache: "no-store" });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          authenticated?: boolean;
+          otpStatus?: DemoOtpPublicStatus;
+        };
+        if (data.authenticated) {
+          router.push("/demo-test");
+          return;
+        }
+        if (data.otpStatus) {
+          setOtpStatus(data.otpStatus);
+        }
+      }
+    } catch {
+      // Fall back to opening the verification modal
+    } finally {
+      setChecking(false);
+    }
+    setModalOpen(true);
+  };
+
+  const modal = modalOpen ? (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Demo Test Mobile Verification"
+    >
+      <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+        <button
+          type="button"
+          onClick={() => setModalOpen(false)}
+          aria-label="Close verification modal"
+          className="absolute right-4 top-4 grid size-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <X className="size-4" />
+        </button>
+        <DemoOtpGate
+          otpStatus={otpStatus}
+          onVerified={() => {
+            setModalOpen(false);
+            router.push("/demo-test");
+          }}
+          onCancel={() => setModalOpen(false)}
+        />
+      </div>
+    </div>
+  ) : null;
+
   if (compact) {
     return (
-      <Link
-        href="/demo-test"
-        className={`group flex items-center justify-between gap-3 rounded-2xl border border-rose-200/90 bg-rose-50/50 p-3 sm:p-3.5 transition-all duration-200 hover:bg-white hover:border-brand-red/50 hover:shadow-card ${className}`}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="grid size-9.5 shrink-0 place-items-center rounded-xl bg-brand-red text-white shadow-2xs group-hover:scale-105 transition-transform">
-            <Zap className="size-4.5 fill-current" />
-          </span>
-          <div className="min-w-0 space-y-0.5">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-brand-red transition-colors">
-                Take Free Full-Screen Demo Test
-              </span>
-              <Badge variant="outline" className="border-rose-300 bg-rose-100/70 text-brand-red text-2xs uppercase font-extrabold">
-                Live CBT
-              </Badge>
+      <>
+        <button
+          type="button"
+          onClick={() => void handleOpenDemo()}
+          disabled={checking}
+          className={`group flex w-full items-center justify-between gap-3 rounded-2xl border border-rose-200/90 bg-rose-50/50 p-3 text-left sm:p-3.5 transition-all duration-200 hover:bg-white hover:border-brand-red/50 hover:shadow-card disabled:opacity-70 ${className}`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="grid size-9.5 shrink-0 place-items-center rounded-xl bg-brand-red text-white shadow-2xs group-hover:scale-105 transition-transform">
+              <Zap className="size-4.5 fill-current" />
+            </span>
+            <div className="min-w-0 space-y-0.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-brand-red transition-colors">
+                  Attend Free Demo Test
+                </span>
+                <Badge variant="outline" className="border-rose-300 bg-rose-100/70 text-brand-red text-2xs uppercase font-extrabold">
+                  Live CBT
+                </Badge>
+              </div>
+              <p className="text-2xs sm:text-xs text-slate-500 truncate">
+                Quick mobile OTP verification • Bilingual NEET practice
+              </p>
             </div>
-            <p className="text-2xs sm:text-xs text-slate-500 truncate">
-              Authentic bilingual NEET questions • Full-screen examination
-            </p>
           </div>
-        </div>
 
-        <div className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-red text-white shadow-2xs group-hover:translate-x-0.5 transition-transform">
-          <Play className="size-3 fill-current ml-0.5" />
-        </div>
-      </Link>
+          <div className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-red text-white shadow-2xs group-hover:translate-x-0.5 transition-transform">
+            <Play className="size-3 fill-current ml-0.5" />
+          </div>
+        </button>
+        {modal}
+      </>
     );
   }
 
   return (
-    <div
-      className={`relative overflow-hidden rounded-3xl border border-rose-200/90 bg-linear-to-br from-white via-rose-50/30 to-amber-50/20 p-5 shadow-card transition-all hover:shadow-card-hover ${className}`}
-    >
-      {/* Top Luxury Accent Strip */}
+    <>
       <div
-        className="pointer-events-none absolute -top-px left-8 right-8 h-1 bg-linear-to-r from-brand-red via-amber-500 to-brand-blue opacity-80"
-        aria-hidden="true"
-      />
+        className={`relative overflow-hidden rounded-3xl border border-rose-200/90 bg-linear-to-br from-white via-rose-50/30 to-amber-50/20 p-5 shadow-card transition-all hover:shadow-card-hover ${className}`}
+      >
+        <div
+          className="pointer-events-none absolute -top-px left-8 right-8 h-1 bg-linear-to-r from-brand-red via-amber-500 to-brand-blue opacity-80"
+          aria-hidden="true"
+        />
 
-      <div className="space-y-4">
-        {/* Header Strip */}
-        <div className="flex items-center justify-between gap-2">
-          <Badge
-            variant="outline"
-            className="inline-flex items-center gap-1.5 rounded-full border-rose-300 bg-rose-50 px-2.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-brand-red"
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <Badge
+              variant="outline"
+              className="inline-flex items-center gap-1.5 rounded-full border-rose-300 bg-rose-50 px-2.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-brand-red"
+            >
+              <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
+              <span>Full-Screen Candidate Drill</span>
+            </Badge>
+
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-2xs font-semibold text-slate-600">
+              OTP Verified Access
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
+              Bilingual NEET Full-Screen Test Console
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Experience the actual I-Sharp exam engine. Practice randomized questions from Physics, Chemistry &amp; Biology with authentic NTA negative marking.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl border border-slate-200/80 bg-white/80 p-2 shadow-2xs">
+              <Clock className="mx-auto size-3.5 text-brand-blue" />
+              <p className="mt-1 text-2xs font-bold text-slate-900">Timed Exam</p>
+              <p className="text-2xs text-slate-400">Live Timer</p>
+            </div>
+            <div className="rounded-xl border border-slate-200/80 bg-white/80 p-2 shadow-2xs">
+              <Languages className="mx-auto size-3.5 text-brand-red" />
+              <p className="mt-1 text-2xs font-bold text-slate-900">தமிழ் + Eng</p>
+              <p className="text-2xs text-slate-400">Dual Toggle</p>
+            </div>
+            <div className="rounded-xl border border-slate-200/80 bg-white/80 p-2 shadow-2xs">
+              <Award className="mx-auto size-3.5 text-emerald-600" />
+              <p className="mt-1 text-2xs font-bold text-slate-900">+4 / -1</p>
+              <p className="text-2xs text-slate-400">NTA Marking</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void handleOpenDemo()}
+            disabled={checking}
+            className="group flex w-full items-center justify-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-hover py-2.5 text-xs sm:text-sm font-bold text-white shadow-primary hover:shadow-primary-hover transition-all active:scale-95 disabled:opacity-70"
           >
-            <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
-            <span>Full-Screen Candidate Drill</span>
-          </Badge>
-
-          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-2xs font-semibold text-slate-600">
-            No Login Required
-          </span>
+            <Play className="size-3.5 fill-current" />
+            <span>Attend Free Demo Test</span>
+            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
+          </button>
         </div>
-
-        {/* Title & Description */}
-        <div className="space-y-1">
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
-            Bilingual NEET Full-Screen Test Console
-          </h3>
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Experience the actual I-Sharp exam engine. Practice randomized questions from Physics, Chemistry &amp; Biology with authentic NTA negative marking in a full-screen CBT console.
-          </p>
-        </div>
-
-        {/* Highlights Row */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-xl border border-slate-200/80 bg-white/80 p-2 shadow-2xs">
-            <Clock className="mx-auto size-3.5 text-brand-blue" />
-            <p className="mt-1 text-2xs font-bold text-slate-900">15 Mins</p>
-            <p className="text-2xs text-slate-400">Timed Exam</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/80 bg-white/80 p-2 shadow-2xs">
-            <Languages className="mx-auto size-3.5 text-brand-red" />
-            <p className="mt-1 text-2xs font-bold text-slate-900">தமிழ் + Eng</p>
-            <p className="text-2xs text-slate-400">Dual Toggle</p>
-          </div>
-          <div className="rounded-xl border border-slate-200/80 bg-white/80 p-2 shadow-2xs">
-            <Award className="mx-auto size-3.5 text-emerald-600" />
-            <p className="mt-1 text-2xs font-bold text-slate-900">+4 / -1</p>
-            <p className="text-2xs text-slate-400">NTA Marking</p>
-          </div>
-        </div>
-
-        {/* Launch Button -> Navigates to Full Screen Test */}
-        <Link
-          href="/demo-test"
-          className="group flex w-full items-center justify-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-hover py-2.5 text-xs sm:text-sm font-bold text-white shadow-primary hover:shadow-primary-hover transition-all active:scale-95"
-        >
-          <Play className="size-3.5 fill-current" />
-          <span>Launch Full-Screen Demo Test</span>
-          <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
-        </Link>
       </div>
-    </div>
+      {modal}
+    </>
   );
 }

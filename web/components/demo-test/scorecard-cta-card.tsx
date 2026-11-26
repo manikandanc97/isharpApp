@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, UserPlus } from "lucide-react";
+import { ArrowRight, GraduationCap } from "lucide-react";
 
 export function ScorecardCtaCard() {
   return (
@@ -12,24 +12,31 @@ export function ScorecardCtaCard() {
           <div className="flex items-center gap-2">
             <span className="flex size-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs font-bold tracking-wide uppercase text-emerald-400">
-              Unlock 1,000+ Verified DPP Drills &amp; Full 720-Mark Mock Series
+              iSharp Academy Admissions Open
             </span>
           </div>
           <h3 className="text-lg sm:text-xl font-bold">
-            Ready to take your NEET score to 650+?
+            Ready to take your preparation to the next level?
           </h3>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Join I-Sharp Academy today. I-Sharp students enroll free with verification; direct students enjoy full bilingual mentorship and video solutions.
+            Join iSharp Academy for structured NEET &amp; JEE coaching, bilingual test series, daily practice problems, and personalized faculty mentorship.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <Link
             href="/register"
+            onClick={() => {
+              void fetch("/api/demo/events/cta", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ctaName: "join_isharp_academy" }),
+              }).catch(() => {});
+            }}
             className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-brand-red hover:bg-brand-red-hover px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-lg transition active:scale-95"
           >
-            <UserPlus className="size-4" />
-            <span>Create Student Account</span>
+            <GraduationCap className="size-4" />
+            <span>Join iSharp Academy</span>
             <ArrowRight className="size-3.5" />
           </Link>
         </div>

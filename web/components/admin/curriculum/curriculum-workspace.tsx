@@ -5,9 +5,15 @@ import {
   BookOpen,
   BookOpenCheck,
   CheckCircle2,
-  ChevronDown,
 } from "lucide-react";
 import type { Course } from "@/components/admin/admin-types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCurriculum } from "./use-curriculum";
 import { SubjectPanel } from "./subject-panel";
 import { ChapterTable } from "./chapter-table";
@@ -75,20 +81,21 @@ export function CurriculumWorkspace({
               {course.code}
             </span>
             {allCourses && allCourses.length > 1 ? (
-              <div className="relative">
-                <select
-                  value={course.id}
-                  onChange={(e) => onSelectCourse?.(e.target.value)}
-                  className="appearance-none text-xl font-bold tracking-tight text-slate-900 sm:text-2xl bg-transparent pr-7 cursor-pointer outline-none hover:text-indigo-700"
-                >
+              <Select
+                value={course.id}
+                onValueChange={(value) => value && onSelectCourse?.(value)}
+              >
+                <SelectTrigger className="h-auto w-auto min-w-48 border-0 bg-transparent px-0 py-0 text-xl font-bold tracking-tight shadow-none hover:text-indigo-700 focus:ring-0 sm:text-2xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {allCourses.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <SelectItem key={c.id} value={c.id} label={c.title}>
                       {c.title}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-              </div>
+                </SelectContent>
+              </Select>
             ) : (
               <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                 {course.title}
@@ -155,19 +162,25 @@ export function CurriculumWorkspace({
         <label className="text-3xs font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
           Select Subject to Manage:
         </label>
-        <div className="relative">
-          <select
+        <div>
+          <Select
             value={selectedSubjectId}
-            onChange={(e) => setSelectedSubjectId(e.target.value)}
-            className="w-full appearance-none rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            onValueChange={(value) => value && setSelectedSubjectId(value)}
           >
-            {subjects.map((sub) => (
-              <option key={sub.id} value={sub.id}>
-                {sub.name} ({sub.code}) – {sub.chaptersCount} Chapters
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <SelectTrigger className="h-10 text-xs font-bold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {subjects.map((sub) => {
+                const label = `${sub.name} (${sub.code}) – ${sub.chaptersCount} Chapters`;
+                return (
+                  <SelectItem key={sub.id} value={sub.id} label={label}>
+                    {label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

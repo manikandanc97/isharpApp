@@ -1,17 +1,8 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { CandidateQuestionRecord } from './demo-test-eligibility.helper.js';
 import {
-  evaluateQuestionEligibility,
-  type CandidateQuestionRecord,
-} from './demo-test-eligibility.helper.js';
-import {
-  DEFAULT_DEMO_BLUEPRINTS,
   DEFAULT_DEMO_CONFIG,
-  DEFAULT_DEMO_COUNT_OPTIONS,
   DEFAULT_DEMO_SELECTION_RULES,
   type DemoBlueprint,
   type DemoCountOption,
@@ -20,170 +11,175 @@ import {
   type LanguageMode,
   type PoolMode,
   type SubjectMode,
+  type WeightingMode,
 } from './demo-test.types.js';
-
-export interface PoolQuestionFilters {
-  page?: number;
-  limit?: number;
-  query?: string;
-  subject?: string;
-  chapterId?: string;
-  difficulty?: string;
-  language?: string;
-  type?: string;
-  mediaFilter?: string;
-  activeFilter?: string;
-  approvalFilter?: string;
-  usageFilter?: string;
-}
 
 @Injectable()
 export class DemoTestConfigurationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private parseBlueprints(value: unknown, countOptionsFallback?: unknown): DemoBlueprint[] {
-    if (Array.isArray(value) && value.length > 0) {
-      const parsed = value.slice(0, 6).flatMap((item, idx) => {
-        if (!item || typeof item !== 'object') return [];
-        const e = item as Record<string, unknown>;
-        const count = Number(e.count);
-        const durationMinutes = Number(e.durationMinutes);
-        if (
-          !Number.isInteger(count) ||
-          count < 1 ||
-          count > 200 ||
-          !Number.isInteger(durationMinutes) ||
-          durationMinutes < 1 ||
-          durationMinutes > 600
-        ) {
-          return [];
+  private buildBalancedBlueprint(
+    questionCount: number,
+    durationMinutes: number,
+    allowedSubjects: SubjectMode[],
+    label?: string,
+    index = 0,
+    weightingMode: WeightingMode = 'WEIGHTED',
+  ): DemoBlueprint {
+    const enabledSubjects = allowedSubjects.filter((s) =>
+      ['PHYSICS', 'CHEMISTRY', 'BIOLOGY'].includes(s),
+    );
+    const activeSet = new Set(
+      enabledSubjects.length ? enabledSubjects : ['PHYSICS', 'CHEMISTRY', 'BIOLOGY'],
+    );
+    const dist = { PHYSICS: 0, CHEMISTRY: 0, BIOLOGY: 0 };
+
+    if (
+      weightingMode === 'WEIGHTED' &&
+      activeSet.has('PHYSICS') &&
+      activeSet.has('CHEMISTRY') &&
+      activeSet.has('BIOLOGY')
+    ) {
+      // NEET standard 1:1:2 weighting (25% Phy, 25% Chem, 50% Bio)
+      const phy = Math.floor(questionCount * 0.25);
+      const chem = Math.floor(questionCount * 0.25);
+      const bio = questionCount - phy - chem;
+      dist.PHYSICS = phy;
+      dist.CHEMISTRY = chem;
+      dist.BIOLOGY = bio;
+    } else {
+      const activeCount = activeSet.size;
+      const base = Math.floor(questionCount / activeCount);
+      let remainder = questionCount % activeCount;
+      for (const subj of ['BIOLOGY', 'PHYSICS', 'CHEMISTRY'] as const) {
+        if (activeSet.has(subj)) {
+          dist[subj] = base + (remainder > 0 ? 1 : 0);
+          if (remainder > 0) remainder -= 1;
         }
-        const label =
-          typeof e.label === 'string' && e.label.trim()
-            ? e.label.trim().slice(0, 50)
-            : `${count} Questions`;
-        const id =
-          typeof e.id === 'string' && e.id.trim()
-            ? e.id.trim().slice(0, 40)
-            : `blueprint-${idx + 1}`;
-        const sd = (e.subjectDistribution ?? {}) as Record<string, unknown>;
-        let phy = Number.isInteger(Number(sd.PHYSICS)) ? Math.max(0, Number(sd.PHYSICS)) : Math.round(count * 0.25);
-        let chem = Number.isInteger(Number(sd.CHEMISTRY)) ? Math.max(0, Number(sd.CHEMISTRY)) : Math.round(count * 0.25);
-        let bio = Number.isInteger(Number(sd.BIOLOGY)) ? Math.max(0, Number(sd.BIOLOGY)) : Math.max(0, count - phy - chem);
-        if (phy + chem + bio !== count) {
-          phy = Math.round(count * 0.25);
-          chem = Math.round(count * 0.25);
-          bio = Math.max(0, count - phy - chem);
-        }
-        return [
-          {
-            id,
-            label,
-            count,
-            durationMinutes,
-            maxMarks: count * 4,
-            subjectDistribution: { PHYSICS: phy, CHEMISTRY: chem, BIOLOGY: bio },
-          },
-        ];
-      });
-      if (parsed.length) return parsed;
-    }
-
-    if (Array.isArray(countOptionsFallback) && countOptionsFallback.length > 0) {
-      return this.parseCountOptions(countOptionsFallback).map((opt, idx) => {
-        const phy = Math.round(opt.count * 0.25);
-        const chem = Math.round(opt.count * 0.25);
-        const bio = Math.max(0, opt.count - phy - chem);
-        return {
-          id: `blueprint-${idx + 1}`,
-          label: opt.label,
-          count: opt.count,
-          durationMinutes: opt.durationMinutes,
-          maxMarks: opt.count * 4,
-          subjectDistribution: { PHYSICS: phy, CHEMISTRY: chem, BIOLOGY: bio },
-        };
-      });
-    }
-
-    return DEFAULT_DEMO_BLUEPRINTS;
-  }
-
-  private parseCountOptions(value: unknown): DemoCountOption[] {
-    if (!Array.isArray(value)) return DEFAULT_DEMO_COUNT_OPTIONS;
-    const result = value.slice(0, 6).flatMap((item) => {
-      if (!item || typeof item !== 'object') return [];
-      const entry = item as Record<string, unknown>;
-      const count = Number(entry.count);
-      const durationMinutes = Number(entry.durationMinutes);
-      if (
-        !Number.isInteger(count) ||
-        count < 1 ||
-        count > 200 ||
-        !Number.isInteger(durationMinutes) ||
-        durationMinutes < 1 ||
-        durationMinutes > 600
-      ) {
-        return [];
       }
-      const label =
-        typeof entry.label === 'string' ? entry.label.trim().slice(0, 50) : '';
-      return [{ count, durationMinutes, label: label || `${count} Questions` }];
-    });
-    return result.length ? result : DEFAULT_DEMO_COUNT_OPTIONS;
-  }
-
-  private parseSelectionRules(value: unknown): DemoSelectionRules {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return { ...DEFAULT_DEMO_SELECTION_RULES };
     }
-    const v = value as Record<string, unknown>;
-    const diff = (v.difficultyDistribution ?? {}) as Record<string, unknown>;
-    const easy = Number.isFinite(Number(diff.EASY)) ? Math.max(0, Math.min(100, Number(diff.EASY))) : 40;
-    const medium = Number.isFinite(Number(diff.MEDIUM)) ? Math.max(0, Math.min(100, Number(diff.MEDIUM))) : 40;
-    const hard = Number.isFinite(Number(diff.HARD)) ? Math.max(0, Math.min(100, Number(diff.HARD))) : 20;
+
+    const cleanLabel = label?.trim() || `${questionCount} Questions`;
 
     return {
-      autoRandomSelection: v.autoRandomSelection !== false,
-      visitorRepeatPrevention: v.visitorRepeatPrevention !== false,
-      equivalentRepeatPrevention: v.equivalentRepeatPrevention !== false,
-      globalExposureBalancing: v.globalExposureBalancing !== false,
-      recentPaperUniqueness: v.recentPaperUniqueness !== false,
-      recentPaperWindow:
-        Number.isInteger(Number(v.recentPaperWindow)) && Number(v.recentPaperWindow) >= 1
-          ? Math.min(200, Number(v.recentPaperWindow))
-          : DEFAULT_DEMO_SELECTION_RULES.recentPaperWindow,
-      maxPaperOverlapRatio:
-        Number.isFinite(Number(v.maxPaperOverlapRatio)) &&
-        Number(v.maxPaperOverlapRatio) >= 0 &&
-        Number(v.maxPaperOverlapRatio) <= 1
-          ? Number(v.maxPaperOverlapRatio)
-          : DEFAULT_DEMO_SELECTION_RULES.maxPaperOverlapRatio,
-      shuffleQuestions: v.shuffleQuestions !== false,
-      shuffleOptions: v.shuffleOptions !== false,
-      cooldownHours:
-        Number.isInteger(Number(v.cooldownHours)) && Number(v.cooldownHours) >= 0
-          ? Math.min(720, Number(v.cooldownHours))
-          : DEFAULT_DEMO_SELECTION_RULES.cooldownHours,
-      strictNoRepeat: v.strictNoRepeat === true,
-      smartReuseAfterExhaustion: v.smartReuseAfterExhaustion !== false,
-      minUniquePoolSize:
-        Number.isInteger(Number(v.minUniquePoolSize)) && Number(v.minUniquePoolSize) >= 1
-          ? Math.min(1000, Number(v.minUniquePoolSize))
-          : DEFAULT_DEMO_SELECTION_RULES.minUniquePoolSize,
-      chapterDiversity: v.chapterDiversity !== false,
-      questionTypeDiversity: v.questionTypeDiversity !== false,
-      minImageQuestions:
-        Number.isInteger(Number(v.minImageQuestions)) && Number(v.minImageQuestions) >= 0
-          ? Math.min(50, Number(v.minImageQuestions))
-          : 0,
-      difficultyDistribution: { EASY: easy, MEDIUM: medium, HARD: hard },
-      weightingMode: v.weightingMode === 'EQUAL' ? 'EQUAL' : 'WEIGHTED',
+      id: index === 0 ? 'default-demo' : `demo-preset-${questionCount}`,
+      label: cleanLabel,
+      count: questionCount,
+      durationMinutes,
+      maxMarks: questionCount * 4,
+      subjectDistribution: dist,
+    };
+  }
+
+  private normalizeCountOptions(
+    raw: unknown,
+    fallbackCount: number,
+    fallbackDuration: number,
+  ): DemoCountOption[] {
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return [
+        {
+          count: fallbackCount,
+          durationMinutes: fallbackDuration,
+          label: `${fallbackCount} Questions`,
+        },
+      ];
+    }
+
+    const seen = new Set<number>();
+    const normalized: DemoCountOption[] = [];
+    for (const item of raw) {
+      if (!item || typeof item !== 'object') continue;
+      const obj = item as Record<string, unknown>;
+      const count = Math.trunc(Number(obj.count));
+      const durationMinutes = Math.trunc(Number(obj.durationMinutes));
+      if (
+        !Number.isFinite(count) ||
+        count < 1 ||
+        count > 180 ||
+        !Number.isFinite(durationMinutes) ||
+        durationMinutes < 1 ||
+        durationMinutes > 240 ||
+        seen.has(count)
+      ) {
+        continue;
+      }
+      seen.add(count);
+      const label =
+        typeof obj.label === 'string' && obj.label.trim()
+          ? obj.label.trim().slice(0, 60)
+          : `${count} Questions`;
+      normalized.push({ count, durationMinutes, label });
+    }
+
+    if (!normalized.length) {
+      return [
+        {
+          count: fallbackCount,
+          durationMinutes: fallbackDuration,
+          label: `${fallbackCount} Questions`,
+        },
+      ];
+    }
+
+    return normalized.sort((a, b) => a.count - b.count);
+  }
+
+  private normalizeSelectionRules(raw: unknown): DemoSelectionRules {
+    const base = { ...DEFAULT_DEMO_SELECTION_RULES };
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return base;
+    }
+    const r = raw as Record<string, unknown>;
+
+    const bool = (key: keyof DemoSelectionRules, fallback: boolean) =>
+      typeof r[key] === 'boolean' ? (r[key] as boolean) : fallback;
+
+    const num = (
+      key: keyof DemoSelectionRules,
+      fallback: number,
+      min: number,
+      max: number,
+    ) => {
+      const n = Number(r[key]);
+      return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+    };
+
+    const weightingMode: WeightingMode =
+      r.weightingMode === 'EQUAL' || r.weightingMode === 'WEIGHTED'
+        ? r.weightingMode
+        : base.weightingMode;
+
+    return {
+      ...base,
+      autoRandomSelection: bool('autoRandomSelection', base.autoRandomSelection),
+      visitorRepeatPrevention: bool('visitorRepeatPrevention', base.visitorRepeatPrevention),
+      equivalentRepeatPrevention: bool(
+        'equivalentRepeatPrevention',
+        base.equivalentRepeatPrevention,
+      ),
+      globalExposureBalancing: bool('globalExposureBalancing', base.globalExposureBalancing),
+      recentPaperUniqueness: bool('recentPaperUniqueness', base.recentPaperUniqueness),
+      recentPaperWindow: Math.trunc(num('recentPaperWindow', base.recentPaperWindow, 1, 100)),
+      maxPaperOverlapRatio: num('maxPaperOverlapRatio', base.maxPaperOverlapRatio, 0, 1),
+      shuffleQuestions: bool('shuffleQuestions', base.shuffleQuestions),
+      shuffleOptions: bool('shuffleOptions', base.shuffleOptions),
+      cooldownHours: Math.trunc(num('cooldownHours', base.cooldownHours, 0, 720)),
+      strictNoRepeat: bool('strictNoRepeat', base.strictNoRepeat),
+      smartReuseAfterExhaustion: bool(
+        'smartReuseAfterExhaustion',
+        base.smartReuseAfterExhaustion,
+      ),
+      chapterDiversity: bool('chapterDiversity', base.chapterDiversity),
+      questionTypeDiversity: bool('questionTypeDiversity', base.questionTypeDiversity),
+      weightingMode,
     };
   }
 
   private normalizeRecord(
     record: {
       isEnabled: boolean;
+      examCategory?: string;
       title: string;
       code: string;
       instructionsEn: string | null;
@@ -193,166 +189,303 @@ export class DemoTestConfigurationService {
       defaultSubject: string;
       defaultLanguage: string;
       defaultQuestionCount: number;
-      countOptions: unknown;
-      poolMode?: string;
+      defaultDurationMinutes?: number;
+      countOptions?: unknown;
       selectionRules?: unknown;
-      blueprints?: unknown;
       guestAccessEnabled?: boolean;
       showResultsImmediately?: boolean;
       showSolutionsAfterSubmit?: boolean;
       admissionCtaEnabled?: boolean;
-      questions?: { questionId: string; isApproved?: boolean }[];
     } | null,
   ): DemoTestConfigurationPayload {
     if (!record) return { ...DEFAULT_DEMO_CONFIG };
 
-    const blueprints = this.parseBlueprints(
-      record.blueprints,
-      record.countOptions,
-    );
-    const countOptions = blueprints.map((bp) => ({
-      count: bp.count,
-      durationMinutes: bp.durationMinutes,
-      label: bp.label,
-    }));
-
-    const poolModeRaw = String(record.poolMode ?? 'HYBRID').toUpperCase();
-    const poolMode: PoolMode =
-      poolModeRaw === 'MANUAL' || poolModeRaw === 'AUTOMATIC' ? poolModeRaw : 'HYBRID';
-
     const allowedSubjects = record.allowedSubjects.filter((s): s is SubjectMode =>
       ['ALL', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY'].includes(s),
     );
+    const normalizedSubjects = allowedSubjects.length
+      ? allowedSubjects
+      : DEFAULT_DEMO_CONFIG.allowedSubjects;
 
     const allowedLanguages = record.allowedLanguages.filter((l): l is LanguageMode =>
       ['en', 'ta'].includes(l),
     );
+    const normalizedLanguages = allowedLanguages.length
+      ? allowedLanguages
+      : DEFAULT_DEMO_CONFIG.allowedLanguages;
+
+    const fallbackQuestionCount = Math.max(
+      1,
+      Math.min(180, Number(record.defaultQuestionCount || DEFAULT_DEMO_CONFIG.defaultQuestionCount)),
+    );
+    const fallbackDurationMinutes = Math.max(
+      1,
+      Math.min(240, Number(record.defaultDurationMinutes || DEFAULT_DEMO_CONFIG.defaultDurationMinutes)),
+    );
+
+    const countOptions = this.normalizeCountOptions(
+      record.countOptions,
+      fallbackQuestionCount,
+      fallbackDurationMinutes,
+    );
+
+    const matchedDefault =
+      countOptions.find((opt) => opt.count === fallbackQuestionCount) ?? countOptions[0];
+    const defaultQuestionCount = matchedDefault.count;
+    const defaultDurationMinutes = matchedDefault.durationMinutes;
+
+    const selectionRules = this.normalizeSelectionRules(record.selectionRules);
+
+    const blueprints = countOptions.map((opt, idx) =>
+      this.buildBalancedBlueprint(
+        opt.count,
+        opt.durationMinutes,
+        normalizedSubjects,
+        opt.label,
+        idx,
+        selectionRules.weightingMode,
+      ),
+    );
 
     return {
       isEnabled: record.isEnabled,
+      examCategory: record.examCategory || DEFAULT_DEMO_CONFIG.examCategory,
       title: record.title ?? DEFAULT_DEMO_CONFIG.title,
       code: record.code ?? DEFAULT_DEMO_CONFIG.code,
       instructionsEn: record.instructionsEn ?? DEFAULT_DEMO_CONFIG.instructionsEn,
       instructionsTa: record.instructionsTa ?? DEFAULT_DEMO_CONFIG.instructionsTa,
-      allowedSubjects: allowedSubjects.length ? allowedSubjects : DEFAULT_DEMO_CONFIG.allowedSubjects,
-      allowedLanguages: allowedLanguages.length ? allowedLanguages : DEFAULT_DEMO_CONFIG.allowedLanguages,
-      defaultSubject: (record.defaultSubject ?? 'ALL') as SubjectMode,
-      defaultLanguage: (record.defaultLanguage ?? 'ta') as LanguageMode,
-      defaultQuestionCount: Number(record.defaultQuestionCount ?? 9),
+      allowedSubjects: normalizedSubjects,
+      allowedLanguages: normalizedLanguages,
+      defaultSubject: normalizedSubjects.includes(record.defaultSubject as SubjectMode)
+        ? (record.defaultSubject as SubjectMode)
+        : normalizedSubjects[0],
+      defaultLanguage: normalizedLanguages.includes(record.defaultLanguage as LanguageMode)
+        ? (record.defaultLanguage as LanguageMode)
+        : normalizedLanguages[0],
+      defaultQuestionCount,
+      defaultDurationMinutes,
       countOptions,
       blueprints,
-      poolMode,
-      selectionRules: this.parseSelectionRules(record.selectionRules),
+      poolMode: 'AUTOMATIC',
+      selectionRules,
       guestAccessEnabled: record.guestAccessEnabled ?? true,
       showResultsImmediately: record.showResultsImmediately ?? true,
       showSolutionsAfterSubmit: record.showSolutionsAfterSubmit ?? true,
       admissionCtaEnabled: record.admissionCtaEnabled ?? true,
-      selectedQuestionIds:
-        record.questions
-          ?.filter((item) => item.isApproved !== false)
-          .map((item) => item.questionId) ?? [],
     };
   }
 
-  async get(isAdmin = false): Promise<DemoTestConfigurationPayload> {
+  async get(_isAdmin = false): Promise<DemoTestConfigurationPayload> {
     const record = await this.prisma.demoTestConfiguration.findUnique({
       where: { id: 'login-demo' },
-      include: {
-        questions: {
-          where: { isApproved: true },
-          orderBy: { position: 'asc' },
-          select: { questionId: true, isApproved: true },
-        },
-      },
     });
-    const result = this.normalizeRecord(record);
-    if (!isAdmin) {
-      delete result.selectedQuestionIds;
-    }
-    return result;
+    return this.normalizeRecord(record);
   }
 
-  private sanitizeConfigInput(body: unknown) {
+  private sanitizeSettingsInput(
+    body: unknown,
+    existing: DemoTestConfigurationPayload,
+  ) {
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      throw new BadRequestException('Invalid demo configuration');
+      throw new BadRequestException('Invalid demo settings payload');
     }
     const input = body as Record<string, unknown>;
-    const allowedSubjects = Array.isArray(input.allowedSubjects)
+
+    const isEnabled =
+      typeof input.isEnabled === 'boolean' ? input.isEnabled : existing.isEnabled;
+
+    const title =
+      typeof input.title === 'string' && input.title.trim()
+        ? input.title.trim().slice(0, 200)
+        : existing.title;
+
+    const code =
+      typeof input.code === 'string' && input.code.trim()
+        ? input.code.trim().slice(0, 64)
+        : existing.code;
+
+    const instructionsEn =
+      typeof input.instructionsEn === 'string'
+        ? input.instructionsEn.trim()
+        : existing.instructionsEn;
+
+    const instructionsTa =
+      typeof input.instructionsTa === 'string'
+        ? input.instructionsTa.trim()
+        : existing.instructionsTa;
+
+    const rawCategory = 'NEET';
+
+    let selectedSubjects: SubjectMode[] = Array.isArray(input.allowedSubjects)
       ? input.allowedSubjects
-          .map(String)
-          .filter((item): item is SubjectMode =>
-            ['ALL', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY'].includes(item),
+          .map((s) => String(s).trim().toUpperCase())
+          .filter((s): s is SubjectMode =>
+            ['PHYSICS', 'CHEMISTRY', 'BIOLOGY'].includes(s),
           )
-      : DEFAULT_DEMO_CONFIG.allowedSubjects;
-    const allowedLanguages = Array.isArray(input.allowedLanguages)
+      : existing.allowedSubjects.filter((s) =>
+          ['PHYSICS', 'CHEMISTRY', 'BIOLOGY'].includes(s),
+        );
+
+    selectedSubjects = [...new Set(selectedSubjects)];
+    if (!selectedSubjects.length) {
+      throw new BadRequestException('Select at least one subject');
+    }
+
+    const allowedSubjects: SubjectMode[] =
+      selectedSubjects.length > 1 ? ['ALL', ...selectedSubjects] : selectedSubjects;
+
+    const requestedDefaultSubject =
+      typeof input.defaultSubject === 'string'
+        ? (input.defaultSubject.trim().toUpperCase() as SubjectMode)
+        : existing.defaultSubject;
+
+    const defaultSubject: SubjectMode = allowedSubjects.includes(requestedDefaultSubject)
+      ? requestedDefaultSubject
+      : selectedSubjects.length > 1
+        ? 'ALL'
+        : selectedSubjects[0];
+
+    let allowedLanguages: LanguageMode[] = Array.isArray(input.allowedLanguages)
       ? input.allowedLanguages
-          .map(String)
-          .filter((item): item is LanguageMode => ['en', 'ta'].includes(item))
-      : DEFAULT_DEMO_CONFIG.allowedLanguages;
-    if (!allowedSubjects.length || !allowedLanguages.length) {
-      throw new BadRequestException('Enable at least one subject and one language');
+          .map((l) => String(l).trim().toLowerCase())
+          .filter((l): l is LanguageMode => ['en', 'ta'].includes(l))
+      : existing.allowedLanguages;
+    allowedLanguages = [...new Set(allowedLanguages)];
+    if (!allowedLanguages.length) {
+      throw new BadRequestException('Select at least one language');
     }
 
-    const blueprints = this.parseBlueprints(input.blueprints, input.countOptions);
-    const countOptions = blueprints.map((bp) => ({
-      count: bp.count,
-      durationMinutes: bp.durationMinutes,
-      label: bp.label,
-    }));
-
-    const defaultSubject = allowedSubjects.includes(String(input.defaultSubject) as SubjectMode)
-      ? (String(input.defaultSubject) as SubjectMode)
-      : allowedSubjects[0];
-    const defaultLanguage = allowedLanguages.includes(String(input.defaultLanguage) as LanguageMode)
-      ? (String(input.defaultLanguage) as LanguageMode)
+    const requestedDefaultLanguage =
+      typeof input.defaultLanguage === 'string'
+        ? (input.defaultLanguage.trim().toLowerCase() as LanguageMode)
+        : existing.defaultLanguage;
+    const defaultLanguage: LanguageMode = allowedLanguages.includes(requestedDefaultLanguage)
+      ? requestedDefaultLanguage
       : allowedLanguages[0];
-    const requestedCount = Number(input.defaultQuestionCount);
-    const defaultQuestionCount = countOptions.some((o) => o.count === requestedCount)
-      ? requestedCount
-      : countOptions[0].count;
 
-    const poolModeRaw = String(input.poolMode ?? 'HYBRID').toUpperCase();
-    const poolMode: PoolMode =
-      poolModeRaw === 'MANUAL' || poolModeRaw === 'AUTOMATIC' ? poolModeRaw : 'HYBRID';
+    const selectionRules = this.normalizeSelectionRules(
+      input.selectionRules !== undefined
+        ? { ...existing.selectionRules, ...(input.selectionRules as Record<string, unknown>) }
+        : existing.selectionRules,
+    );
 
-    const selectionRules = this.parseSelectionRules(input.selectionRules);
-    const diffSum =
-      selectionRules.difficultyDistribution.EASY +
-      selectionRules.difficultyDistribution.MEDIUM +
-      selectionRules.difficultyDistribution.HARD;
-    if (diffSum !== 100) {
-      throw new BadRequestException(
-        `Difficulty distribution must sum to 100% (currently ${diffSum}%)`,
-      );
+    let countOptions: DemoCountOption[];
+    if (Array.isArray(input.countOptions)) {
+      if (input.countOptions.length === 0 || input.countOptions.length > 8) {
+        throw new BadRequestException('Configure between 1 and 8 question count options');
+      }
+      const seenCounts = new Set<number>();
+      countOptions = input.countOptions.map((item, idx) => {
+        if (!item || typeof item !== 'object') {
+          throw new BadRequestException(`Invalid option at position ${idx + 1}`);
+        }
+        const obj = item as Record<string, unknown>;
+        const count = Number(obj.count);
+        const durationMinutes = Number(obj.durationMinutes);
+        if (!Number.isInteger(count) || count < 1 || count > 180) {
+          throw new BadRequestException('Question count must be between 1 and 180');
+        }
+        if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 240) {
+          throw new BadRequestException('Duration must be between 1 and 240 minutes');
+        }
+        if (seenCounts.has(count)) {
+          throw new BadRequestException(`Duplicate question count option: ${count}`);
+        }
+        seenCounts.add(count);
+        const label =
+          typeof obj.label === 'string' && obj.label.trim()
+            ? obj.label.trim().slice(0, 60)
+            : `${count} Questions`;
+        return { count, durationMinutes, label };
+      });
+      countOptions.sort((a, b) => a.count - b.count);
+    } else {
+      const questionCount =
+        input.defaultQuestionCount !== undefined
+          ? Number(input.defaultQuestionCount)
+          : existing.defaultQuestionCount;
+      if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > 180) {
+        throw new BadRequestException('Number of questions must be between 1 and 180');
+      }
+      const durationMinutes =
+        input.defaultDurationMinutes !== undefined
+          ? Number(input.defaultDurationMinutes)
+          : existing.defaultDurationMinutes;
+      if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 240) {
+        throw new BadRequestException('Test duration must be between 1 and 240 minutes');
+      }
+      countOptions = [
+        {
+          count: questionCount,
+          durationMinutes,
+          label: `${questionCount} Questions`,
+        },
+      ];
     }
 
-    const text = (value: unknown, fallback: string, max: number) =>
-      typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : fallback;
+    const requestedDefaultCount =
+      input.defaultQuestionCount !== undefined
+        ? Number(input.defaultQuestionCount)
+        : existing.defaultQuestionCount;
+    const defaultOption =
+      countOptions.find((opt) => opt.count === requestedDefaultCount) ?? countOptions[0];
+
+    const blueprints = countOptions.map((opt, idx) =>
+      this.buildBalancedBlueprint(
+        opt.count,
+        opt.durationMinutes,
+        allowedSubjects,
+        opt.label,
+        idx,
+        selectionRules.weightingMode,
+      ),
+    );
+
+    const guestAccessEnabled =
+      typeof input.guestAccessEnabled === 'boolean'
+        ? input.guestAccessEnabled
+        : existing.guestAccessEnabled;
+    const showResultsImmediately =
+      typeof input.showResultsImmediately === 'boolean'
+        ? input.showResultsImmediately
+        : existing.showResultsImmediately;
+    const showSolutionsAfterSubmit =
+      typeof input.showSolutionsAfterSubmit === 'boolean'
+        ? input.showSolutionsAfterSubmit
+        : existing.showSolutionsAfterSubmit;
+    const admissionCtaEnabled =
+      typeof input.admissionCtaEnabled === 'boolean'
+        ? input.admissionCtaEnabled
+        : existing.admissionCtaEnabled;
 
     return {
-      isEnabled: input.isEnabled !== false,
-      title: text(input.title, DEFAULT_DEMO_CONFIG.title, 200),
-      code: text(input.code, DEFAULT_DEMO_CONFIG.code, 64),
-      instructionsEn: text(input.instructionsEn, DEFAULT_DEMO_CONFIG.instructionsEn, 20_000),
-      instructionsTa: text(input.instructionsTa, DEFAULT_DEMO_CONFIG.instructionsTa, 20_000),
+      isEnabled,
+      examCategory: rawCategory,
+      title,
+      code,
+      instructionsEn,
+      instructionsTa,
       allowedSubjects,
       allowedLanguages,
       defaultSubject,
       defaultLanguage,
-      defaultQuestionCount,
+      defaultQuestionCount: defaultOption.count,
+      defaultDurationMinutes: defaultOption.durationMinutes,
       countOptions,
       blueprints,
-      poolMode,
+      poolMode: 'AUTOMATIC' as PoolMode,
       selectionRules,
-      guestAccessEnabled: input.guestAccessEnabled !== false,
-      showResultsImmediately: input.showResultsImmediately !== false,
-      showSolutionsAfterSubmit: input.showSolutionsAfterSubmit !== false,
-      admissionCtaEnabled: input.admissionCtaEnabled !== false,
+      guestAccessEnabled,
+      showResultsImmediately,
+      showSolutionsAfterSubmit,
+      admissionCtaEnabled,
     };
   }
 
   async update(body: unknown, actorUserId?: string | null) {
-    const sanitized = this.sanitizeConfigInput(body);
+    const existing = await this.get(true);
+    const sanitized = this.sanitizeSettingsInput(body, existing);
+
     await this.prisma.demoTestConfiguration.upsert({
       where: { id: 'login-demo' },
       create: {
@@ -369,575 +502,52 @@ export class DemoTestConfigurationService {
         selectionRules: sanitized.selectionRules as never,
       },
     });
-    await this.logAdminAction(actorUserId, 'UPDATE_CONFIG', {
-      title: sanitized.title,
-      poolMode: sanitized.poolMode,
+
+    await this.prisma.demoAdminAuditLog.create({
+      data: {
+        actorUserId: actorUserId ?? null,
+        action: 'UPDATE_DEMO_SETTINGS',
+        details: {
+          isEnabled: sanitized.isEnabled,
+          examCategory: sanitized.examCategory,
+          defaultQuestionCount: sanitized.defaultQuestionCount,
+          defaultDurationMinutes: sanitized.defaultDurationMinutes,
+          allowedSubjects: sanitized.allowedSubjects,
+        } as never,
+      },
     });
+
     return this.get(true);
   }
 
-  async validateConfiguration(body?: unknown) {
-    const config = body ? this.sanitizeConfigInput(body) : await this.get(true);
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    const candidates = await this.fetchPoolCandidates(config.poolMode);
-    const maxBlueprintCount = Math.max(
-      ...config.blueprints.map((bp) => bp.count),
-    );
-
-    if (candidates.length === 0) {
-      errors.push(
-        config.poolMode === 'AUTOMATIC'
-          ? 'No active, eligible questions exist in the Question Bank.'
-          : 'No approved questions exist in the Demo Question Pool. Approve questions in the Question Pool tab before publishing.',
-      );
-    }
-
-    for (const bp of config.blueprints) {
-      const sdSum =
-        bp.subjectDistribution.PHYSICS +
-        bp.subjectDistribution.CHEMISTRY +
-        bp.subjectDistribution.BIOLOGY;
-      if (sdSum !== bp.count) {
-        errors.push(
-          `Blueprint "${bp.label}" subject distribution sums to ${sdSum}, expected ${bp.count}.`,
-        );
-      }
-      if (bp.durationMinutes < 1) {
-        errors.push(`Blueprint "${bp.label}" duration must be at least 1 minute.`);
-      }
-    }
-
-    for (const lang of config.allowedLanguages) {
-      for (const subj of config.allowedSubjects) {
-        const eligibleForCombo = candidates.filter((q) => {
-          const code = q.courseSubject?.subject?.code?.toUpperCase() ?? 'GENERAL';
-          if (subj !== 'ALL' && code !== subj) return false;
-          return evaluateQuestionEligibility(q, lang).eligible;
-        });
-
-        if (eligibleForCombo.length < maxBlueprintCount) {
-          errors.push(
-            `Insufficient eligible questions for ${subj} (${lang === 'ta' ? 'Tamil + English' : 'English'}): ${eligibleForCombo.length} available, ${maxBlueprintCount} required for largest blueprint.`,
-          );
-        } else if (eligibleForCombo.length < maxBlueprintCount * 2) {
-          warnings.push(
-            `Low pool depth for ${subj} (${lang === 'ta' ? 'Tamil + English' : 'English'}): only ${eligibleForCombo.length} questions available (fewer than 2 fresh attempts).`,
-          );
-        }
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings,
-      eligiblePoolCount: candidates.length,
-    };
-  }
-
-  async fetchPoolCandidates(poolMode: PoolMode): Promise<CandidateQuestionRecord[]> {
-    const includeRelations = {
-      options: { orderBy: { position: 'asc' as const } },
-      chapter: { select: { id: true, title: true } },
-      courseSubject: { include: { subject: { select: { code: true, name: true } } } },
-    };
-
-    if (poolMode === 'AUTOMATIC') {
-      return this.prisma.question.findMany({
-        where: { isActive: true, isRestrictedForDemo: false },
-        include: includeRelations,
-      });
-    }
-
-    // MANUAL or HYBRID: strictly use explicitly approved DemoTestQuestion rows (never fall back to entire Question Bank!)
-    const poolRows = await this.prisma.demoTestQuestion.findMany({
+  /**
+   * Automatically pulls eligible questions from the Question Bank,
+   * excluding inactive, restricted, and protected/upcoming exam questions.
+   */
+  async fetchPoolCandidates(_poolMode?: PoolMode): Promise<CandidateQuestionRecord[]> {
+    const now = new Date();
+    return this.prisma.question.findMany({
       where: {
-        configId: 'login-demo',
-        isApproved: true,
-        question: { isActive: true, isRestrictedForDemo: false },
-      },
-      include: {
-        question: { include: includeRelations },
-      },
-    });
-    return poolRows.map((row) => row.question);
-  }
-
-  private buildQuestionWhere(filters: PoolQuestionFilters) {
-    const where: Record<string, unknown> = {};
-
-    if (filters.activeFilter === 'INACTIVE') {
-      where.isActive = false;
-    } else if (filters.activeFilter !== 'ALL') {
-      where.isActive = true;
-    }
-
-    if (filters.subject && ['PHYSICS', 'CHEMISTRY', 'BIOLOGY'].includes(filters.subject.toUpperCase())) {
-      where.courseSubject = {
-        subject: { code: filters.subject.toUpperCase() },
-      };
-    }
-
-    if (filters.chapterId) {
-      where.chapterId = filters.chapterId;
-    }
-
-    if (filters.difficulty && ['EASY', 'MEDIUM', 'HARD'].includes(filters.difficulty.toUpperCase())) {
-      where.difficulty = filters.difficulty.toUpperCase();
-    }
-
-    if (filters.type && filters.type !== 'ALL') {
-      where.type = filters.type.toUpperCase();
-    }
-
-    if (filters.language === 'en') {
-      where.textEn = { not: null };
-    } else if (filters.language === 'ta') {
-      where.AND = [
-        ...(Array.isArray(where.AND) ? (where.AND as unknown[]) : []),
-        { textTa: { not: null } },
-        { NOT: { textTa: '' } },
-      ];
-    }
-
-    if (filters.mediaFilter === 'DIAGRAM') {
-      where.AND = [
-        ...(Array.isArray(where.AND) ? (where.AND as unknown[]) : []),
-        { questionImageUrl: { not: null } },
-        { NOT: { questionImageUrl: '' } },
-      ];
-    } else if (filters.mediaFilter === 'TEXT_ONLY') {
-      where.OR = [{ questionImageUrl: null }, { questionImageUrl: '' }];
-    } else if (filters.mediaFilter === 'IMAGE_OPTIONS') {
-      where.options = { some: { imageUrl: { not: null } } };
-    }
-
-    if (filters.approvalFilter === 'APPROVED') {
-      where.demoTests = { some: { configId: 'login-demo', isApproved: true } };
-    } else if (filters.approvalFilter === 'UNAPPROVED') {
-      where.demoTests = { none: { configId: 'login-demo', isApproved: true } };
-    } else if (filters.approvalFilter === 'RESTRICTED') {
-      where.isRestrictedForDemo = true;
-    }
-
-    if (filters.usageFilter === 'FREQUENT') {
-      where.demoGlobalStat = { exposureCount: { gte: 5 } };
-    } else if (filters.usageFilter === 'RARELY_USED') {
-      where.demoGlobalStat = { exposureCount: { gt: 0, lt: 5 } };
-    } else if (filters.usageFilter === 'UNUSED') {
-      where.OR = [
-        ...(Array.isArray(where.OR) ? (where.OR as unknown[]) : []),
-        { demoGlobalStat: null },
-        { demoGlobalStat: { exposureCount: 0 } },
-      ];
-    }
-
-    if (filters.query?.trim()) {
-      const q = filters.query.trim();
-      where.AND = [
-        ...(Array.isArray(where.AND) ? (where.AND as unknown[]) : []),
-        {
-          OR: [
-            { externalId: { contains: q, mode: 'insensitive' } },
-            { textEn: { contains: q, mode: 'insensitive' } },
-            { textTa: { contains: q, mode: 'insensitive' } },
-          ],
-        },
-      ];
-    }
-
-    return where;
-  }
-
-  async listPoolQuestions(filters: PoolQuestionFilters) {
-    const page = Math.max(1, Number(filters.page) || 1);
-    const limit = Math.max(1, Math.min(100, Number(filters.limit) || 25));
-    const skip = (page - 1) * limit;
-    const where = this.buildQuestionWhere(filters);
-
-    const [total, rows] = await Promise.all([
-      this.prisma.question.count({ where: where as never }),
-      this.prisma.question.findMany({
-        where: where as never,
-        skip,
-        take: limit,
-        orderBy: [{ createdAt: 'desc' }, { externalId: 'asc' }],
-        include: {
-          options: { orderBy: { position: 'asc' } },
-          chapter: { select: { id: true, title: true } },
-          courseSubject: { include: { subject: { select: { code: true, name: true } } } },
-          demoTests: {
-            where: { configId: 'login-demo' },
-            select: { isApproved: true, addedAt: true },
-          },
-          demoGlobalStat: {
-            select: { exposureCount: true, lastExposedAt: true },
+        isActive: true,
+        isRestrictedForDemo: false,
+        assessmentQuestions: {
+          none: {
+            assessmentTest: {
+              isActive: true,
+              isCancelled: false,
+              OR: [
+                { scheduledAt: { gt: now } },
+                { availableUntil: { gt: now } },
+              ],
+            },
           },
         },
-      }),
-    ]);
-
-    const items = rows.map((q) => {
-      const enCheck = evaluateQuestionEligibility(q, 'en');
-      const taCheck = evaluateQuestionEligibility(q, 'ta');
-      const hasQuestionImage = Boolean(q.questionImageUrl?.trim());
-      const hasOptionImages = q.options.some((o) => Boolean(o.imageUrl?.trim()));
-      const isApproved = q.demoTests.some((dt) => dt.isApproved);
-
-      return {
-        id: q.id,
-        externalId: q.externalId,
-        textPreview: (q.textEn || q.textTa || '').slice(0, 180),
-        subject: q.courseSubject?.subject?.name ?? 'General',
-        subjectCode: q.courseSubject?.subject?.code ?? 'GENERAL',
-        chapterTitle: q.chapter?.title ?? null,
-        difficulty: q.difficulty,
-        type: q.type,
-        languageAvailability: taCheck.eligible ? 'BILINGUAL' : enCheck.eligible ? 'ENGLISH' : 'INCOMPLETE',
-        hasQuestionImage,
-        hasOptionImages,
-        isActive: q.isActive,
-        isRestrictedForDemo: q.isRestrictedForDemo,
-        isApproved,
-        isDemoEligible: enCheck.eligible,
-        eligibilityIssues: enCheck.reasons,
-        globalExposureCount: q.demoGlobalStat?.exposureCount ?? 0,
-        lastUsedAt: q.demoGlobalStat?.lastExposedAt?.toISOString() ?? null,
-      };
-    });
-
-    return {
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.max(1, Math.ceil(total / limit)),
-    };
-  }
-
-  async getQuestionPreview(questionId: string) {
-    const q = await this.prisma.question.findUnique({
-      where: { id: questionId },
+      },
       include: {
         options: { orderBy: { position: 'asc' } },
         chapter: { select: { id: true, title: true } },
         courseSubject: { include: { subject: { select: { code: true, name: true } } } },
-        demoTests: { where: { configId: 'login-demo' } },
-        demoGlobalStat: true,
       },
     });
-    if (!q) throw new NotFoundException('Question not found');
-    return q;
-  }
-
-  async bulkUpdatePool(
-    body: {
-      action: 'APPROVE' | 'REMOVE' | 'RESTRICT' | 'UNRESTRICT';
-      questionIds?: string[];
-      selectAllFiltered?: boolean;
-      filters?: PoolQuestionFilters;
-    },
-    actorUserId?: string | null,
-  ) {
-    if (!body || !['APPROVE', 'REMOVE', 'RESTRICT', 'UNRESTRICT'].includes(body.action)) {
-      throw new BadRequestException('Invalid pool action');
-    }
-
-    let targetIds: string[] = [];
-    if (body.selectAllFiltered) {
-      const where = this.buildQuestionWhere(body.filters ?? {});
-      const matched = await this.prisma.question.findMany({
-        where: where as never,
-        select: { id: true },
-        take: 5000,
-      });
-      targetIds = matched.map((m) => m.id);
-    } else if (Array.isArray(body.questionIds)) {
-      targetIds = [...new Set(body.questionIds.filter((id) => typeof id === 'string'))];
-    }
-
-    if (!targetIds.length) {
-      return { updatedCount: 0, skippedCount: 0 };
-    }
-
-    await this.prisma.demoTestConfiguration.upsert({
-      where: { id: 'login-demo' },
-      create: {
-        id: 'login-demo',
-        countOptions: DEFAULT_DEMO_COUNT_OPTIONS as never,
-        blueprints: DEFAULT_DEMO_BLUEPRINTS as never,
-        selectionRules: DEFAULT_DEMO_SELECTION_RULES as never,
-      },
-      update: {},
-    });
-
-    let updatedCount = 0;
-    let skippedCount = 0;
-
-    if (body.action === 'APPROVE') {
-      const questions = await this.prisma.question.findMany({
-        where: { id: { in: targetIds } },
-        include: { options: { orderBy: { position: 'asc' } } },
-      });
-      const eligibleIds = questions
-        .filter((q) => evaluateQuestionEligibility(q, 'en').eligible)
-        .map((q) => q.id);
-      skippedCount = targetIds.length - eligibleIds.length;
-
-      if (eligibleIds.length) {
-        await this.prisma.$transaction(async (tx) => {
-          const maxPos = await tx.demoTestQuestion.aggregate({
-            where: { configId: 'login-demo' },
-            _max: { position: true },
-          });
-          let nextPos = (maxPos._max.position ?? 0) + 1;
-
-          const existing = await tx.demoTestQuestion.findMany({
-            where: { configId: 'login-demo', questionId: { in: eligibleIds } },
-            select: { questionId: true },
-          });
-          const existingSet = new Set(existing.map((e) => e.questionId));
-          const toInsert = eligibleIds.filter((id) => !existingSet.has(id));
-
-          if (existing.length) {
-            await tx.demoTestQuestion.updateMany({
-              where: { configId: 'login-demo', questionId: { in: [...existingSet] } },
-              data: { isApproved: true, addedById: actorUserId ?? null },
-            });
-          }
-          if (toInsert.length) {
-            await tx.demoTestQuestion.createMany({
-              data: toInsert.map((qId) => ({
-                configId: 'login-demo',
-                questionId: qId,
-                position: nextPos++,
-                isApproved: true,
-                addedById: actorUserId ?? null,
-              })),
-            });
-          }
-        });
-        updatedCount = eligibleIds.length;
-      }
-    } else if (body.action === 'REMOVE') {
-      const res = await this.prisma.demoTestQuestion.deleteMany({
-        where: { configId: 'login-demo', questionId: { in: targetIds } },
-      });
-      updatedCount = res.count;
-    } else if (body.action === 'RESTRICT') {
-      await this.prisma.$transaction(async (tx) => {
-        const res = await tx.question.updateMany({
-          where: { id: { in: targetIds } },
-          data: { isRestrictedForDemo: true },
-        });
-        await tx.demoTestQuestion.deleteMany({
-          where: { configId: 'login-demo', questionId: { in: targetIds } },
-        });
-        updatedCount = res.count;
-      });
-    } else if (body.action === 'UNRESTRICT') {
-      const res = await this.prisma.question.updateMany({
-        where: { id: { in: targetIds } },
-        data: { isRestrictedForDemo: false },
-      });
-      updatedCount = res.count;
-    }
-
-    await this.logAdminAction(actorUserId, `POOL_${body.action}`, {
-      requestedCount: targetIds.length,
-      updatedCount,
-      skippedCount,
-    });
-
-    return { updatedCount, skippedCount };
-  }
-
-  async setQuestionPool(body: unknown, actorUserId?: string | null) {
-    const questionIds =
-      body && typeof body === 'object' && !Array.isArray(body)
-        ? (body as Record<string, unknown>).questionIds
-        : null;
-    if (
-      !Array.isArray(questionIds) ||
-      questionIds.length > 500 ||
-      questionIds.some((id) => typeof id !== 'string')
-    ) {
-      throw new BadRequestException('questionIds must contain up to 500 IDs');
-    }
-    const uniqueIds = [...new Set(questionIds as string[])];
-    const valid = await this.prisma.question.findMany({
-      where: { id: { in: uniqueIds }, isActive: true, isRestrictedForDemo: false },
-      select: { id: true },
-    });
-    if (valid.length !== uniqueIds.length) {
-      throw new BadRequestException('One or more selected questions are unavailable or restricted');
-    }
-    await this.prisma.$transaction(async (tx) => {
-      await tx.demoTestConfiguration.upsert({
-        where: { id: 'login-demo' },
-        create: {
-          id: 'login-demo',
-          countOptions: DEFAULT_DEMO_COUNT_OPTIONS as never,
-          blueprints: DEFAULT_DEMO_BLUEPRINTS as never,
-          selectionRules: DEFAULT_DEMO_SELECTION_RULES as never,
-        },
-        update: {},
-      });
-      await tx.demoTestQuestion.deleteMany({ where: { configId: 'login-demo' } });
-      if (uniqueIds.length) {
-        await tx.demoTestQuestion.createMany({
-          data: uniqueIds.map((questionId, index) => ({
-            configId: 'login-demo',
-            questionId,
-            position: index + 1,
-            isApproved: true,
-            addedById: actorUserId ?? null,
-          })),
-        });
-      }
-    });
-    await this.logAdminAction(actorUserId, 'SET_QUESTION_POOL', {
-      count: uniqueIds.length,
-    });
-    return { questionIds: uniqueIds };
-  }
-
-  async getPoolHealth() {
-    const config = await this.get(true);
-    const [allActive, approvedRows, globalStats] = await Promise.all([
-      this.prisma.question.findMany({
-        where: { isActive: true },
-        include: {
-          options: { orderBy: { position: 'asc' } },
-          courseSubject: { include: { subject: { select: { code: true } } } },
-        },
-      }),
-      this.prisma.demoTestQuestion.findMany({
-        where: { configId: 'login-demo', isApproved: true },
-        select: { questionId: true },
-      }),
-      this.prisma.demoQuestionGlobalStat.findMany({
-        orderBy: { exposureCount: 'desc' },
-        take: 10,
-      }),
-    ]);
-
-    const approvedSet = new Set(approvedRows.map((r) => r.questionId));
-    const poolQuestions =
-      config.poolMode === 'AUTOMATIC'
-        ? allActive.filter((q) => !q.isRestrictedForDemo)
-        : allActive.filter((q) => approvedSet.has(q.id) && !q.isRestrictedForDemo);
-
-    const eligibleQuestions = poolQuestions.filter(
-      (q) => evaluateQuestionEligibility(q, 'en').eligible,
-    );
-
-    const uniqueEquivSet = new Set<string>();
-    const uniqueEligible = eligibleQuestions.filter((q) => {
-      const key = q.equivalentFingerprint || q.contentFingerprint || q.id;
-      if (uniqueEquivSet.has(key)) return false;
-      uniqueEquivSet.add(key);
-      return true;
-    });
-
-    const bySubject = { PHYSICS: 0, CHEMISTRY: 0, BIOLOGY: 0 };
-    const byDifficulty = { EASY: 0, MEDIUM: 0, HARD: 0 };
-    const byType: Record<string, number> = {};
-    let englishReady = 0;
-    let bilingualReady = 0;
-    let imageBased = 0;
-    let invalidOrDuplicate = 0;
-
-    for (const q of allActive) {
-      if (!evaluateQuestionEligibility(q, 'en').eligible) {
-        invalidOrDuplicate += 1;
-      }
-    }
-
-    for (const q of uniqueEligible) {
-      const subj = q.courseSubject?.subject?.code?.toUpperCase() ?? '';
-      if (subj === 'PHYSICS' || subj === 'CHEMISTRY' || subj === 'BIOLOGY') {
-        bySubject[subj] += 1;
-      }
-      if (q.difficulty === 'EASY' || q.difficulty === 'MEDIUM' || q.difficulty === 'HARD') {
-        byDifficulty[q.difficulty] += 1;
-      }
-      byType[q.type] = (byType[q.type] ?? 0) + 1;
-      if (evaluateQuestionEligibility(q, 'en').eligible) englishReady += 1;
-      if (evaluateQuestionEligibility(q, 'ta').eligible) bilingualReady += 1;
-      if (q.questionImageUrl?.trim() || q.options.some((o) => o.imageUrl?.trim())) {
-        imageBased += 1;
-      }
-    }
-
-    const standardBp =
-      config.blueprints.find((bp) => bp.count === config.defaultQuestionCount) ??
-      config.blueprints[0];
-    const bpCount = standardBp?.count ?? 9;
-    const estimatedFreshAttemptsAll = bpCount > 0 ? Math.floor(uniqueEligible.length / bpCount) : 0;
-
-    const warnings: string[] = [];
-    if (uniqueEligible.length < config.selectionRules.minUniquePoolSize) {
-      warnings.push(
-        `Eligible unique pool (${uniqueEligible.length}) is below minimum threshold (${config.selectionRules.minUniquePoolSize}). Add more eligible questions.`,
-      );
-    }
-    if (estimatedFreshAttemptsAll < 3) {
-      warnings.push(
-        `Pool currently supports only ~${estimatedFreshAttemptsAll} fresh ${bpCount}-question attempt(s) per visitor before reuse.`,
-      );
-    }
-    if (config.allowedLanguages.includes('ta') && bilingualReady < bpCount) {
-      warnings.push(
-        `Only ${bilingualReady} bilingual (Tamil + English) questions are eligible; ${bpCount} needed for standard blueprint.`,
-      );
-    }
-
-    const exhaustionRisk =
-      uniqueEligible.length === 0
-        ? 'CRITICAL'
-        : estimatedFreshAttemptsAll < 3
-          ? 'HIGH'
-          : estimatedFreshAttemptsAll < 8
-            ? 'MODERATE'
-            : 'LOW';
-
-    return {
-      totalQuestionBank: allActive.length,
-      approvedPoolCount: approvedSet.size,
-      eligibleUniqueCount: uniqueEligible.length,
-      bySubject,
-      byDifficulty,
-      byType,
-      englishReady,
-      bilingualReady,
-      imageBased,
-      invalidOrDuplicate,
-      estimatedFreshAttemptsPerVisitor: estimatedFreshAttemptsAll,
-      exhaustionRisk,
-      frequentlyExposedCount: globalStats.filter((s) => s.exposureCount >= 10).length,
-      warnings,
-      poolMode: config.poolMode,
-    };
-  }
-
-  async logAdminAction(
-    actorUserId: string | null | undefined,
-    action: string,
-    details: Record<string, unknown>,
-  ) {
-    try {
-      await this.prisma.demoAdminAuditLog.create({
-        data: {
-          actorUserId: actorUserId ?? null,
-          action,
-          details: details as never,
-        },
-      });
-    } catch {
-      // Audit logging should not break primary flow
-    }
   }
 }

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
-  CalendarCheck,
   CheckCircle2,
   Clock,
   FileQuestion,
@@ -194,37 +193,34 @@ export function ExamManagementSection({
 
   return (
     <div className="space-y-6">
-      {/* Workspace Header */}
+      {/* Real-time Metric Cards & Sync */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700">
-              <CalendarCheck className="size-4" /> Live Exam Operations & CBT Proctoring
-            </div>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Exam Management Workspace
+            <p className="text-3xs font-semibold uppercase tracking-wider text-brand-blue">
+              Live Proctoring &amp; Scheduling
+            </p>
+            <h2 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Exam Management
             </h2>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Schedule CBT examination windows, monitor active test takers in real time, enforce auto-submissions, and configure reattempts.
+            <p className="mt-0.5 text-xs text-slate-500">
+              Monitor live test windows, scheduled exams &amp; student attempts.
             </p>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={refreshing}
-              onClick={() => void loadData(true)}
-              className="gap-1.5 rounded-full"
-            >
-              <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
-              <span>Sync</span>
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={refreshing}
+            onClick={() => void loadData(true)}
+            className="w-fit gap-1.5 rounded-full"
+          >
+            <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            <span>Sync</span>
+          </Button>
         </div>
 
         {/* Real-time Metric Cards */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
             <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-blue-700">
               <span>Live Exams</span>

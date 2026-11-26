@@ -1,5 +1,5 @@
-import { AdminDashboard } from "@/components/admin-dashboard";
+import { AdminSectionView } from "@/components/admin-dashboard";
 
 export default function AdminTestsPage() {
-  return <AdminDashboard initialSection="tests" />;
+  return <AdminSectionView section="tests" />;
 }

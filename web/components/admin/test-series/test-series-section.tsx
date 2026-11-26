@@ -1,14 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Award, MonitorCog, Plus, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Award, MonitorCog, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TestSeriesOverview } from "./test-series-overview";
 import { TestSeriesTable } from "./test-series-table";
 import { TestSeriesDialog } from "./test-series-dialog";
 import { CategoryManagerDialog } from "./category-manager-dialog";
 import { TestSeriesDetailsView } from "./test-series-details-view";
-import { MockTestsTab } from "./mock-tests-tab";
 import { LoginDemoControlTab } from "./login-demo-control-tab";
 import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 import type {
@@ -25,7 +24,7 @@ interface TestSeriesSectionProps {
 
 export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps) {
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"series" | "mock-tests" | "login-demo">("series");
+  const [activeTab, setActiveTab] = useState<"series" | "login-demo">("series");
   const [categories, setCategories] = useState<TestSeriesCategory[]>([]);
   const [seriesList, setSeriesList] = useState<TestSeries[]>([]);
   const [stats, setStats] = useState<TestSeriesOverviewStats>({
@@ -35,14 +34,18 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
     completedTests: 0,
   });
 
-  const [activeSeries, setActiveSeries] = useState<TestSeries | null>(null);
+  const [activeSeriesId, setActiveSeriesId] = useState<string | null>(null);
   const [seriesDialogOpen, setSeriesDialogOpen] = useState(false);
   const [editingSeries, setEditingSeries] = useState<TestSeries | null>(null);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
 
+  const activeSeries = useMemo(
+    () => (activeSeriesId ? seriesList.find((s) => s.id === activeSeriesId) ?? null : null),
+    [seriesList, activeSeriesId]
+  );
+
   // Load from API
   const loadData = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/admin/test-series", { cache: "no-store" });
       if (res.ok) {
@@ -50,17 +53,13 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
         if (data.series) setSeriesList(data.series);
         if (data.categories) setCategories(data.categories);
         if (data.stats) setStats(data.stats);
-        if (activeSeries) {
-          const refreshed = (data.series as TestSeries[]).find((s) => s.id === activeSeries.id);
-          if (refreshed) setActiveSeries(refreshed);
-        }
       }
     } catch {
       // Keep initial seed data on error
     } finally {
       setLoading(false);
     }
-  }, [activeSeries]);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadData(), 0);
@@ -106,9 +105,10 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
   };
 
   // Series handlers
-  const handleSaveSeries = async (data: Partial<TestSeries>) => {
-    if (editingSeries) {
-      const res = await fetch(`/api/admin/test-series/${editingSeries.id}`, {
+  const handleSaveSeries = async (data: Partial<TestSeries>, targetSeriesId?: string) => {
+    const seriesId = targetSeriesId ?? editingSeries?.id;
+    if (seriesId) {
+      const res = await fetch(`/api/admin/test-series/${seriesId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -151,7 +151,7 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
       });
       if (!res.ok) throw new Error("Failed to delete test series");
       onNotice("Test series deleted successfully");
-      if (activeSeries?.id === id) setActiveSeries(null);
+      if (activeSeriesId === id) setActiveSeriesId(null);
       await loadData();
     } catch (err) {
       onError(err instanceof Error ? err.message : "Failed to delete series");
@@ -236,12 +236,8 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
         <TestSeriesDetailsView
           series={activeSeries}
           categories={categories}
-          onBack={() => setActiveSeries(null)}
-          onUpdateSeries={async (updates) => {
-            await handleSaveSeries(updates);
-            const updated = seriesList.find((s) => s.id === activeSeries.id);
-            if (updated) setActiveSeries(updated);
-          }}
+          onBack={() => setActiveSeriesId(null)}
+          onUpdateSeries={(updates) => handleSaveSeries(updates, activeSeries.id)}
           onAddTest={handleAddTest}
           onUpdateTest={handleUpdateTest}
           onDeleteTest={handleDeleteTest}
@@ -252,24 +248,64 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
         />
       ) : (
         <>
-          {/* Header & Overview Stats */}
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Test Series & Tests
-              </h2>
-              <p className="mt-1 text-xs text-slate-600">
-                Create test series, schedule tests, assign questions, and manage the login demo test.
-              </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-3xs font-semibold uppercase tracking-wider text-indigo-600">
+              Assessment Packages
+            </p>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Test Series
+            </h2>
+            <p className="text-xs text-slate-500">
+              Organize mock test packages, categories &amp; login demo configurations.
+            </p>
+          </div>
+
+          {/* Unified Test Tab Bar */}
+          <div className="flex w-full flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-2 rounded-xl shadow-2xs">
+            <div className="flex items-center">
+              <button
+                onClick={() => setActiveTab("series")}
+                className={`relative flex items-center gap-2 px-5 py-3 text-xs font-bold transition ${
+                  activeTab === "series"
+                    ? "text-indigo-700"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <Award className="size-4" />
+                <span>Test Series Packages</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-3xs font-bold ${
+                    activeTab === "series"
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  {seriesList.length}
+                </span>
+                {activeTab === "series" && (
+                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600" />
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab("login-demo")}
+                className={`relative flex items-center gap-2 px-5 py-3 text-xs font-bold transition ${
+                  activeTab === "login-demo" ? "text-indigo-700" : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <MonitorCog className="size-4 text-emerald-600" />
+                <span>Login Demo Control</span>
+                {activeTab === "login-demo" && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600" />}
+              </button>
             </div>
 
             {activeTab === "series" && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 py-1.5 pr-1">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCategoryDialogOpen(true)}
-                  className="h-9 rounded-full border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
+                  className="h-8.5 rounded-full border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
                 >
                   Categories
                 </Button>
@@ -279,65 +315,12 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
                     setEditingSeries(null);
                     setSeriesDialogOpen(true);
                   }}
-                  className="h-9 gap-1.5 rounded-full bg-brand-red text-xs font-semibold text-white shadow-primary hover:bg-brand-red-hover"
+                  className="h-8.5 gap-1.5 rounded-full bg-brand-red text-xs font-semibold text-white shadow-primary hover:bg-brand-red-hover"
                 >
                   <Plus className="size-3.5" /> Create Test Series
                 </Button>
               </div>
             )}
-          </div>
-
-          {/* Unified Test Tab Bar */}
-          <div className="flex w-full border-b border-slate-200 bg-white px-2 rounded-xl shadow-2xs">
-            <button
-              onClick={() => setActiveTab("series")}
-              className={`relative flex items-center gap-2 px-5 py-3 text-xs font-bold transition ${
-                activeTab === "series"
-                  ? "text-indigo-700"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <Award className="size-4" />
-              <span>Test Series Packages</span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-3xs font-bold ${
-                  activeTab === "series"
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {seriesList.length}
-              </span>
-              {activeTab === "series" && (
-                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600" />
-              )}
-            </button>
-
-            <button
-              onClick={() => setActiveTab("login-demo")}
-              className={`relative flex items-center gap-2 px-5 py-3 text-xs font-bold transition ${
-                activeTab === "login-demo" ? "text-indigo-700" : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <MonitorCog className="size-4 text-emerald-600" />
-              <span>Login Demo Control</span>
-              {activeTab === "login-demo" && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600" />}
-            </button>
-
-            <button
-              onClick={() => setActiveTab("mock-tests")}
-              className={`relative flex items-center gap-2 px-5 py-3 text-xs font-bold transition ${
-                activeTab === "mock-tests"
-                  ? "text-indigo-700"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <Sparkles className="size-4 text-amber-500" />
-              <span>Quick Mock Tests & Auto-Builder</span>
-              {activeTab === "mock-tests" && (
-                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600" />
-              )}
-            </button>
           </div>
 
           {/* Tab 1: Test Series Packages */}
@@ -347,7 +330,7 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
               <TestSeriesTable
                 series={seriesList}
                 categories={categories}
-                onViewSeries={(s) => setActiveSeries(s)}
+                onViewSeries={(s) => setActiveSeriesId(s.id)}
                 onEditSeries={(s) => {
                   setEditingSeries(s);
                   setSeriesDialogOpen(true);
@@ -357,11 +340,6 @@ export function TestSeriesSection({ onNotice, onError }: TestSeriesSectionProps)
                 onOpenCategoryManager={() => setCategoryDialogOpen(true)}
               />
             </div>
-          )}
-
-          {/* Tab 2: Quick Mock Tests & Builder */}
-          {activeTab === "mock-tests" && (
-            <MockTestsTab onNotice={onNotice} onError={onError} />
           )}
 
           {activeTab === "login-demo" && (

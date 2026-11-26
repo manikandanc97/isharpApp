@@ -137,17 +137,6 @@ export function ExamHeader({
         <div className="flex items-center rounded-full bg-slate-100 p-0.5 text-2xs font-semibold">
           <button
             type="button"
-            onClick={() => onLangChange("en")}
-            className={`rounded-full px-2 py-0.5 transition ${
-              langMode === "en"
-                ? "bg-white text-slate-900 shadow-2xs font-bold"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            EN
-          </button>
-          <button
-            type="button"
             onClick={() => onLangChange("ta")}
             className={`rounded-full px-2 py-0.5 transition ${
               langMode === "ta"
@@ -156,6 +145,17 @@ export function ExamHeader({
             }`}
           >
             தமிழ்
+          </button>
+          <button
+            type="button"
+            onClick={() => onLangChange("en")}
+            className={`rounded-full px-2 py-0.5 transition ${
+              langMode === "en"
+                ? "bg-white text-slate-900 shadow-2xs font-bold"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            EN
           </button>
         </div>
 

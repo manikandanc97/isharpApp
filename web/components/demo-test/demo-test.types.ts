@@ -43,6 +43,7 @@ export interface DemoSelectionRules {
 
 export interface DemoTestConfiguration {
   isEnabled: boolean;
+  examCategory?: string;
   title: string;
   code: string;
   instructionsEn: string;
@@ -52,7 +53,15 @@ export interface DemoTestConfiguration {
   defaultSubject: SubjectMode;
   defaultLanguage: LanguageMode;
   defaultQuestionCount: number;
+  defaultDurationMinutes?: number;
   countOptions: { count: number; durationMinutes: number; label: string }[];
+  otpStatus?: {
+    isAvailable: boolean;
+    isMockMode: boolean;
+    expirySeconds: number;
+    resendCooldownSeconds: number;
+    maxAttempts: number;
+  };
   blueprints?: DemoBlueprint[];
   poolMode?: PoolMode;
   selectionRules?: DemoSelectionRules;

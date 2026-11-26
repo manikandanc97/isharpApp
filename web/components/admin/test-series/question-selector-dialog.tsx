@@ -752,13 +752,14 @@ export function QuestionSelectorDialog({
                           </span>
                         </div>
 
-                        <p className="text-xs font-medium text-slate-900 line-clamp-2 leading-relaxed">
-                          {q.textEn}
-                        </p>
-
                         {q.textTa && (
-                          <p className="text-3xs text-slate-500 font-sans italic line-clamp-1">
+                          <p className="text-xs font-semibold text-slate-900 font-sans line-clamp-2 leading-relaxed">
                             {q.textTa}
+                          </p>
+                        )}
+                        {q.textEn && (
+                          <p className={`leading-relaxed ${q.textTa ? "text-3xs text-slate-500 italic line-clamp-1" : "text-xs font-medium text-slate-900 line-clamp-2"}`}>
+                            {q.textEn}
                           </p>
                         )}
 
@@ -860,8 +861,8 @@ export function QuestionSelectorDialog({
                       {resolveSubject(q)}
                     </Badge>
                   </div>
-                  <p className="font-medium text-slate-800 leading-relaxed">{q.textEn}</p>
-                  {q.textTa && <p className="text-slate-500 text-3xs font-sans italic">{q.textTa}</p>}
+                  {q.textTa && <p className="font-semibold text-slate-800 leading-relaxed font-sans">{q.textTa}</p>}
+                  {q.textEn && <p className={q.textTa ? "text-slate-500 text-3xs italic" : "font-medium text-slate-800 leading-relaxed"}>{q.textEn}</p>}
                 </div>
               ))
             )}

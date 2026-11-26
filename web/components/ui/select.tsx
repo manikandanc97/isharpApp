@@ -5,8 +5,13 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-function extractSelectItems(children: React.ReactNode): Array<{ value: any; label: React.ReactNode }> {
-  const items: Array<{ value: any; label: React.ReactNode }> = [];
+type ExtractedSelectItem = {
+  value: unknown
+  label: React.ReactNode
+}
+
+function extractSelectItems(children: React.ReactNode): ExtractedSelectItem[] {
+  const items: ExtractedSelectItem[] = [];
 
   function traverse(node: React.ReactNode) {
     if (!node) return;
@@ -14,8 +19,14 @@ function extractSelectItems(children: React.ReactNode): Array<{ value: any; labe
       node.forEach(traverse);
       return;
     }
-    if (React.isValidElement(node)) {
-      const props = node.props as Record<string, any> | undefined;
+    if (
+      React.isValidElement<{
+        value?: unknown
+        label?: React.ReactNode
+        children?: React.ReactNode
+      }>(node)
+    ) {
+      const props = node.props;
       if (props && "value" in props && props.value !== undefined) {
         items.push({
           value: props.value,

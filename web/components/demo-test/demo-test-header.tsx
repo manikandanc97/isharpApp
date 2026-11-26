@@ -74,17 +74,6 @@ export function DemoTestHeader({
         <div className="hidden md:inline-flex rounded-full bg-slate-100 p-0.5 text-xs font-semibold">
           <button
             type="button"
-            onClick={() => onLangChange("en")}
-            className={`rounded-full px-2.5 py-1 transition ${
-              langMode === "en"
-                ? "bg-white text-slate-900 shadow-2xs font-bold"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            English (Only)
-          </button>
-          <button
-            type="button"
             onClick={() => onLangChange("ta")}
             className={`rounded-full px-2.5 py-1 transition ${
               langMode === "ta"
@@ -93,6 +82,17 @@ export function DemoTestHeader({
             }`}
           >
             தமிழ் + English (Both)
+          </button>
+          <button
+            type="button"
+            onClick={() => onLangChange("en")}
+            className={`rounded-full px-2.5 py-1 transition ${
+              langMode === "en"
+                ? "bg-white text-slate-900 shadow-2xs font-bold"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            English (Only)
           </button>
         </div>
 

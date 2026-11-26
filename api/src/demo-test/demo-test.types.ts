@@ -49,6 +49,7 @@ export interface DemoSelectionRules {
 
 export interface DemoTestConfigurationPayload {
   isEnabled: boolean;
+  examCategory: string;
   title: string;
   code: string;
   instructionsEn: string;
@@ -58,6 +59,7 @@ export interface DemoTestConfigurationPayload {
   defaultSubject: SubjectMode;
   defaultLanguage: LanguageMode;
   defaultQuestionCount: number;
+  defaultDurationMinutes: number;
   countOptions: DemoCountOption[];
   blueprints: DemoBlueprint[];
   poolMode: PoolMode;
@@ -71,28 +73,12 @@ export interface DemoTestConfigurationPayload {
 
 export const DEFAULT_DEMO_BLUEPRINTS: DemoBlueprint[] = [
   {
-    id: 'quick-demo',
-    label: 'Quick Demo',
-    count: 6,
-    durationMinutes: 10,
-    maxMarks: 24,
-    subjectDistribution: { PHYSICS: 2, CHEMISTRY: 1, BIOLOGY: 3 },
-  },
-  {
-    id: 'standard-demo',
-    label: 'Standard Demo',
-    count: 9,
-    durationMinutes: 15,
-    maxMarks: 36,
-    subjectDistribution: { PHYSICS: 3, CHEMISTRY: 2, BIOLOGY: 4 },
-  },
-  {
-    id: 'extended-demo',
-    label: 'Extended Demo',
-    count: 12,
+    id: 'default-demo',
+    label: 'Free NEET Demo Test',
+    count: 15,
     durationMinutes: 20,
-    maxMarks: 48,
-    subjectDistribution: { PHYSICS: 3, CHEMISTRY: 3, BIOLOGY: 6 },
+    maxMarks: 60,
+    subjectDistribution: { PHYSICS: 5, CHEMISTRY: 5, BIOLOGY: 5 },
   },
 ];
 
@@ -130,6 +116,7 @@ export const DEFAULT_DEMO_SELECTION_RULES: DemoSelectionRules = {
 
 export const DEFAULT_DEMO_CONFIG: DemoTestConfigurationPayload = {
   isEnabled: true,
+  examCategory: 'NEET',
   title: 'Free NEET Demo Test',
   code: 'NEET-DEMO-2026',
   instructionsEn:
@@ -140,10 +127,11 @@ export const DEFAULT_DEMO_CONFIG: DemoTestConfigurationPayload = {
   allowedLanguages: ['en', 'ta'],
   defaultSubject: 'ALL',
   defaultLanguage: 'ta',
-  defaultQuestionCount: 9,
+  defaultQuestionCount: 15,
+  defaultDurationMinutes: 20,
   countOptions: DEFAULT_DEMO_COUNT_OPTIONS,
   blueprints: DEFAULT_DEMO_BLUEPRINTS,
-  poolMode: 'HYBRID',
+  poolMode: 'AUTOMATIC',
   selectionRules: DEFAULT_DEMO_SELECTION_RULES,
   guestAccessEnabled: true,
   showResultsImmediately: true,

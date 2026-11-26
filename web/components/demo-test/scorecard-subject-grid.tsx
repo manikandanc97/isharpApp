@@ -64,7 +64,7 @@ export function ScorecardSubjectGrid({ report }: ScorecardSubjectGridProps) {
             <div className="flex items-center gap-2">
               <Timer className="size-4 text-brand-blue" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Time &amp; Speed Management Diagnostic (நேர மேலாண்மை பகுப்பாய்வு)
+                நேர மேலாண்மை பகுப்பாய்வு (Time &amp; Speed Management Diagnostic)
               </h3>
             </div>
             <Badge

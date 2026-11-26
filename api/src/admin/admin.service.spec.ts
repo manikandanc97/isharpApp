@@ -64,6 +64,7 @@ describe('AdminService student account isolation', () => {
     expect(membershipCount).toHaveBeenCalledWith({
       where: {
         status: 'PENDING',
+        studentCategory: 'INTERNAL',
         user: { userRoles: studentRoleFilter },
       },
     });

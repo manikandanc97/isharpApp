@@ -9,11 +9,51 @@ function context(user: Record<string, unknown>) {
 }
 
 describe('VerifiedMembershipGuard', () => {
-  it('rejects paid access when the membership is not verified', async () => {
+  it('allows paid external student access without manual verification', async () => {
     const prisma = {
       institutionMembership: {
         findUnique: vi.fn().mockResolvedValue({
           status: 'PENDING',
+          studentCategory: 'EXTERNAL',
+          paymentStatus: 'PAID',
+          paidAccessUntil: null,
+        }),
+      },
+    };
+    const guard = new VerifiedMembershipGuard(prisma as never);
+
+    await expect(
+      guard.canActivate(
+        context({ profileId: 'profile-id', roles: ['STUDENT'] }),
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it('rejects unpaid external student access', async () => {
+    const prisma = {
+      institutionMembership: {
+        findUnique: vi.fn().mockResolvedValue({
+          status: 'VERIFIED',
+          studentCategory: 'EXTERNAL',
+          paymentStatus: 'PENDING',
+          paidAccessUntil: null,
+        }),
+      },
+    };
+    const guard = new VerifiedMembershipGuard(prisma as never);
+
+    await expect(
+      guard.canActivate(
+        context({ profileId: 'profile-id', roles: ['STUDENT'] }),
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('rejects revoked external student access even when paid', async () => {
+    const prisma = {
+      institutionMembership: {
+        findUnique: vi.fn().mockResolvedValue({
+          status: 'REVOKED',
           studentCategory: 'EXTERNAL',
           paymentStatus: 'PAID',
           paidAccessUntil: null,

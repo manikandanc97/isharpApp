@@ -50,12 +50,12 @@ export const courses: readonly Course[] = [
         topics: [
           "State Board to NCERT Syllabus Alignment",
           "2,000+ Bilingual Scientific Keyterms Dictionary",
-          "Basic Mathematical Tools for Physics in தமிழ்",
-          "Chemical IUPAC Names & Formula Balancing in தமிழ்",
+          "தமிழில் Physics Basic Mathematical Tools",
+          "தமிழில் Chemical IUPAC Names & Formula Balancing",
         ],
       },
       {
-        title: "Physics & Chemistry in தமிழ்",
+        title: "தமிழில் Physics & Chemistry",
         topics: [
           "Fundamental Laws Explained in Native Tamil",
           "Step-by-Step Numerical Derivation Workflows",
@@ -82,7 +82,7 @@ export const courses: readonly Course[] = [
     icon: BookOpenCheck,
     accent: "red",
     duration: "12 Months · 700+ Lecture Hrs",
-    language: "Bilingual (தமிழ் + English)",
+    language: "தமிழ் + English (Bilingual)",
     targetAudience: "Class 11, 12 & Repeater Aspirants",
     deliverables: [
       "700+ Hours live interactive classes with full 4K recorded archive",
@@ -128,7 +128,7 @@ export const courses: readonly Course[] = [
     icon: Sparkles,
     accent: "blue",
     duration: "3,500+ Solved Questions",
-    language: "English & தமிழ்",
+    language: "தமிழ் & English",
     targetAudience: "Self-Paced Practice & Repeater Aspirants",
     deliverables: [
       "Past 15 years' questions sorted by chapter, topic & difficulty",
@@ -165,7 +165,7 @@ export const courses: readonly Course[] = [
     icon: Clock3,
     accent: "red",
     duration: "15-Day Intensive Sprint",
-    language: "Bilingual (தமிழ் + English)",
+    language: "தமிழ் + English (Bilingual)",
     targetAudience: "Final 30-45 Days Before Examination",
     deliverables: [
       "Top 100 high-weightage chapter fast-track video capsules & mind maps",
@@ -202,7 +202,7 @@ export const courses: readonly Course[] = [
     icon: FileCheck2,
     accent: "blue",
     duration: "10 Full Grand Mocks",
-    language: "English & தமிழ்",
+    language: "தமிழ் & English",
     targetAudience: "Exam-Year Aspirants (NEET 2026)",
     deliverables: [
       "10 Full-length 720-mark simulated exam papers strictly on NTA pattern",
@@ -230,7 +230,7 @@ export const courses: readonly Course[] = [
     icon: BrainCircuit,
     accent: "red",
     duration: "12 Months · 300+ Practice Sets",
-    language: "Bilingual (தமிழ் + English)",
+    language: "தமிழ் + English (Bilingual)",
     targetAudience: "Class 11, 12 & Droppers (Engineering)",
     deliverables: [
       "Advanced Calculus, Mechanics & Organic reaction pathways",

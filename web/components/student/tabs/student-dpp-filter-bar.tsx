@@ -1,5 +1,12 @@
 import { RotateCcw, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface StudentDppFilterBarProps {
   practicedCount: number;
@@ -90,18 +97,22 @@ export function StudentDppFilterBar({
             {/* Subject Select */}
             <div className="flex items-center gap-1.5 text-xs">
               <span className="font-medium text-slate-500">Subject:</span>
-              <select
+              <Select
                 value={selectedSubject}
-                onChange={(e) => onSubjectChange(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs focus:border-brand-red focus:outline-none cursor-pointer"
+                onValueChange={(value) => value && onSubjectChange(value)}
               >
-                <option value="ALL">All Subjects</option>
-                {allSubjects.map((sub) => (
-                  <option key={sub.id} value={sub.name}>
-                    {sub.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-8 w-auto min-w-32 text-xs font-semibold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" label="All Subjects">All Subjects</SelectItem>
+                  {allSubjects.map((sub) => (
+                    <SelectItem key={sub.id} value={sub.name} label={sub.name}>
+                      {sub.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Difficulty Select */}
@@ -128,16 +139,20 @@ export function StudentDppFilterBar({
             {/* Question Type Select */}
             <div className="hidden sm:flex items-center gap-1.5 text-xs">
               <span className="font-medium text-slate-500">Type:</span>
-              <select
+              <Select
                 value={selectedType}
-                onChange={(e) => onTypeChange(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-800 shadow-2xs focus:outline-none cursor-pointer"
+                onValueChange={(value) => value && onTypeChange(value)}
               >
-                <option value="ALL">All Types</option>
-                <option value="SINGLE_CORRECT">Single Correct</option>
-                <option value="MULTIPLE_CORRECT">Multiple Correct</option>
-                <option value="NUMERICAL">Numerical</option>
-              </select>
+                <SelectTrigger className="h-8 w-auto min-w-32 text-xs font-medium">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" label="All Types">All Types</SelectItem>
+                  <SelectItem value="SINGLE_CORRECT" label="Single Correct">Single Correct</SelectItem>
+                  <SelectItem value="MULTIPLE_CORRECT" label="Multiple Correct">Multiple Correct</SelectItem>
+                  <SelectItem value="NUMERICAL" label="Numerical">Numerical</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

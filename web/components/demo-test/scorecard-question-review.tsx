@@ -99,17 +99,6 @@ export function ScorecardQuestionReview({
           </span>
           <button
             type="button"
-            onClick={() => setLangTab("en")}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-              langTab === "en"
-                ? "bg-white text-slate-900 shadow-2xs border border-slate-200/80 font-bold"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            English (Only)
-          </button>
-          <button
-            type="button"
             onClick={() => setLangTab("ta")}
             className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
               langTab === "ta"
@@ -118,6 +107,17 @@ export function ScorecardQuestionReview({
             }`}
           >
             தமிழ் + English (Both)
+          </button>
+          <button
+            type="button"
+            onClick={() => setLangTab("en")}
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+              langTab === "en"
+                ? "bg-white text-slate-900 shadow-2xs border border-slate-200/80 font-bold"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            English (Only)
           </button>
         </div>
       </div>
@@ -437,8 +437,8 @@ export function ScorecardQuestionReview({
                         <Sparkles className="size-3.5 text-amber-600" />
                         <span>
                           {expandedSolutions[q.id]
-                            ? "Hide Solution / விளக்கம் மறைக்க"
-                            : "View Solution & Explanation / விளக்கம் பார்க்க"}
+                            ? "விளக்கம் மறைக்க / Hide Solution"
+                            : "விளக்கம் பார்க்க / View Solution & Explanation"}
                         </span>
                         {expandedSolutions[q.id] ? (
                           <ChevronUp className="size-3.5 text-amber-700" />
@@ -458,7 +458,7 @@ export function ScorecardQuestionReview({
                       <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs space-y-2 animate-in fade-in-50 duration-200">
                         <div className="flex items-center gap-1.5 font-bold text-amber-950">
                           <Sparkles className="size-4 text-amber-600" />
-                          <span>Step-by-Step Concept Key / விரிவான விளக்கம்:</span>
+                          <span>விரிவான விளக்கம் / Step-by-Step Concept Key:</span>
                         </div>
                         {langTab === "en" ? (
                           <p className="text-slate-800 leading-relaxed font-sans">{q.solutionEn}</p>

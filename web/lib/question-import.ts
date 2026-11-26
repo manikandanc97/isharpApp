@@ -1,18 +1,18 @@
 export const QUESTION_HEADERS = [
   'external_id', 'course_code', 'subject_code', 'chapter_title', 'question_type', 'difficulty',
-  'question_text_en', 'question_text_ta', 'question_image',
-  'option_1_en', 'option_1_ta', 'option_1_image', 'option_2_en', 'option_2_ta', 'option_2_image',
-  'option_3_en', 'option_3_ta', 'option_3_image', 'option_4_en', 'option_4_ta', 'option_4_image',
-  'correct_options', 'numerical_answer', 'solution_en', 'solution_ta', 'solution_image',
+  'question_text_ta', 'question_text_en', 'question_image',
+  'option_1_ta', 'option_1_en', 'option_1_image', 'option_2_ta', 'option_2_en', 'option_2_image',
+  'option_3_ta', 'option_3_en', 'option_3_image', 'option_4_ta', 'option_4_en', 'option_4_image',
+  'correct_options', 'numerical_answer', 'solution_ta', 'solution_en', 'solution_image',
   'correct_marks', 'negative_marks', 'source',
 ] as const;
 
 export const TEMPLATE_HEADERS = [
   'subject_code', 'chapter_title', 'question_type', 'difficulty',
-  'question_text_en', 'question_text_ta', 'question_image',
-  'option_1_en', 'option_1_ta', 'option_1_image', 'option_2_en', 'option_2_ta', 'option_2_image',
-  'option_3_en', 'option_3_ta', 'option_3_image', 'option_4_en', 'option_4_ta', 'option_4_image',
-  'correct_options', 'numerical_answer', 'solution_en', 'solution_ta', 'solution_image',
+  'question_text_ta', 'question_text_en', 'question_image',
+  'option_1_ta', 'option_1_en', 'option_1_image', 'option_2_ta', 'option_2_en', 'option_2_image',
+  'option_3_ta', 'option_3_en', 'option_3_image', 'option_4_ta', 'option_4_en', 'option_4_image',
+  'correct_options', 'numerical_answer', 'solution_ta', 'solution_en', 'solution_image',
   'correct_marks', 'negative_marks', 'source',
 ] as const;
 

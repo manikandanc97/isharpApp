@@ -140,10 +140,11 @@ export class DemoTestService {
 
   async startAttempt(params: {
     visitorId: string;
+    leadId?: string | null;
     userProfileId?: string | null;
     input: StartDemoAttemptInput;
   }) {
-    const { visitorId, userProfileId, input } = params;
+    const { visitorId, leadId, userProfileId, input } = params;
     const isPreview = Boolean(input.isPreview);
 
     // Idempotency check
@@ -280,6 +281,7 @@ export class DemoTestService {
       const attempt = await tx.demoAttempt.create({
         data: {
           visitorId,
+          leadId: leadId ?? null,
           userProfileId: userProfileId ?? null,
           configVersionId: null,
           isPreview,
@@ -317,6 +319,12 @@ export class DemoTestService {
           where: { id: visitorId },
           data: { totalAttempts: { increment: 1 }, lastSeenAt: startedAt },
         });
+        if (leadId) {
+          await tx.demoLead.update({
+            where: { id: leadId },
+            data: { totalAttempts: { increment: 1 }, lastAccessAt: startedAt },
+          });
+        }
 
         for (const item of selection.questions) {
           const q = item.question;
@@ -842,6 +850,17 @@ export class DemoTestService {
       });
 
       if (!attempt.isPreview) {
+        if (attempt.leadId) {
+          await tx.demoLead.update({
+            where: { id: attempt.leadId },
+            data: {
+              latestScore: totalScore,
+              latestMaxMarks: attempt.maxMarks,
+              latestPercentage: percentage,
+              lastAccessAt: now,
+            },
+          });
+        }
         await tx.demoAnalyticsEvent.create({
           data: {
             visitorId: attempt.visitorId,

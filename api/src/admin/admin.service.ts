@@ -93,6 +93,7 @@ export class AdminService {
       this.prisma.institutionMembership.count({
         where: {
           status: 'PENDING',
+          studentCategory: 'INTERNAL',
           user: { userRoles: studentAccountRoleFilter },
         },
       }),
@@ -110,6 +111,8 @@ export class AdminService {
           id: true,
           studentId: true,
           status: true,
+          studentCategory: true,
+          paymentStatus: true,
           updatedAt: true,
           user: { select: { id: true, displayName: true } },
         },

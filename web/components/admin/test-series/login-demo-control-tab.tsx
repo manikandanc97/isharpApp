@@ -2,51 +2,31 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  BarChart3,
-  Database,
   ExternalLink,
-  LayoutDashboard,
-  LoaderCircle,
   MonitorCog,
-  Save,
   Settings,
-  Shuffle,
-  Sliders,
+  Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { LoginDemoControlSkeleton } from "@/components/skeletons/admin/test-series-tab-skeletons";
-import type { DemoTestConfiguration } from "@/components/demo-test/demo-test.types";
-import { request } from "@/components/question-bank/helpers";
 import type {
-  DemoAnalyticsData,
-  DemoPoolHealth,
-} from "./demo-management/demo-admin.types";
-import { DemoOverviewTab } from "./demo-management/demo-overview-tab";
-import { DemoGeneralConfigTab } from "./demo-management/demo-general-config-tab";
-import { DemoQuestionPoolTab } from "./demo-management/demo-question-pool-tab";
-import { DemoBlueprintsTab } from "./demo-management/demo-blueprints-tab";
-import { DemoRandomizationTab } from "./demo-management/demo-randomization-tab";
-import { DemoAnalyticsTab } from "./demo-management/demo-analytics-tab";
+  DemoSelectionRules,
+  DemoTestConfiguration,
+  LanguageMode,
+  SubjectMode,
+} from "@/components/demo-test/demo-test.types";
+import { request } from "@/components/question-bank/helpers";
+import { DemoLeadsTab } from "./demo-management/demo-leads-tab";
+import { DemoSettingsTab } from "./demo-management/demo-settings-tab";
 
-type SubTab =
-  | "overview"
-  | "general"
-  | "pool"
-  | "blueprints"
-  | "randomization"
-  | "analytics";
+type SubTab = "leads" | "settings";
 
 const TABS: {
   id: SubTab;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "general", label: "General Config", icon: Settings },
-  { id: "pool", label: "Question Pool", icon: Database },
-  { id: "blueprints", label: "Exam Blueprints", icon: Sliders },
-  { id: "randomization", label: "Randomization Rules", icon: Shuffle },
-  { id: "analytics", label: "Demo Analytics", icon: BarChart3 },
+  { id: "leads", label: "Demo Leads", icon: Users },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 interface Props {
@@ -55,29 +35,20 @@ interface Props {
 }
 
 export function LoginDemoControlTab({ onNotice, onError }: Props) {
-  const [activeTab, setActiveTab] = useState<SubTab>("overview");
+  const [activeTab, setActiveTab] = useState<SubTab>("leads");
   const [config, setConfig] = useState<DemoTestConfiguration | null>(null);
-  const [health, setHealth] = useState<DemoPoolHealth | null>(null);
-  const [analytics, setAnalytics] = useState<DemoAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async () => {
+  const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
-      const [nextConfig, nextHealth, nextAnalytics] = await Promise.all([
-        request<DemoTestConfiguration>("demo-test"),
-        request<DemoPoolHealth>("demo-test/health").catch(() => null),
-        request<DemoAnalyticsData>("demo-test/analytics").catch(() => null),
-      ]);
+      const nextConfig = await request<DemoTestConfiguration>("demo-test");
       setConfig(nextConfig);
-      setHealth(nextHealth);
-      setAnalytics(nextAnalytics);
     } catch (error) {
       onError(
         error instanceof Error
           ? error.message
-          : "Failed to load demo management console",
+          : "Failed to load demo test settings",
       );
     } finally {
       setLoading(false);
@@ -85,24 +56,39 @@ export function LoginDemoControlTab({ onNotice, onError }: Props) {
   }, [onError]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
+    const timer = window.setTimeout(() => void loadConfig(), 0);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [loadConfig]);
 
-  const saveConfig = async () => {
-    if (!config) return;
-    setSaving(true);
+  const handleSaveSettings = async (next: {
+    isEnabled: boolean;
+    title: string;
+    code: string;
+    allowedSubjects: SubjectMode[];
+    defaultSubject: SubjectMode;
+    allowedLanguages: LanguageMode[];
+    defaultLanguage: LanguageMode;
+    defaultQuestionCount: number;
+    defaultDurationMinutes: number;
+    countOptions: { count: number; durationMinutes: number; label: string }[];
+    selectionRules: DemoSelectionRules;
+    guestAccessEnabled: boolean;
+    showResultsImmediately: boolean;
+    showSolutionsAfterSubmit: boolean;
+    admissionCtaEnabled: boolean;
+  }) => {
     try {
       const updated = await request<DemoTestConfiguration>("demo-test", {
         method: "PATCH",
-        body: JSON.stringify(config),
+        body: JSON.stringify(next),
       });
       setConfig(updated);
-      onNotice("Demo test configuration saved.");
+      onNotice("Demo test settings saved.");
     } catch (error) {
-      onError(error instanceof Error ? error.message : "Failed to save configuration");
-    } finally {
-      setSaving(false);
+      onError(
+        error instanceof Error ? error.message : "Failed to save settings",
+      );
+      throw error;
     }
   };
 
@@ -118,10 +104,10 @@ export function LoginDemoControlTab({ onNotice, onError }: Props) {
           </span>
           <div>
             <h3 className="font-bold text-slate-950">
-              Demo Test Management
+              Demo Test &amp; Lead Management
             </h3>
             <p className="mt-1 text-xs text-slate-500">
-              Manage the question pool, exam blueprints, randomization rules, and analytics for /demo-test.
+              Manage prospective student leads and basic configuration for the public Demo Test.
             </p>
           </div>
         </div>
@@ -134,22 +120,10 @@ export function LoginDemoControlTab({ onNotice, onError }: Props) {
           >
             <ExternalLink className="size-3.5" /> View Demo Page
           </a>
-          <Button
-            onClick={() => void saveConfig()}
-            disabled={saving}
-            className="gap-2 rounded-full bg-brand-red text-xs font-bold text-white hover:bg-brand-red-hover"
-          >
-            {saving ? (
-              <LoaderCircle className="size-4 animate-spin" />
-            ) : (
-              <Save className="size-4" />
-            )}
-            Save Changes
-          </Button>
         </div>
       </section>
 
-      {/* Internal Navigation Tabs */}
+      {/* Two-Tab Navigation: Demo Leads & Settings */}
       <nav
         aria-label="Demo Test Management Sections"
         className="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xs"
@@ -162,7 +136,7 @@ export function LoginDemoControlTab({ onNotice, onError }: Props) {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
                 active
                   ? "bg-indigo-600 text-white shadow-xs"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -176,32 +150,12 @@ export function LoginDemoControlTab({ onNotice, onError }: Props) {
       </nav>
 
       {/* Active Tab Content */}
-      {activeTab === "overview" && (
-        <DemoOverviewTab
-          config={config}
-          health={health}
-          analytics={analytics}
-          onRefresh={() => void load()}
-          onNavigateTab={(t) => setActiveTab(t as SubTab)}
-        />
+      {activeTab === "leads" && (
+        <DemoLeadsTab onNotice={onNotice} onError={onError} />
       )}
-      {activeTab === "general" && (
-        <DemoGeneralConfigTab config={config} onChange={setConfig} />
+      {activeTab === "settings" && (
+        <DemoSettingsTab config={config} onSave={handleSaveSettings} />
       )}
-      {activeTab === "pool" && (
-        <DemoQuestionPoolTab
-          onNotice={onNotice}
-          onError={onError}
-          onPoolChanged={() => void load()}
-        />
-      )}
-      {activeTab === "blueprints" && (
-        <DemoBlueprintsTab config={config} onChange={setConfig} />
-      )}
-      {activeTab === "randomization" && (
-        <DemoRandomizationTab config={config} onChange={setConfig} />
-      )}
-      {activeTab === "analytics" && <DemoAnalyticsTab onError={onError} />}
     </div>
   );
 }

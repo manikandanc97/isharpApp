@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
   sheet.addRow([...TEMPLATE_HEADERS]);
   sheet.addRow([
     'PHYSICS', 'Units and Measurements', 'SINGLE_CORRECT', 'MEDIUM',
-    'English question text', 'தமிழ் கேள்வி', '',
-    'Option 1', 'விருப்பம் 1', '',
-    'Option 2', 'விருப்பம் 2', '',
-    'Option 3', 'விருப்பம் 3', '',
-    'Option 4', 'விருப்பம் 4', '',
-    '2', '', 'English solution', 'தமிழ் தீர்வு', '', 4, 1, 'NEET practice'
+    'தமிழ் கேள்வி', 'English question text', '',
+    'விருப்பம் 1', 'Option 1', '',
+    'விருப்பம் 2', 'Option 2', '',
+    'விருப்பம் 3', 'Option 3', '',
+    'விருப்பம் 4', 'Option 4', '',
+    '2', '', 'தமிழ் தீர்வு', 'English solution', '', 4, 1, 'NEET practice'
   ]);
   sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
   sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF18134F' } };

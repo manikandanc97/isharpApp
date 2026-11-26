@@ -32,6 +32,13 @@ import { QuestionPreviewDialog } from "./question-preview-dialog";
 import { QuestionDeleteDialog } from "./question-delete-dialog";
 import { QuestionCardsSkeletonGrid } from "@/components/skeletons/admin/question-card-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Question } from "./types";
 import type { SubjectFilter } from "./use-question-bank";
 import { exportQuestionsToExcel } from "@/lib/question-export";
@@ -307,7 +314,18 @@ export function QuestionBankList({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Bilingual
+              தமிழ் + English
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguageViewMode("TA")}
+              className={`rounded px-2.5 py-1 text-2xs transition ${
+                languageViewMode === "TA"
+                  ? "bg-white text-indigo-700 font-bold shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              தமிழ்
             </button>
             <button
               type="button"
@@ -319,17 +337,6 @@ export function QuestionBankList({
               }`}
             >
               English
-            </button>
-            <button
-              type="button"
-              onClick={() => setLanguageViewMode("TA")}
-              className={`rounded px-2.5 py-1 text-2xs transition font-serif ${
-                languageViewMode === "TA"
-                  ? "bg-white text-indigo-700 font-bold shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              தமிழ்
             </button>
           </div>
 
@@ -412,52 +419,60 @@ export function QuestionBankList({
 
         {/* Chapter Filter */}
         {onChapterChange && (
-          <div>
-            <select
-              value={chapterFilter}
-              onChange={(e) => onChapterChange(e.target.value)}
-              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 outline-none cursor-pointer focus:border-indigo-400"
-            >
-              <option value="ALL">All Chapters ({availableChapters.length})</option>
+          <Select
+            value={chapterFilter}
+            onValueChange={(value) => value && onChapterChange(value)}
+          >
+            <SelectTrigger className="h-9 text-xs font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" label={`All Chapters (${availableChapters.length})`}>
+                All Chapters ({availableChapters.length})
+              </SelectItem>
               {availableChapters.map((ch) => (
-                <option key={ch} value={ch}>
+                <SelectItem key={ch} value={ch} label={ch}>
                   {ch}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </div>
+            </SelectContent>
+          </Select>
         )}
 
         {/* Difficulty Filter */}
         {onDifficultyChange && (
-          <div>
-            <select
-              value={difficultyFilter}
-              onChange={(e) => onDifficultyChange(e.target.value)}
-              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 outline-none cursor-pointer focus:border-indigo-400"
-            >
-              <option value="ALL">All Difficulties</option>
-              <option value="EASY">Easy</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HARD">Hard</option>
-            </select>
-          </div>
+          <Select
+            value={difficultyFilter}
+            onValueChange={(value) => value && onDifficultyChange(value)}
+          >
+            <SelectTrigger className="h-9 text-xs font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" label="All Difficulties">All Difficulties</SelectItem>
+              <SelectItem value="EASY" label="Easy">Easy</SelectItem>
+              <SelectItem value="MEDIUM" label="Medium">Medium</SelectItem>
+              <SelectItem value="HARD" label="Hard">Hard</SelectItem>
+            </SelectContent>
+          </Select>
         )}
 
         {/* Question Type Filter */}
         {onTypeChange && (
-          <div>
-            <select
-              value={typeFilter}
-              onChange={(e) => onTypeChange(e.target.value)}
-              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 outline-none cursor-pointer focus:border-indigo-400"
-            >
-              <option value="ALL">All Question Types</option>
-              <option value="SINGLE_CORRECT">Single Correct MCQ</option>
-              <option value="MULTIPLE_CORRECT">Multiple Correct MCQ</option>
-              <option value="NUMERICAL">Numerical Questions</option>
-            </select>
-          </div>
+          <Select
+            value={typeFilter}
+            onValueChange={(value) => value && onTypeChange(value)}
+          >
+            <SelectTrigger className="h-9 text-xs font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" label="All Question Types">All Question Types</SelectItem>
+              <SelectItem value="SINGLE_CORRECT" label="Single Correct MCQ">Single Correct MCQ</SelectItem>
+              <SelectItem value="MULTIPLE_CORRECT" label="Multiple Correct MCQ">Multiple Correct MCQ</SelectItem>
+              <SelectItem value="NUMERICAL" label="Numerical Questions">Numerical Questions</SelectItem>
+            </SelectContent>
+          </Select>
         )}
       </div>
 
@@ -529,16 +544,20 @@ export function QuestionBankList({
             {/* Page size dropdown */}
             <div className="flex items-center gap-1.5 text-xs text-slate-500">
               <span>Per page:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="h-7 rounded border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer focus:border-indigo-400"
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => value && setPageSize(Number(value))}
               >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
+                <SelectTrigger className="h-7 w-18 rounded-lg px-2 text-xs font-semibold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10" label="10">10</SelectItem>
+                  <SelectItem value="20" label="20">20</SelectItem>
+                  <SelectItem value="50" label="50">50</SelectItem>
+                  <SelectItem value="100" label="100">100</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Layout mode switcher: Full-width list vs 2-column grid */}

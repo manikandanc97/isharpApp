@@ -253,12 +253,23 @@ export function LightField({
   );
 }
 
-export function LightStatusBadge({ status }: { status: Membership["status"] }) {
-  const styles = {
+export function LightStatusBadge({
+  status,
+}: {
+  status: Membership["status"] | Membership["paymentStatus"];
+}) {
+  const styles: Record<
+    Membership["status"] | Membership["paymentStatus"],
+    string
+  > = {
     PENDING: "bg-amber-50 text-amber-700 ring-amber-200/80",
     VERIFIED: "bg-emerald-50 text-emerald-700 ring-emerald-200/80",
+    PAID: "bg-emerald-50 text-emerald-700 ring-emerald-200/80",
+    NOT_REQUIRED: "bg-emerald-50 text-emerald-700 ring-emerald-200/80",
     REJECTED: "bg-red-50 text-red-700 ring-red-200/80",
+    EXPIRED: "bg-red-50 text-red-700 ring-red-200/80",
     REVOKED: "bg-slate-100 text-slate-600 ring-slate-200/80",
+    CANCELLED: "bg-slate-100 text-slate-600 ring-slate-200/80",
   };
 
   return (
@@ -267,11 +278,11 @@ export function LightStatusBadge({ status }: { status: Membership["status"] }) {
     >
       <span
         className={`size-1.5 rounded-full ${
-          status === "VERIFIED"
+          status === "VERIFIED" || status === "PAID" || status === "NOT_REQUIRED"
             ? "bg-emerald-500"
             : status === "PENDING"
               ? "bg-amber-500"
-              : status === "REJECTED"
+              : status === "REJECTED" || status === "EXPIRED"
                 ? "bg-red-500"
                 : "bg-slate-400"
         }`}

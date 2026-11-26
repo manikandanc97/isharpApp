@@ -80,9 +80,9 @@ export function StudentHeader({
             </div>
             {(
               [
-                { id: "bilingual" as const, label: "EN+தமிழ்" },
-                { id: "en" as const, label: "English" },
+                { id: "bilingual" as const, label: "தமிழ்+EN" },
                 { id: "ta" as const, label: "தமிழ்" },
+                { id: "en" as const, label: "English" },
               ] as const
             ).map((lang) => (
               <button

@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { mapQuestionRow } from './question-import';
+import { mapQuestionRow, QUESTION_HEADERS, TEMPLATE_HEADERS } from './question-import';
+
+describe('bilingual spreadsheet column order', () => {
+  it('places Tamil before English for every bilingual field', () => {
+    for (const headers of [QUESTION_HEADERS, TEMPLATE_HEADERS]) {
+      const headerList = Array.from(headers, String);
+      expect(headerList.indexOf('question_text_ta')).toBeLessThan(headerList.indexOf('question_text_en'));
+      expect(headerList.indexOf('solution_ta')).toBeLessThan(headerList.indexOf('solution_en'));
+
+      for (const option of [1, 2, 3, 4]) {
+        expect(headerList.indexOf(`option_${option}_ta`)).toBeLessThan(
+          headerList.indexOf(`option_${option}_en`),
+        );
+      }
+    }
+  });
+});
+
 describe('mapQuestionRow', () => {
   it('maps bilingual options and multiple correct answers with 1, 2 numeric labels', () => {
     const resultNum = mapQuestionRow({

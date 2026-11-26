@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getNestApiBaseUrl } from '@/lib/nest-api';
 
-const DEMO_COOKIE_NAME = 'isharp_demo_vid';
+const DEMO_SESSION_COOKIE = 'isharp_demo_session';
 
 export async function proxyDemoRequest(
   request: NextRequest,
@@ -10,13 +10,18 @@ export async function proxyDemoRequest(
 ) {
   const baseUrl = getNestApiBaseUrl();
   const method = methodOverride ?? request.method;
-  const cookieToken = request.cookies.get(DEMO_COOKIE_NAME)?.value;
+  const sessionToken = request.cookies.get(DEMO_SESSION_COOKIE)?.value;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  if (cookieToken) {
-    headers['x-demo-visitor-token'] = cookieToken;
+  if (sessionToken) {
+    headers['x-demo-session-token'] = sessionToken;
+  }
+
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    headers['x-forwarded-for'] = forwardedFor;
   }
 
   let body: string | undefined;
@@ -34,20 +39,37 @@ export async function proxyDemoRequest(
     });
 
     const data = await upstreamRes.json().catch(() => ({}));
+
+    let newSessionToken: string | null = null;
+    let sessionExpiresAt: string | null = null;
+    if (data && typeof data.sessionToken === 'string' && data.sessionToken) {
+      newSessionToken = data.sessionToken;
+      sessionExpiresAt =
+        typeof data.expiresAt === 'string' ? data.expiresAt : null;
+      delete data.sessionToken;
+    }
+
     const response = NextResponse.json(data, {
       status: upstreamRes.status,
       headers: { 'Cache-Control': 'no-store, private' },
     });
 
-    if (data && typeof data.visitorToken === 'string' && data.visitorToken) {
-      response.cookies.set(DEMO_COOKIE_NAME, data.visitorToken, {
+    if (newSessionToken) {
+      const maxAgeSeconds = sessionExpiresAt
+        ? Math.max(
+            60,
+            Math.floor((new Date(sessionExpiresAt).getTime() - Date.now()) / 1000),
+          )
+        : 4 * 60 * 60;
+      response.cookies.set(DEMO_SESSION_COOKIE, newSessionToken, {
         httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 180 * 24 * 60 * 60,
+        maxAge: maxAgeSeconds,
       });
-      delete data.visitorToken;
+    } else if (data && data.cleared === true) {
+      response.cookies.delete(DEMO_SESSION_COOKIE);
     }
 
     return response;

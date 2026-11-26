@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   RefreshCw,
-  ShieldCheck,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,33 +74,30 @@ export function RolesSection({ onNotice, onError }: RolesSectionProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700">
-              <ShieldCheck className="size-4" /> System Governance & Access Control
-            </div>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Roles & Permissions Matrix
-            </h2>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Role-Based Access Control (RBAC) enforced strictly at the database and API gateway level.
-            </p>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={refreshing || loading}
-            onClick={() => void loadData(true)}
-            className="gap-1.5 rounded-full"
-          >
-            <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            <span>Sync</span>
-          </Button>
+      {/* Header & Actions */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div>
+          <p className="text-3xs font-semibold uppercase tracking-wider text-brand-blue">
+            Access Control
+          </p>
+          <h2 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Roles &amp; Permissions
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            RBAC matrix &amp; staff access levels across platform modules.
+          </p>
         </div>
-      </section>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={refreshing || loading}
+          onClick={() => void loadData(true)}
+          className="gap-1.5 rounded-full bg-white"
+        >
+          <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          <span>Sync</span>
+        </Button>
+      </div>
 
       {/* Role Cards Grid - Active Roles Only */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

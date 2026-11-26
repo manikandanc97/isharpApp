@@ -51,12 +51,16 @@ export class AuthGuard implements CanActivate {
               profile.institutionMembership.paidAccessUntil?.toISOString() ??
               null,
             hasLearningAccess:
-              profile.institutionMembership.status ===
-                MembershipVerificationStatus.VERIFIED &&
-              (profile.institutionMembership.studentCategory === 'INTERNAL' ||
-                (profile.institutionMembership.paymentStatus === 'PAID' &&
+              profile.institutionMembership.studentCategory === 'INTERNAL'
+                ? profile.institutionMembership.status ===
+                  MembershipVerificationStatus.VERIFIED
+                : profile.institutionMembership.status !==
+                    MembershipVerificationStatus.REJECTED &&
+                  profile.institutionMembership.status !==
+                    MembershipVerificationStatus.REVOKED &&
+                  profile.institutionMembership.paymentStatus === 'PAID' &&
                   (!profile.institutionMembership.paidAccessUntil ||
-                    profile.institutionMembership.paidAccessUntil > new Date()))),
+                    profile.institutionMembership.paidAccessUntil > new Date()),
           }
         : null,
     };

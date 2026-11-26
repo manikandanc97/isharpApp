@@ -193,20 +193,20 @@ export function MockTestsBuilder({
               }
             />
           </Field>
+          <Field label="வழிமுறைகள் (தமிழ், optional)">
+            <textarea
+              rows={3}
+              value={instructionsTa}
+              onChange={(event) => setInstructionsTa(event.target.value)}
+              placeholder="Login demo தொடங்கும் முன் காட்ட வேண்டிய வழிமுறைகள்"
+            />
+          </Field>
           <Field label="Instructions (English, optional)">
             <textarea
               rows={3}
               value={instructionsEn}
               onChange={(event) => setInstructionsEn(event.target.value)}
               placeholder="Instructions shown before the login-page demo starts"
-            />
-          </Field>
-          <Field label="Instructions (Tamil, optional)">
-            <textarea
-              rows={3}
-              value={instructionsTa}
-              onChange={(event) => setInstructionsTa(event.target.value)}
-              placeholder="Login demo தொடங்கும் முன் காட்ட வேண்டிய வழிமுறைகள்"
             />
           </Field>
           <button

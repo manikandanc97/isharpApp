@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Download,
   Filter,
-  History,
   RefreshCw,
   Search,
   Shield,
@@ -106,44 +105,41 @@ export function AuditLogsSection({ onNotice, onError }: AuditLogsSectionProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-700">
-              <History className="size-4" /> Compliance & Accountability
-            </div>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              System Audit Logs & Activity Trail
-            </h2>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Immutable logging of administrative operations, question bank imports, examination schedules, and access changes.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={refreshing}
-              onClick={() => void loadData(true)}
-              className="gap-1.5 rounded-full"
-            >
-              <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
-              <span>Sync</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportCSV}
-              className="gap-1.5 rounded-full"
-            >
-              <Download className="size-3.5" />
-              <span>Export CSV</span>
-            </Button>
-          </div>
+      {/* Header & Actions */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div>
+          <p className="text-3xs font-semibold uppercase tracking-wider text-brand-blue">
+            Security &amp; Compliance
+          </p>
+          <h2 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Audit Logs
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Track administrative actions, configuration changes &amp; activity trail.
+          </p>
         </div>
-      </section>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={refreshing}
+            onClick={() => void loadData(true)}
+            className="gap-1.5 rounded-full bg-white"
+          >
+            <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            <span>Sync</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="gap-1.5 rounded-full bg-white"
+          >
+            <Download className="size-3.5" />
+            <span>Export CSV</span>
+          </Button>
+        </div>
+      </div>
 
       {/* Logs Table */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">

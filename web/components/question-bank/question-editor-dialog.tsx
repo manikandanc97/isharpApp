@@ -3,6 +3,13 @@
 import { LoaderCircle, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -89,10 +96,10 @@ export function QuestionEditorDialog({
               />
             </Field>
             <Field label="Type">
-              <select
+              <Select
                 value={draft.type}
-                onChange={(e) => {
-                  const newType = e.target.value;
+                onValueChange={(newType) => {
+                  if (!newType) return;
                   setDraft((prev) => {
                     let newOptions = prev.options;
                     if (newType === "SINGLE_CORRECT") {
@@ -112,40 +119,50 @@ export function QuestionEditorDialog({
                   });
                 }}
               >
-                <option>SINGLE_CORRECT</option>
-                <option>MULTIPLE_CORRECT</option>
-                <option>NUMERICAL</option>
-              </select>
+                <SelectTrigger className="h-10 rounded-lg text-xs font-medium">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SINGLE_CORRECT" label="Single Correct">Single Correct</SelectItem>
+                  <SelectItem value="MULTIPLE_CORRECT" label="Multiple Correct">Multiple Correct</SelectItem>
+                  <SelectItem value="NUMERICAL" label="Numerical">Numerical</SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Difficulty">
-              <select
+              <Select
                 value={draft.difficulty}
-                onChange={(e) =>
-                  setDraft({ ...draft, difficulty: e.target.value })
+                onValueChange={(value) =>
+                  value && setDraft({ ...draft, difficulty: value })
                 }
               >
-                <option>EASY</option>
-                <option>MEDIUM</option>
-                <option>HARD</option>
-              </select>
+                <SelectTrigger className="h-10 rounded-lg text-xs font-medium">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EASY" label="Easy">Easy</SelectItem>
+                  <SelectItem value="MEDIUM" label="Medium">Medium</SelectItem>
+                  <SelectItem value="HARD" label="Hard">Hard</SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Question — English">
-              <textarea
-                rows={3}
-                value={draft.textEn}
-                onChange={(e) =>
-                  setDraft({ ...draft, textEn: e.target.value })
-                }
-              />
-            </Field>
             <Field label="கேள்வி — தமிழ்">
               <textarea
                 rows={3}
                 value={draft.textTa}
                 onChange={(e) =>
                   setDraft({ ...draft, textTa: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="Question — English">
+              <textarea
+                rows={3}
+                value={draft.textEn}
+                onChange={(e) =>
+                  setDraft({ ...draft, textEn: e.target.value })
                 }
               />
             </Field>
@@ -183,21 +200,21 @@ export function QuestionEditorDialog({
             />
           )}
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Solution — English">
-              <textarea
-                rows={3}
-                value={draft.solutionEn}
-                onChange={(e) =>
-                  setDraft({ ...draft, solutionEn: e.target.value })
-                }
-              />
-            </Field>
             <Field label="தீர்வு — தமிழ்">
               <textarea
                 rows={3}
                 value={draft.solutionTa}
                 onChange={(e) =>
                   setDraft({ ...draft, solutionTa: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="Solution — English">
+              <textarea
+                rows={3}
+                value={draft.solutionEn}
+                onChange={(e) =>
+                  setDraft({ ...draft, solutionEn: e.target.value })
                 }
               />
             </Field>

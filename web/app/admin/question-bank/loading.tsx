@@ -1,5 +1,5 @@
-import { AdminLayoutSkeleton } from "@/components/skeletons/admin-layout-skeleton";
+import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 
 export default function AdminQuestionBankLoading() {
-  return <AdminLayoutSkeleton section="questions" />;
+  return <AdminWorkspaceContentSkeleton section="questions" />;
 }

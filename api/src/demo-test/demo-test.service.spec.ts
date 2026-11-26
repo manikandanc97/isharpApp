@@ -291,16 +291,20 @@ describe('Enterprise Demo Test System', () => {
   });
 
   describe('Security, Attempt Lifecycle & Pool Safety', () => {
-    it('never falls back to master Question Bank when HYBRID or MANUAL pool is empty', async () => {
+    it('automatically pulls active, non-restricted Question Bank records excluding upcoming exams', async () => {
+      const findManySpy = vi.fn().mockResolvedValue([]);
       const prismaMock = {
-        demoTestQuestion: { findMany: vi.fn().mockResolvedValue([]) },
-        question: { findMany: vi.fn() },
+        question: { findMany: findManySpy },
       } as unknown as PrismaService;
       const configService = new DemoTestConfigurationService(prismaMock);
 
-      const candidates = await configService.fetchPoolCandidates('HYBRID');
+      const candidates = await configService.fetchPoolCandidates();
       expect(candidates).toEqual([]);
-      expect(prismaMock.question.findMany).not.toHaveBeenCalled();
+      expect(findManySpy).toHaveBeenCalledTimes(1);
+      const whereArg = findManySpy.mock.calls[0][0].where;
+      expect(whereArg.isActive).toBe(true);
+      expect(whereArg.isRestrictedForDemo).toBe(false);
+      expect(whereArg.assessmentQuestions).toBeDefined();
     });
 
     it('verifies guest visitor tokens and rejects tampered tokens', () => {
@@ -390,6 +394,104 @@ describe('Enterprise Demo Test System', () => {
       limiter.consume('v1:1.2.3.4');
       limiter.consume('v1:1.2.3.4');
       expect(() => limiter.consume('v1:1.2.3.4')).toThrow(HttpException);
+    });
+
+    it('persists and normalizes multi-type countOptions and full selectionRules in DemoTestConfigurationService', async () => {
+      let storedRecord: Record<string, unknown> | null = null;
+      const prismaMock = {
+        demoTestConfiguration: {
+          findUnique: vi.fn(async () => storedRecord),
+          upsert: vi.fn(async ({ create }: { create: Record<string, unknown> }) => {
+            storedRecord = { ...create };
+            return storedRecord;
+          }),
+        },
+        demoAdminAuditLog: {
+          create: vi.fn(async () => ({ id: 'audit-1' })),
+        },
+      } as unknown as PrismaService;
+
+      const configService = new DemoTestConfigurationService(prismaMock);
+      const updated = await configService.update(
+        {
+          isEnabled: true,
+          title: 'Custom NEET Demo',
+          code: 'NEET-CUSTOM',
+          allowedSubjects: ['PHYSICS', 'CHEMISTRY', 'BIOLOGY'],
+          defaultSubject: 'ALL',
+          allowedLanguages: ['en', 'ta'],
+          defaultLanguage: 'en',
+          defaultQuestionCount: 18,
+          countOptions: [
+            { count: 9, durationMinutes: 15, label: 'Quick Sprint' },
+            { count: 18, durationMinutes: 30, label: 'Mini Mock' },
+            { count: 45, durationMinutes: 60, label: 'Subject Mock' },
+          ],
+          selectionRules: {
+            visitorRepeatPrevention: true,
+            strictNoRepeat: true,
+            smartReuseAfterExhaustion: false,
+            shuffleQuestions: true,
+            shuffleOptions: true,
+            weightingMode: 'EQUAL',
+          },
+          guestAccessEnabled: false,
+        },
+        'admin-1',
+      );
+
+      expect(updated.title).toBe('Custom NEET Demo');
+      expect(updated.code).toBe('NEET-CUSTOM');
+      expect(updated.defaultLanguage).toBe('en');
+      expect(updated.defaultQuestionCount).toBe(18);
+      expect(updated.defaultDurationMinutes).toBe(30);
+      expect(updated.countOptions).toHaveLength(3);
+      expect(updated.blueprints).toHaveLength(3);
+      expect(updated.selectionRules.strictNoRepeat).toBe(true);
+      expect(updated.selectionRules.weightingMode).toBe('EQUAL');
+      expect(updated.guestAccessEnabled).toBe(false);
+    });
+
+    it('never repeats questions for the same visitor across multiple consecutive attempts while unseen questions exist', () => {
+      const pool = buildPool(10); // 30 total questions (10 per subject)
+      const exposures: Array<{
+        questionId: string;
+        contentFingerprint: string | null;
+        equivalentFingerprint: string | null;
+        lastExposedAt: Date;
+      }> = [];
+      const seenIds = new Set<string>();
+
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const result = selectDemoQuestions({
+          candidates: pool,
+          subjectMode: 'ALL',
+          languageMode: 'ta',
+          questionCount: 9,
+          rules: {
+            ...DEFAULT_DEMO_SELECTION_RULES,
+            visitorRepeatPrevention: true,
+            strictNoRepeat: true,
+          },
+          visitorExposures: exposures,
+          globalStats: new Map(),
+          recentPapers: [],
+        });
+
+        expect(result.questions).toHaveLength(9);
+        for (const item of result.questions) {
+          expect(seenIds.has(item.question.id)).toBe(false);
+          seenIds.add(item.question.id);
+          exposures.push({
+            questionId: item.question.id,
+            contentFingerprint: item.question.contentFingerprint,
+            equivalentFingerprint: item.question.equivalentFingerprint,
+            lastExposedAt: new Date(),
+          });
+        }
+      }
+
+      expect(seenIds.size).toBe(27);
     });
   });
 });
