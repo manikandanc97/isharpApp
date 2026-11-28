@@ -14,7 +14,7 @@ export interface UseQuestionBankFiltersOptions {
 
 export function useQuestionBankFilters({
   questions,
-  busy = false,
+  busy: _busy = false,
   initialSubject = "PHYSICS",
   initialTab = "bank",
 }: UseQuestionBankFiltersOptions) {

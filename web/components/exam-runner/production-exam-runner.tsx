@@ -32,7 +32,7 @@ export function ProductionExamRunner({
   onSubmitted,
 }: ProductionExamRunnerProps) {
   const router = useRouter();
-  const { questions, attemptId, durationMinutes, expiresAt, secondsRemaining: initialSeconds } =
+  const { questions, attemptId, expiresAt, secondsRemaining: initialSeconds } =
     initialAttempt;
 
   const [currentIndex, setCurrentIndex] = useState(0);

@@ -46,9 +46,6 @@ export function QuestionCard({
   const isNumerical = question.type === "NUMERICAL";
   const correctCount = question.options.filter((o) => o.isCorrect).length;
 
-  const showEn = languageViewMode === "BILINGUAL" || languageViewMode === "EN";
-  const showTa = languageViewMode === "BILINGUAL" || languageViewMode === "TA";
-
   return (
     <article
       className={`flex h-full flex-col rounded-2xl border bg-white p-4 transition sm:p-5 ${

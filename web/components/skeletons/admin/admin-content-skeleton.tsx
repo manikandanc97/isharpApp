@@ -316,63 +316,6 @@ function TestSeriesSkeleton() {
   );
 }
 
-function ExamsSkeleton() {
-  return (
-    <div className="space-y-6 animate-pulse">
-      {/* Top Banner */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-36 rounded-full" />
-            <Skeleton className="h-8 w-72 rounded-lg" />
-            <Skeleton className="h-3.5 w-80 max-w-full" />
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Skeleton className="h-10 w-36 rounded-full bg-brand-red/30" />
-            <Skeleton className="h-10 w-24 rounded-full" />
-          </div>
-        </div>
-
-        {/* 4 Real-time Metric Cards */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-5">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-2">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="h-3 w-32" />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Exam Sessions Table */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-[#fbfbfa]">
-          <Skeleton className="h-8 w-48 rounded-lg" />
-          <Skeleton className="h-8 w-64 rounded-lg" />
-        </div>
-        <div className="divide-y divide-slate-100 p-2">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center justify-between p-4">
-              <div className="space-y-1.5 flex-1">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-5 w-44 rounded" />
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                </div>
-                <Skeleton className="h-3.5 w-64" />
-              </div>
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-4 w-28" />
-                <Skeleton className="h-8 w-24 rounded-lg" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
-
 function ResultsSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
@@ -574,7 +517,6 @@ export function AdminWorkspaceContentSkeleton({
   if (section === "courses") return <CoursesSkeleton />;
   if (section === "questions") return <QuestionBankSkeleton />;
   if (section === "test-series" || section === "tests") return <TestSeriesSkeleton />;
-  if (section === "exams") return <ExamsSkeleton />;
   if (section === "results") return <ResultsSkeleton />;
   if (section === "audit-logs") return <AuditLogsSkeleton />;
   if (section === "roles") return <RolesSkeleton />;

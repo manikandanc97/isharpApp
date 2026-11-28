@@ -105,15 +105,10 @@ export function useCurriculum(course: Course) {
     return course.courseSubjects[0]?.subject.id || "";
   });
 
-  // Ensure selectedSubjectId is valid if subjects list changes
-  useEffect(() => {
-    if (subjects.length > 0) {
-      const exists = subjects.some((s) => s.id === selectedSubjectId);
-      if (!exists) {
-        setSelectedSubjectId(subjects[0].id);
-      }
-    }
-  }, [subjects, selectedSubjectId]);
+  const validSelectedSubjectId =
+    subjects.length > 0 && !subjects.some((s) => s.id === selectedSubjectId)
+      ? subjects[0].id
+      : selectedSubjectId;
 
   // Persist to localStorage whenever state changes
   useEffect(() => {
@@ -122,13 +117,13 @@ export function useCurriculum(course: Course) {
       const payload: StoragePayload = {
         subjects,
         chapters: chaptersBySubject,
-        selectedSubjectId,
+        selectedSubjectId: validSelectedSubjectId,
       };
       localStorage.setItem(storageKey, JSON.stringify(payload));
     } catch {
       // Ignore quota errors
     }
-  }, [subjects, chaptersBySubject, selectedSubjectId, storageKey]);
+  }, [subjects, chaptersBySubject, validSelectedSubjectId, storageKey]);
 
   // Helper to sync chapter counts in subjects
   const syncSubjectChapterCounts = useCallback(
@@ -496,7 +491,7 @@ export function useCurriculum(course: Course) {
   return {
     subjects,
     selectedSubject,
-    selectedSubjectId,
+    selectedSubjectId: validSelectedSubjectId,
     setSelectedSubjectId,
     activeChapters,
     totalChaptersAcrossAllSubjects,

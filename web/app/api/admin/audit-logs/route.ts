@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const module = searchParams.get("module") || undefined;
+  const moduleFilter = searchParams.get("module") || undefined;
 
-  const logs = auditLogsStore.getLogs(module);
+  const logs = auditLogsStore.getLogs(moduleFilter);
   return NextResponse.json(logs);
 }
 

@@ -56,6 +56,82 @@ export function createApiClient({
         timeoutMs,
       );
 
+      const isFormData =
+        typeof FormData !== 'undefined' && body instanceof FormData;
+      const headers = new Headers(requestHeaders);
+      if (accessToken) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
+      }
+      if (body !== undefined && !isFormData && !headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
+      if (isFormData) {
+        headers.delete('Content-Type');
+      }
+
+      const serializedBody: BodyInit | undefined =
+        body === undefined
+          ? undefined
+          : isFormData || typeof body === 'string'
+            ? (body as BodyInit)
+            : JSON.stringify(body);
+
+      try {
+        const fullUrl = joinUrl(normalizedBaseUrl, path);
+        const response = await fetchImpl(fullUrl, {
+          ...requestInit,
+          body: serializedBody,
+          headers,
+          signal: controller.signal,
+        });
+        const payload = await parseJsonResponse(response);
+        if (!response.ok) {
+          throw new ApiClientError(
+            getErrorMessage(payload, response.status),
+            response.status,
+            payload,
+          );
+        }
+        return payload as T;
+      } catch (error) {
+        if (error instanceof ApiClientError) throw error;
+        if (externalSignal?.aborted) {
+          throw error instanceof Error
+            ? error
+            : new DOMException('Request aborted', 'AbortError');
+        }
+        if (controller.signal.aborted) {
+          throw new ApiClientError('API request timed out', 408);
+        }
+        throw new ApiClientError('API request failed', 0);
+      } finally {
+        clearTimeout(timeout);
+        externalSignal?.removeEventListener('abort', onExternalAbort);
+      }
+    },
+
+    async requestBlob(
+      path: string,
+      options: ApiRequestOptions = {},
+    ): Promise<Blob> {
+      const {
+        accessToken,
+        body,
+        headers: requestHeaders,
+        signal: externalSignal,
+        timeoutMs: requestTimeoutMs,
+        ...requestInit
+      } = options;
+      const controller = new AbortController();
+      const timeoutMs = requestTimeoutMs ?? defaultTimeoutMs;
+      const onExternalAbort = () => controller.abort(externalSignal?.reason);
+      if (externalSignal?.aborted) onExternalAbort();
+      else externalSignal?.addEventListener('abort', onExternalAbort, { once: true });
+      const timeout = setTimeout(
+        () => controller.abort(new DOMException('Request timed out', 'TimeoutError')),
+        timeoutMs,
+      );
+
       const headers = new Headers(requestHeaders);
       if (accessToken) {
         headers.set('Authorization', `Bearer ${accessToken}`);
@@ -72,18 +148,23 @@ export function createApiClient({
           headers,
           signal: controller.signal,
         });
-        const payload = await parseJsonResponse(response);
         if (!response.ok) {
+          const payload = await parseJsonResponse(response).catch(() => undefined);
           throw new ApiClientError(
             getErrorMessage(payload, response.status),
             response.status,
             payload,
           );
         }
-        return payload as T;
+        return await response.blob();
       } catch (error) {
         if (error instanceof ApiClientError) throw error;
-        if (controller.signal.aborted && !externalSignal?.aborted) {
+        if (externalSignal?.aborted) {
+          throw error instanceof Error
+            ? error
+            : new DOMException('Request aborted', 'AbortError');
+        }
+        if (controller.signal.aborted) {
           throw new ApiClientError('API request timed out', 408);
         }
         throw new ApiClientError('API request failed', 0);

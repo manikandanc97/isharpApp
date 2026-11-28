@@ -118,10 +118,108 @@ export function calculateOptionContentHash(opt: {
   return createHash('sha256').update(JSON.stringify(contentObj)).digest('hex');
 }
 
+interface CachedImageHashEntry {
+  hash: string;
+  cachedAt: number;
+  etag?: string | null;
+  lastModified?: string | null;
+}
+
+const DEFAULT_IMAGE_HASH_CACHE_MAX_ENTRIES = 1000;
+const DEFAULT_IMAGE_HASH_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_CACHEABLE_IMAGE_KEY_LENGTH = 8192;
+
+export function isAllowedRemoteImageUrl(rawUrl: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return false;
+  }
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (!host || host === 'localhost' || host.endsWith('.local')) {
+    return false;
+  }
+  if (
+    host === '::1' ||
+    host.startsWith('fe80:') ||
+    host.startsWith('fc') ||
+    host.startsWith('fd')
+  ) {
+    return false;
+  }
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4) {
+    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
+    if (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 @Injectable()
 export class QuestionDuplicateDetectionService {
   private readonly logger = new Logger(QuestionDuplicateDetectionService.name);
-  private readonly imageHashCache = new Map<string, string>();
+  private readonly imageHashCache = new Map<string, CachedImageHashEntry>();
+  private maxImageCacheEntries = DEFAULT_IMAGE_HASH_CACHE_MAX_ENTRIES;
+  private imageCacheTtlMs = DEFAULT_IMAGE_HASH_CACHE_TTL_MS;
+
+  configureImageCache(maxEntries: number, ttlMs: number): void {
+    this.maxImageCacheEntries = Math.max(1, maxEntries);
+    this.imageCacheTtlMs = Math.max(1, ttlMs);
+  }
+
+  getImageHashCacheSize(): number {
+    return this.imageHashCache.size;
+  }
+
+  private getCachedImageEntry(key: string): CachedImageHashEntry | null {
+    const entry = this.imageHashCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.cachedAt > this.imageCacheTtlMs) {
+      this.imageHashCache.delete(key);
+      return null;
+    }
+    // Refresh LRU order
+    this.imageHashCache.delete(key);
+    this.imageHashCache.set(key, entry);
+    return entry;
+  }
+
+  private setCachedImageHash(
+    key: string,
+    hash: string,
+    validators?: { etag?: string | null; lastModified?: string | null },
+  ): void {
+    if (key.length > MAX_CACHEABLE_IMAGE_KEY_LENGTH) {
+      return;
+    }
+    if (this.imageHashCache.has(key)) {
+      this.imageHashCache.delete(key);
+    } else if (this.imageHashCache.size >= this.maxImageCacheEntries) {
+      const oldestKey = this.imageHashCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.imageHashCache.delete(oldestKey);
+      }
+    }
+    this.imageHashCache.set(key, {
+      hash,
+      cachedAt: Date.now(),
+      etag: validators?.etag ?? null,
+      lastModified: validators?.lastModified ?? null,
+    });
+  }
 
   /**
    * Resolves the SHA-256 hash of an image from a URL, data URI, or local file.
@@ -135,8 +233,10 @@ export class QuestionDuplicateDetectionService {
     const trimmed = imageUrl.trim();
     if (!trimmed) return null;
 
-    if (this.imageHashCache.has(trimmed)) {
-      return this.imageHashCache.get(trimmed)!;
+    const isDataUri = trimmed.startsWith('data:image/');
+    const cachedEntry = this.getCachedImageEntry(trimmed);
+    if (isDataUri && cachedEntry) {
+      return cachedEntry.hash;
     }
 
     try {
@@ -149,7 +249,7 @@ export class QuestionDuplicateDetectionService {
           const base64Data = trimmed.slice(commaIdx + 1);
           const buffer = Buffer.from(base64Data, 'base64');
           const hash = hashImageBytes(buffer, mimeType);
-          this.imageHashCache.set(trimmed, hash);
+          this.setCachedImageHash(trimmed, hash);
           return hash;
         }
       }
@@ -187,7 +287,7 @@ export class QuestionDuplicateDetectionService {
                   ? 'image/png'
                   : 'image/jpeg';
             const hash = hashImageBytes(buffer, mimeType);
-            this.imageHashCache.set(trimmed, hash);
+            this.setCachedImageHash(trimmed, hash);
             return hash;
           } catch {
             continue;
@@ -195,20 +295,40 @@ export class QuestionDuplicateDetectionService {
         }
       }
 
-      // 3. HTTP(S) URL
+      // 3. HTTP(S) URL (SSRF-guarded + ETag/Last-Modified revalidated)
       if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        if (!isAllowedRemoteImageUrl(trimmed)) {
+          this.logger.warn(`Blocked unsafe remote image URL: ${trimmed}`);
+          return null;
+        }
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 4000);
         try {
+          const reqHeaders: Record<string, string> = {};
+          if (cachedEntry?.etag) {
+            reqHeaders['If-None-Match'] = cachedEntry.etag;
+          }
+          if (cachedEntry?.lastModified) {
+            reqHeaders['If-Modified-Since'] = cachedEntry.lastModified;
+          }
           const res = await fetch(trimmed, {
             signal: controller.signal,
-            cache: 'force-cache',
+            cache: 'no-store',
+            headers: Object.keys(reqHeaders).length > 0 ? reqHeaders : undefined,
           });
+          if (res.status === 304 && cachedEntry) {
+            return cachedEntry.hash;
+          }
           if (res.ok) {
             const arrayBuffer = await res.arrayBuffer();
             const mimeType = res.headers.get('content-type') || undefined;
             const hash = hashImageBytes(Buffer.from(arrayBuffer), mimeType);
-            this.imageHashCache.set(trimmed, hash);
+            const etag = res.headers.get('etag');
+            const lastModified = res.headers.get('last-modified');
+            // Only cache mutable remote URLs when the server provides a validator
+            if (etag || lastModified) {
+              this.setCachedImageHash(trimmed, hash, { etag, lastModified });
+            }
             return hash;
           }
         } finally {
@@ -216,7 +336,9 @@ export class QuestionDuplicateDetectionService {
         }
       }
     } catch (err) {
-      this.logger.warn(`Failed to resolve image hash for ${imageUrl}: ${err}`);
+      this.logger.warn(
+        `Failed to resolve image hash for ${imageUrl}: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
 
     return null;

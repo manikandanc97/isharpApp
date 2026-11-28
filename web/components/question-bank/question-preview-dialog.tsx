@@ -1,16 +1,12 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState } from "react";
 import {
   CheckCircle2,
-  FileQuestion,
-  HelpCircle,
   Sparkles,
-  X,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QuestionDiagram } from "@/components/shared/questions/question-diagram";
 import {
   Dialog,
   DialogContent,
@@ -168,20 +164,9 @@ export function QuestionPreviewDialog({
                   </a>
                 </div>
                 <div className="flex justify-center bg-white p-2 rounded-lg border border-slate-100">
-                  <img
+                  <QuestionDiagram
                     src={question.questionImageUrl}
                     alt="Question Diagram"
-                    className="max-h-72 object-contain rounded-lg"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = "none";
-                      const parent = e.currentTarget.parentElement;
-                      if (parent && !parent.querySelector(".img-error-hint")) {
-                        const hint = document.createElement("div");
-                        hint.className = "img-error-hint py-4 text-center text-xs text-slate-400 font-medium";
-                        hint.textContent = "Diagram image preview unavailable or not found";
-                        parent.appendChild(hint);
-                      }
-                    }}
                   />
                 </div>
               </div>
@@ -251,7 +236,7 @@ export function QuestionPreviewDialog({
 
                       {option.imageUrl && (
                         <div className="mt-3 flex justify-center rounded-lg border border-slate-100 bg-slate-50 p-2">
-                          <img
+                          <QuestionDiagram
                             src={option.imageUrl}
                             alt={`Option ${displayNum}`}
                             className="max-h-24 object-contain"
@@ -312,7 +297,7 @@ export function QuestionPreviewDialog({
             )}
             {question.solutionImageUrl && (
               <div className="mt-3 flex justify-center rounded-xl border border-blue-100 bg-white p-4">
-                <img
+                <QuestionDiagram
                   src={question.solutionImageUrl}
                   alt="Solution Explanation Diagram"
                   className="max-h-60 object-contain rounded-lg"

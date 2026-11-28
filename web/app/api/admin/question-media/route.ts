@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 200, headers: { 'Cache-Control': 'no-store, private' } },
     );
-  } catch (err) {
+  } catch {
     return Response.json({ message: 'Image upload failed' }, { status: 500 });
   }
 }

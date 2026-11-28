@@ -1,7 +1,6 @@
 import ExcelJS from "exceljs";
 import type { NextRequest } from "next/server";
 import { normalizeExcelXmlBuffer } from "@/lib/excel-patch";
-import { ApiClientError } from "@/lib/api-client";
 import { collectEmbeddedImages } from "@/lib/excel-embedded-images";
 import { prepareEmbeddedImageForUpload } from "@/lib/excel-image-upload";
 import { getNestApiBaseUrl, getNestApiClient } from "@/lib/nest-api";

@@ -20,41 +20,6 @@ export function useExamAutosave({ attemptId }: UseExamAutosaveOptions) {
   const retryQueueRef = useRef<Map<string, StudentAnswerState>>(new Map());
   const isOnlineRef = useRef<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
 
-  // Network offline / online detection
-  useEffect(() => {
-    function handleOnline() {
-      isOnlineRef.current = true;
-      setSaveStatus("saving");
-      // Flush retry queue
-      flushRetryQueue();
-    }
-
-    function handleOffline() {
-      isOnlineRef.current = false;
-      setSaveStatus("offline");
-    }
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  const flushRetryQueue = async () => {
-    if (retryQueueRef.current.size === 0) {
-      setSaveStatus("saved");
-      return;
-    }
-
-    const items = Array.from(retryQueueRef.current.values());
-    for (const item of items) {
-      await saveAnswer(item);
-    }
-  };
-
   const saveAnswer = useCallback(
     async (answer: StudentAnswerState): Promise<boolean> => {
       const qId = answer.questionId;
@@ -114,6 +79,41 @@ export function useExamAutosave({ attemptId }: UseExamAutosaveOptions) {
     },
     [attemptId]
   );
+
+  const flushRetryQueue = useCallback(async () => {
+    if (retryQueueRef.current.size === 0) {
+      setSaveStatus("saved");
+      return;
+    }
+
+    const items = Array.from(retryQueueRef.current.values());
+    for (const item of items) {
+      await saveAnswer(item);
+    }
+  }, [saveAnswer]);
+
+  // Network offline / online detection
+  useEffect(() => {
+    function handleOnline() {
+      isOnlineRef.current = true;
+      setSaveStatus("saving");
+      // Flush retry queue
+      void flushRetryQueue();
+    }
+
+    function handleOffline() {
+      isOnlineRef.current = false;
+      setSaveStatus("offline");
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [flushRetryQueue]);
 
   return {
     saveStatus,

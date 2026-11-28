@@ -3,14 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Download,
-  Filter,
   RefreshCw,
   Search,
-  Shield,
-  ShieldAlert,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { api } from "@/components/admin/admin-api";
 import { TablePagination } from "@/components/admin/admin-helpers";
 import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 import type { AuditLogEntry } from "@/lib/audit-logs-store";
@@ -30,19 +28,19 @@ export function AuditLogsSection({ onNotice, onError }: AuditLogsSectionProps) {
   const pageSize = 10;
 
   // Reset page on filter or search query change
-  useEffect(() => {
+  const filterKey = `${selectedModule}|${searchQuery}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [selectedModule, searchQuery]);
+  }
 
   const loadData = useCallback(async (quiet = false) => {
     if (quiet) setRefreshing(true);
     else setLoading(true);
     try {
-      const res = await fetch("/api/admin/audit-logs", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        setLogs(data || []);
-      }
+      const data = await api<AuditLogEntry[]>("audit-logs");
+      setLogs(data || []);
     } catch {
       onError("Failed to load audit logs");
     } finally {
@@ -52,8 +50,21 @@ export function AuditLogsSection({ onNotice, onError }: AuditLogsSectionProps) {
   }, [onError]);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    let active = true;
+    api<AuditLogEntry[]>("audit-logs")
+      .then((data) => {
+        if (active) setLogs(data || []);
+      })
+      .catch(() => {
+        if (active) onError("Failed to load audit logs");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [onError]);
 
   const filteredLogs = logs.filter((log) => {
     if (selectedModule !== "ALL" && log.module !== selectedModule) return false;
@@ -152,7 +163,6 @@ export function AuditLogsSection({ onNotice, onError }: AuditLogsSectionProps) {
                 { key: "QUESTION_BANK", label: "Question Bank" },
                 { key: "COURSES", label: "Courses" },
                 { key: "TEST_SERIES", label: "Test Series" },
-                { key: "EXAM_MANAGEMENT", label: "Exams" },
                 { key: "ROLES", label: "Roles" },
                 { key: "SETTINGS", label: "Settings" },
               ].map((m) => (
@@ -212,8 +222,6 @@ export function AuditLogsSection({ onNotice, onError }: AuditLogsSectionProps) {
                     ? "bg-indigo-50 text-indigo-700 border-indigo-200"
                     : log.module === "COURSES"
                     ? "bg-blue-50 text-blue-700 border-blue-200"
-                    : log.module === "EXAM_MANAGEMENT"
-                    ? "bg-amber-50 text-amber-700 border-amber-200"
                     : log.module === "ROLES"
                     ? "bg-rose-50 text-rose-700 border-rose-200"
                     : "bg-slate-100 text-slate-700 border-slate-200";

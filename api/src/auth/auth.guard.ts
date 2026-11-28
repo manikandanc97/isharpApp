@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import type { AuthenticatedRequest } from './auth-user.js';
-import { MembershipVerificationStatus } from '../generated/prisma/client.js';
 import { isRoleName } from './role.js';
 import { SupabaseTokenVerifier } from './supabase-token-verifier.service.js';
 import { StudentAccessResolver } from './student-access-resolver.service.js';
+import { hasStudentLearningAccess } from './student-learning-access.policy.js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -50,17 +50,9 @@ export class AuthGuard implements CanActivate {
             paidAccessUntil:
               profile.institutionMembership.paidAccessUntil?.toISOString() ??
               null,
-            hasLearningAccess:
-              profile.institutionMembership.studentCategory === 'INTERNAL'
-                ? profile.institutionMembership.status ===
-                  MembershipVerificationStatus.VERIFIED
-                : profile.institutionMembership.status !==
-                    MembershipVerificationStatus.REJECTED &&
-                  profile.institutionMembership.status !==
-                    MembershipVerificationStatus.REVOKED &&
-                  profile.institutionMembership.paymentStatus === 'PAID' &&
-                  (!profile.institutionMembership.paidAccessUntil ||
-                    profile.institutionMembership.paidAccessUntil > new Date()),
+            hasLearningAccess: hasStudentLearningAccess(
+              profile.institutionMembership,
+            ),
           }
         : null,
     };

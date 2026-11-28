@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import type { DemoLeadFollowUpStatus, Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { maskPhoneNumber } from './demo-test-phone.helper.js';
+import { maskPhoneNumber, normalizeIndianMobile } from './demo-test-phone.helper.js';
 
 export interface ListDemoLeadsQuery {
   page?: number;
@@ -18,6 +18,8 @@ export interface ListDemoLeadsQuery {
 }
 
 export interface UpdateDemoLeadInput {
+  normalizedPhone?: string;
+  marketingConsent?: boolean;
   followUpStatus?: string;
   adminNotes?: string | null;
 }
@@ -212,6 +214,30 @@ export class DemoLeadsService {
 
     const data: Prisma.DemoLeadUpdateInput = {};
 
+    if (input.normalizedPhone !== undefined) {
+      const normalized = normalizeIndianMobile(input.normalizedPhone);
+      if (normalized !== existing.normalizedPhone) {
+        const duplicate = await this.prisma.demoLead.findUnique({
+          where: { normalizedPhone: normalized },
+          select: { id: true },
+        });
+        if (duplicate && duplicate.id !== leadId) {
+          throw new BadRequestException(
+            'Another demo lead already exists with this mobile number.',
+          );
+        }
+        data.normalizedPhone = normalized;
+      }
+    }
+
+    if (input.marketingConsent !== undefined) {
+      const consent = Boolean(input.marketingConsent);
+      data.marketingConsent = consent;
+      data.consentTimestamp = consent
+        ? (existing.consentTimestamp ?? new Date())
+        : null;
+    }
+
     if (input.followUpStatus !== undefined) {
       const normalizedStatus = String(input.followUpStatus).trim().toUpperCase();
       if (
@@ -254,5 +280,34 @@ export class DemoLeadsService {
     });
 
     return updated;
+  }
+
+  async deleteLead(leadId: string, actorUserId?: string | null) {
+    const existing = await this.prisma.demoLead.findUnique({
+      where: { id: leadId },
+      select: { id: true, normalizedPhone: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Demo lead not found');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.demoLead.delete({
+        where: { id: leadId },
+      });
+
+      await tx.demoAdminAuditLog.create({
+        data: {
+          actorUserId: actorUserId ?? null,
+          action: 'DELETE_DEMO_LEAD',
+          details: {
+            leadId,
+            phoneMasked: maskPhoneNumber(existing.normalizedPhone),
+          } as never,
+        },
+      });
+    });
+
+    return { deleted: true, id: leadId };
   }
 }

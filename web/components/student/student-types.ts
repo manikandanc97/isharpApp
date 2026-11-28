@@ -50,7 +50,9 @@ export type StudentPortalData = {
     testType?: string;
     seriesId?: string | null;
     seriesTitle?: string | null;
+    categoryId?: string | null;
     categoryName?: string;
+    subjects?: Array<{ code: string; name: string; questionCount: number }>;
     attemptCount?: number;
     maxAttempts?: number;
     activeAttemptId?: string | null;
@@ -72,9 +74,9 @@ export type StudentPortalData = {
     academicYear: string;
     coverImageUrl: string | null;
     course: { id: string; title: string; code: string } | null;
-    tests: Array<any>;
+    tests: Array<Record<string, unknown>>;
   }>;
-  assessmentTests?: Array<any>;
+  assessmentTests?: Array<Record<string, unknown>>;
   recentQuestions: Array<{
     id: string;
     externalId: string;

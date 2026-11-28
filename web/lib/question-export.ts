@@ -1,4 +1,3 @@
-import ExcelJS from "exceljs";
 import { QUESTION_HEADERS } from "./question-import";
 import type { Question } from "@/components/question-bank/types";
 
@@ -6,6 +5,7 @@ export async function exportQuestionsToExcel(
   questions: Question[],
   fileName = "i-sharp-questions-export.xlsx"
 ) {
+  const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "I-SHARP Academy";
   workbook.created = new Date();

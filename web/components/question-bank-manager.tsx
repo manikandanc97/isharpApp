@@ -1,14 +1,30 @@
 "use client";
 
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import { X } from "lucide-react";
 import { Stack } from "@/components/layout/layout-primitives";
-import { QuestionEditorDialog } from "./question-bank/question-editor-dialog";
-import { QuestionImportDialog } from "./question-bank/question-import-dialog";
 import { QuestionBankHeader } from "./question-bank/question-bank-header";
 import { QuestionBankTabsAndSubjects } from "./question-bank/question-bank-tabs-and-subjects";
 import { QuestionBankList } from "./question-bank/question-bank-list";
 import { useQuestionBank } from "./question-bank/use-question-bank";
 import { exportQuestionsToExcel } from "@/lib/question-export";
+
+const QuestionEditorDialog = dynamic(
+  () =>
+    import("./question-bank/question-editor-dialog").then(
+      (m) => m.QuestionEditorDialog,
+    ),
+  { ssr: false },
+);
+
+const QuestionImportDialog = dynamic(
+  () =>
+    import("./question-bank/question-import-dialog").then(
+      (m) => m.QuestionImportDialog,
+    ),
+  { ssr: false },
+);
 
 export function QuestionBankManager() {
   const {
@@ -65,12 +81,22 @@ export function QuestionBankManager() {
     visible,
   } = useQuestionBank();
 
+  const [exportBusy, setExportBusy] = useState(false);
+
   const handleExportExcel = async () => {
-    const toExport = visible.length > 0 ? visible : questions;
-    await exportQuestionsToExcel(
-      toExport,
-      `isharp-neet-questions-export-${Date.now()}.xlsx`
-    );
+    if (exportBusy) return;
+    setExportBusy(true);
+    try {
+      const toExport = visible.length > 0 ? visible : questions;
+      await exportQuestionsToExcel(
+        toExport,
+        `isharp-neet-questions-export-${Date.now()}.xlsx`
+      );
+    } catch {
+      setError("Failed to export questions to Excel.");
+    } finally {
+      setExportBusy(false);
+    }
   };
 
   const handleDuplicateQuestion = (q: (typeof questions)[number]) => {

@@ -1,21 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
   BookOpen,
-  CheckCircle2,
-  ChevronRight,
   Download,
-  Filter,
   Layers,
   MoreVertical,
   Pencil,
   Plus,
   Power,
   Search,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -71,9 +67,12 @@ export function ChapterTable({
   const pageSize = 10;
 
   // Reset page when subject, filter, or query changes
-  useEffect(() => {
+  const filterKey = `${query}|${statusFilter}|${subject?.id ?? ""}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [query, statusFilter, subject?.id]);
+  }
 
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);

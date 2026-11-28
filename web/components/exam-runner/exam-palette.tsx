@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ChevronRight, LayoutGrid, Send } from "lucide-react";
+import { LayoutGrid, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ExamQuestion, QuestionStatus } from "./exam.types";
 
@@ -31,7 +31,7 @@ export function ExamPaletteSidebar({
   currentIndex,
   summaryCounts,
   attemptedCount,
-  remainingCount,
+  remainingCount: _remainingCount,
   progressPercent,
   getQuestionStatus,
   onJumpTo,

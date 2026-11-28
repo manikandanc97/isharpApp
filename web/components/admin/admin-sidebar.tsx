@@ -29,7 +29,7 @@ export function AdminSidebar({
   sidebarOpen,
   onCloseSidebar,
   section,
-  onNavigate,
+  onNavigate: _onNavigate,
   pendingNotificationCount,
   administratorLabel,
   session,

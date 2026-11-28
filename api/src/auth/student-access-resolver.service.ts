@@ -7,7 +7,6 @@ import {
   StudentPaymentStatus,
 } from '../generated/prisma/client.js';
 import {
-  isTransientConnectionError,
   PrismaService,
   withTransientDbRetry,
 } from '../prisma/prisma.service.js';

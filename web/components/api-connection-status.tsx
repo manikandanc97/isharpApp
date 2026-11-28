@@ -6,7 +6,7 @@ import { createApiClient } from '@/lib/api-client';
 const frontendApi = createApiClient({ baseUrl: '', defaultTimeoutMs: 4_000 });
 
 export function ApiConnectionStatus() {
-  const [isLive, setIsLive] = useState(true);
+  const [, setIsLive] = useState(true);
 
   useEffect(() => {
     let active = true;

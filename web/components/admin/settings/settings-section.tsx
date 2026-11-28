@@ -1,15 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Check,
-  CheckCircle2,
-  Clock,
-  Globe,
   LoaderCircle,
   Save,
-  Shield,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,24 +35,25 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const loadSettings = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/settings", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        setForm((prev) => ({ ...prev, ...data }));
-      }
-    } catch {
-      onError("Failed to load system settings");
-    } finally {
-      setLoading(false);
-    }
-  }, [onError]);
-
   useEffect(() => {
-    void loadSettings();
-  }, [loadSettings]);
+    let active = true;
+    fetch("/api/admin/settings", { cache: "no-store" })
+      .then(async (res) => {
+        if (active && res.ok) {
+          const data = await res.json();
+          setForm((prev) => ({ ...prev, ...data }));
+        }
+      })
+      .catch(() => {
+        if (active) onError("Failed to load system settings");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [onError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

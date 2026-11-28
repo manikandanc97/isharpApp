@@ -117,4 +117,72 @@ describe('API client', () => {
       );
     });
   });
+
+  describe('FormData, empty responses, cancellation & binary downloads', () => {
+    it('does not set Content-Type manually for FormData uploads', async () => {
+      const fetchImpl = vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify({ uploaded: true })));
+      const client = createApiClient({ baseUrl: '', fetchImpl });
+      const form = new FormData();
+      form.append('file', new Blob(['hello']), 'test.txt');
+
+      await expect(
+        client.request('/api/upload', { method: 'POST', body: form }),
+      ).resolves.toEqual({ uploaded: true });
+
+      const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+      const headers = new Headers(init.headers);
+      expect(headers.has('Content-Type')).toBe(false);
+      expect(init.body).toBe(form);
+    });
+
+    it('handles 204 No Content empty responses cleanly', async () => {
+      const fetchImpl = vi
+        .fn()
+        .mockResolvedValue(new Response(null, { status: 204 }));
+      const client = createApiClient({ baseUrl: '', fetchImpl });
+
+      await expect(
+        client.request('/api/admin/item', { method: 'DELETE' }),
+      ).resolves.toBeUndefined();
+    });
+
+    it('propagates external AbortSignal cancellation without converting to timeout', async () => {
+      const external = new AbortController();
+      const fetchImpl = vi.fn((_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('User cancelled', 'AbortError'));
+          });
+        }),
+      );
+      const client = createApiClient({
+        baseUrl: '',
+        defaultTimeoutMs: 5000,
+        fetchImpl: fetchImpl as typeof fetch,
+      });
+
+      const promise = client.request('/api/search', { signal: external.signal });
+      external.abort();
+
+      await expect(promise).rejects.toThrow('User cancelled');
+    });
+
+    it('downloads binary blobs via requestBlob without JSON parsing', async () => {
+      const bytes = new Uint8Array([80, 75, 3, 4]);
+      const fetchImpl = vi.fn().mockResolvedValue(
+        new Response(bytes, {
+          status: 200,
+          headers: {
+            'Content-Type':
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+        }),
+      );
+      const client = createApiClient({ baseUrl: '', fetchImpl });
+      const blob = await client.requestBlob('/api/admin/questions/template');
+      expect(blob.size).toBe(4);
+    });
+  });
 });

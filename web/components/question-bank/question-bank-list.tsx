@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   AlertTriangle,
   CheckSquare,
@@ -8,17 +9,11 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Copy,
   Download,
-  Eye,
   FileQuestion,
-  Filter,
-  Languages,
   LayoutGrid,
   List,
-  LoaderCircle,
   Plus,
-  RefreshCw,
   RotateCcw,
   Search,
   Square,
@@ -28,8 +23,15 @@ import {
 } from "lucide-react";
 import { Stack } from "@/components/layout/layout-primitives";
 import { QuestionCard } from "./question-card";
-import { QuestionPreviewDialog } from "./question-preview-dialog";
 import { QuestionDeleteDialog } from "./question-delete-dialog";
+
+const QuestionPreviewDialog = dynamic(
+  () =>
+    import("./question-preview-dialog").then(
+      (m) => m.QuestionPreviewDialog,
+    ),
+  { ssr: false },
+);
 import { QuestionCardsSkeletonGrid } from "@/components/skeletons/admin/question-card-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -75,7 +77,7 @@ export function QuestionBankList({
   subjectFilter,
   showingExamples = false,
   visibleCount,
-  totalSubjectCount,
+  totalSubjectCount: _totalSubjectCount,
   query,
   onQueryChange,
   chapterFilter = "ALL",
@@ -85,7 +87,7 @@ export function QuestionBankList({
   typeFilter = "ALL",
   onTypeChange,
   languageFilter = "ALL",
-  onLanguageChange,
+  onLanguageChange: _onLanguageChange,
   availableChapters = [],
   busy,
   libraryQuestions,
@@ -151,18 +153,12 @@ export function QuestionBankList({
   );
 
   // Reset to page 1 whenever filters or query change
-  useEffect(() => {
+  const filterKey = `${subjectFilter}|${chapterFilter}|${difficultyFilter}|${typeFilter}|${languageFilter}|${query}|${pageSize}|${showDuplicatesOnly}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [
-    subjectFilter,
-    chapterFilter,
-    difficultyFilter,
-    typeFilter,
-    languageFilter,
-    query,
-    pageSize,
-    showDuplicatesOnly,
-  ]);
+  }
 
   const totalItems = displayedQuestions.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -771,11 +767,13 @@ export function QuestionBankList({
       )}
 
       {/* Question Preview Modal */}
-      <QuestionPreviewDialog
-        open={Boolean(previewQuestion)}
-        onClose={() => setPreviewQuestion(null)}
-        question={previewQuestion}
-      />
+      {Boolean(previewQuestion) && (
+        <QuestionPreviewDialog
+          open={Boolean(previewQuestion)}
+          onClose={() => setPreviewQuestion(null)}
+          question={previewQuestion}
+        />
+      )}
 
       {/* Question Delete Confirmation Modal */}
       <QuestionDeleteDialog

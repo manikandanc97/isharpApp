@@ -91,13 +91,18 @@ export async function DELETE(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
+  const moveToCategoryId = searchParams.get("moveToCategoryId");
   if (!id) {
     return NextResponse.json({ message: "Category ID is required" }, { status: 400 });
   }
 
+  const query = moveToCategoryId
+    ? `?moveToCategoryId=${encodeURIComponent(moveToCategoryId)}`
+    : "";
+
   try {
     const payload = await getNestApiClient().request(
-      `/api/admin/test-series/categories/${encodeURIComponent(id)}`,
+      `/api/admin/test-series/categories/${encodeURIComponent(id)}${query}`,
       {
         method: "DELETE",
         accessToken: token,

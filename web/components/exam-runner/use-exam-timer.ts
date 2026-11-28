@@ -23,8 +23,12 @@ export function useExamTimer({
   };
 
   const [secondsRemaining, setSecondsRemaining] = useState<number>(() => {
-    const wallLeft = getSecondsLeft();
-    return Number.isFinite(wallLeft) ? wallLeft : initialSecondsRemaining;
+    const wallLeft = Math.floor(
+      (new Date(expiresAt).getTime() - Date.now()) / 1000,
+    );
+    return Number.isFinite(wallLeft)
+      ? Math.max(0, wallLeft)
+      : initialSecondsRemaining;
   });
 
   const onAutoSubmitRef = useRef(onAutoSubmit);

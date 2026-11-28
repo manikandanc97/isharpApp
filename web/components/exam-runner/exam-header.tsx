@@ -1,13 +1,10 @@
 "use client";
 
 import {
-  CheckCircle2,
   Clock,
   CloudCheck,
   CloudOff,
   Flame,
-  Globe2,
-  Languages,
   LayoutGrid,
   Loader2,
   Maximize2,
@@ -49,11 +46,11 @@ export function ExamHeader({
   onLangChange,
   isFullscreen,
   onToggleFullscreen,
-  attemptedCount,
-  totalQuestions,
+  attemptedCount: _attemptedCount,
+  totalQuestions: _totalQuestions,
   onOpenMobilePalette,
   onOpenSubmitDialog,
-  onOpenExitDialog,
+  onOpenExitDialog: _onOpenExitDialog,
 }: ExamHeaderProps) {
   return (
     <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-3 py-2 sm:px-6 sm:py-2.5 shadow-2xs z-20">

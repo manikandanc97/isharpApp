@@ -23,7 +23,7 @@ const areaConfig: Record<Area, { title: string; requiredRole: RoleName }> = {
 };
 
 export function RoleDashboard({ area }: { area: Area }) {
-  const router = useRouter();
+  useRouter();
   const [session, setSession] = useState<AuthenticatedSession | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'unauthenticated' | 'forbidden' | 'payment-required' | 'error'>('loading');
   const [message, setMessage] = useState('');

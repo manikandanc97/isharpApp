@@ -8,7 +8,6 @@ import {
   Pencil,
   Trash2,
   UserPlus,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

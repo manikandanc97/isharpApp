@@ -17,7 +17,7 @@ export type StudentDashboardStatus =
 const DASHBOARD_LOAD_TIMEOUT_MS = 15_000;
 
 export function useStudentDashboard() {
-  const router = useRouter();
+  useRouter();
   const [session, setSession] = useState<AuthenticatedSession | null>(null);
   const [portalData, setPortalData] = useState<StudentPortalData | null>(null);
   const [status, setStatus] = useState<StudentDashboardStatus>("loading");

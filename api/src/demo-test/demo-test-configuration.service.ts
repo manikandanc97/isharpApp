@@ -543,11 +543,40 @@ export class DemoTestConfigurationService {
           },
         },
       },
-      include: {
-        options: { orderBy: { position: 'asc' } },
+      select: {
+        id: true,
+        externalId: true,
+        type: true,
+        language: true,
+        difficulty: true,
+        textEn: true,
+        textTa: true,
+        questionImageUrl: true,
+        numericalAnswer: true,
+        contentFingerprint: true,
+        equivalentFingerprint: true,
+        correctMarks: true,
+        negativeMarks: true,
+        isActive: true,
+        isRestrictedForDemo: true,
+        chapterId: true,
         chapter: { select: { id: true, title: true } },
-        courseSubject: { include: { subject: { select: { code: true, name: true } } } },
+        courseSubject: {
+          select: { subject: { select: { code: true, name: true } } },
+        },
+        options: {
+          orderBy: { position: 'asc' },
+          select: {
+            id: true,
+            label: true,
+            textEn: true,
+            textTa: true,
+            imageUrl: true,
+            isCorrect: true,
+            position: true,
+          },
+        },
       },
-    });
+    }) as Promise<CandidateQuestionRecord[]>;
   }
 }

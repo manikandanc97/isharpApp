@@ -111,4 +111,95 @@ describe('StudentPortalService', () => {
       expect.objectContaining({ take: 12 }),
     );
   });
+
+  it('fetches published assessment tests only once per getDashboard call', async () => {
+    const prisma = {
+      ...createPrisma(),
+      assessmentTest: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'test-1',
+            code: 'T1',
+            title: 'Test 1',
+            description: null,
+            testType: 'MOCK',
+            durationMinutes: 180,
+            totalMarks: 720,
+            totalQuestions: 1,
+            passingMarks: null,
+            hasNegativeMarking: true,
+            correctMarks: 4,
+            negativeMarks: 1,
+            maxAttempts: 1,
+            showResultsImmediately: true,
+            instructionsEn: null,
+            instructionsTa: null,
+            scheduledAt: null,
+            availableUntil: null,
+            category: { id: 'cat-1', name: 'Mocks' },
+            testSeries: {
+              id: 'series-1',
+              title: 'NEET 2026',
+              slug: 'neet-2026',
+              category: { id: 'cat-1', name: 'Mocks' },
+            },
+            questions: [
+              {
+                question: {
+                  courseSubject: {
+                    subject: { id: 'sub-1', code: 'PHY', name: 'Physics' },
+                  },
+                  chapter: { id: 'ch-1', title: 'Mechanics' },
+                },
+              },
+            ],
+            attempts: [],
+            _count: { questions: 1 },
+          },
+        ]),
+      },
+      testSeries: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'series-1',
+            title: 'NEET 2026',
+            slug: 'neet-2026',
+            description: null,
+            categoryId: 'cat-1',
+            category: { id: 'cat-1', name: 'Mocks' },
+            academicYear: '2026',
+            coverImageUrl: null,
+            course: null,
+          },
+        ]),
+      },
+    };
+    prisma.userProfile.findUnique.mockResolvedValue({
+      id: 'profile-id',
+      displayName: 'Student',
+      email: 's@example.com',
+      institutionMembership: {
+        studentId: 'ISA000001',
+        studentCategory: 'INTERNAL',
+        paymentStatus: 'NOT_REQUIRED',
+        paidAccessUntil: null,
+      },
+    });
+    prisma.course.findMany.mockResolvedValue([]);
+    prisma.mockTest.findMany.mockResolvedValue([]);
+    prisma.question.findMany.mockResolvedValue([]);
+    prisma.course.count.mockResolvedValue(0);
+    prisma.subject.count.mockResolvedValue(0);
+    prisma.chapter.count.mockResolvedValue(0);
+    prisma.question.count.mockResolvedValue(0);
+    prisma.mockTest.count.mockResolvedValue(0);
+
+    const result = await new StudentPortalService(
+      prisma as never,
+    ).getDashboard('profile-id');
+
+    expect(prisma.assessmentTest.findMany).toHaveBeenCalledTimes(1);
+    expect(result.mockTests).toHaveLength(1);
+    expect(result.testSeries[0]?.tests).toHaveLength(1);
+  });
 });

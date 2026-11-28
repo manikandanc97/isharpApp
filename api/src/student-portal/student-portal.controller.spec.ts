@@ -17,7 +17,9 @@ describe('StudentPortalController', () => {
       studentAccess: null,
     } as const;
 
-    const result = await controller.dashboard({ user } as AuthenticatedRequest);
+    const result = await controller.dashboard({
+      user,
+    } as unknown as AuthenticatedRequest);
 
     expect(portal.getDashboard).toHaveBeenCalledWith('profile-id');
     expect(result).toEqual({ ...dashboard, session: user });

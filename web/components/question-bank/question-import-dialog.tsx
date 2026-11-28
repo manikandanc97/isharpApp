@@ -37,9 +37,9 @@ function AnimatedCount({ value, duration = 350 }: { value: number; duration?: nu
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setDisplay(value);
       prevRef.current = value;
-      return;
+      const id = requestAnimationFrame(() => setDisplay(value));
+      return () => cancelAnimationFrame(id);
     }
     const fromVal = prevRef.current;
     const toVal = value;

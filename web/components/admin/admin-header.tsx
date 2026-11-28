@@ -41,7 +41,7 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({
-  section,
+  section: _section,
   onOpenSidebar,
   pendingNotificationCount,
   recentPendingVerifications,

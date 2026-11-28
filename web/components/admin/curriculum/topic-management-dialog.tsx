@@ -6,7 +6,6 @@ import {
   ArrowUp,
   BookOpen,
   CheckCircle2,
-  Clock,
   Layers,
   Pencil,
   Plus,
@@ -16,7 +15,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

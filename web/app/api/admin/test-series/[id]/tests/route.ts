@@ -14,7 +14,7 @@ export async function GET(
 
   const { id } = await context.params;
   try {
-    const series = await getNestApiClient().request<any>(
+    const series = await getNestApiClient().request<{ tests?: unknown[] }>(
       `/api/admin/test-series/${encodeURIComponent(id)}`,
       {
         method: "GET",

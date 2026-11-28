@@ -34,7 +34,7 @@ describe('Examination Randomization Helper', () => {
 
     expect(mappings.length).toBe(4);
     const positions = mappings.map((m) => m.shuffledPosition);
-    expect(positions.sort()).toEqual([1, 2, 3, 4]);
+    expect(positions.sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
 
     const labels = mappings.map((m) => m.displayedLabel);
     expect(labels).toEqual(['1', '2', '3', '4']);

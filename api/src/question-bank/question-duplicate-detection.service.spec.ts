@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   hashImageBytes,
   normalizeNumericalAnswer,
-  normalizeSvgContent,
   normalizeText,
   QuestionDuplicateDetectionService,
 } from './question-duplicate-detection.service.js';
@@ -475,6 +474,90 @@ describe('QuestionDuplicateDetectionService & Normalization', () => {
       const fp2 = service.calculateFingerprints(q2);
 
       expect(fp1.contentFingerprint).not.toBe(fp2.contentFingerprint);
+    });
+  });
+
+  describe('Bounded imageHashCache & SSRF protection', () => {
+    it('caches image hashes with ETag revalidation, evicts LRU entries past max size, and never caches failures', async () => {
+      service.configureImageCache(2, 60_000);
+
+      const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes('fail')) {
+          return new Response(null, { status: 500 });
+        }
+        const headers = init?.headers as Record<string, string> | undefined;
+        if (headers?.['If-None-Match'] === `etag-${url}`) {
+          return new Response(null, { status: 304 });
+        }
+        return new Response(Buffer.from(`img-${url}`), {
+          status: 200,
+          headers: {
+            'content-type': 'image/png',
+            etag: `etag-${url}`,
+          },
+        });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      try {
+        const h1 = await service.resolveImageHash('https://example.com/1.png');
+        const h1Revalidated = await service.resolveImageHash('https://example.com/1.png');
+        expect(h1).toBeTruthy();
+        expect(h1Revalidated).toBe(h1);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+
+        await service.resolveImageHash('https://example.com/2.png');
+        expect(service.getImageHashCacheSize()).toBe(2);
+
+        // Touch 1.png so 2.png becomes LRU, then insert 3.png -> 2.png evicted
+        await service.resolveImageHash('https://example.com/1.png');
+        await service.resolveImageHash('https://example.com/3.png');
+        expect(service.getImageHashCacheSize()).toBe(2);
+
+        // Failed fetch returns null and is not cached
+        const failed = await service.resolveImageHash('https://example.com/fail.png');
+        expect(failed).toBeNull();
+        expect(service.getImageHashCacheSize()).toBe(2);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('bypasses cache when remote server omits ETag/Last-Modified so changed content at same URL is detected', async () => {
+      let version = 1;
+      const fetchMock = vi.fn(async () =>
+        new Response(Buffer.from(`mutable-v${version}`), {
+          status: 200,
+          headers: { 'content-type': 'image/png' },
+        }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      try {
+        const h1 = await service.resolveImageHash('https://example.com/mutable.png');
+        version = 2;
+        const h2 = await service.resolveImageHash('https://example.com/mutable.png');
+        expect(h1).toBeTruthy();
+        expect(h2).toBeTruthy();
+        expect(h1).not.toBe(h2);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('blocks private, loopback, and metadata URLs to prevent SSRF', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      try {
+        expect(await service.resolveImageHash('http://127.0.0.1/secret.png')).toBeNull();
+        expect(await service.resolveImageHash('http://169.254.169.254/latest/meta-data/')).toBeNull();
+        expect(await service.resolveImageHash('http://localhost:3001/admin.png')).toBeNull();
+        expect(await service.resolveImageHash('http://10.0.0.5/internal.png')).toBeNull();
+        expect(fetchMock).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
   });
 });

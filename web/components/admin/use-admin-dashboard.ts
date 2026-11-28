@@ -41,7 +41,7 @@ export function useAdminDashboard() {
     (nextSection: Section) => {
       router.push(sectionPaths[nextSection], { scroll: false });
     },
-    [router],
+    [/* loadAll only uses stable state setters */],
   );
 
   const loadAll = useCallback(
@@ -92,7 +92,7 @@ export function useAdminDashboard() {
         setRefreshing(false);
       }
     },
-    [router],
+    [/* loadAll only uses stable state setters */],
   );
 
   useEffect(() => {

@@ -13,7 +13,6 @@ function AdminSidebarSkeleton({ section }: { section: AdminSkeletonSection }) {
     "courses",
     "questions",
     "test-series",
-    "exams",
     "results",
   ];
   const activeIndex = sectionOrder.indexOf(section);

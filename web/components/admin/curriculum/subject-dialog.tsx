@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BookOpen, Layers3, Plus, Save } from "lucide-react";
 import {
   Dialog,
@@ -26,24 +26,30 @@ export function SubjectDialog({
   subject,
   onSave,
 }: SubjectDialogProps) {
-  const isEditing = Boolean(subject);
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [description, setDescription] = useState("");
-  const [error, setError] = useState("");
+  return (
+    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+      {open && (
+        <SubjectDialogForm
+          key={subject?.id ?? "new"}
+          onClose={onClose}
+          subject={subject}
+          onSave={onSave}
+        />
+      )}
+    </Dialog>
+  );
+}
 
-  useEffect(() => {
-    if (subject) {
-      setName(subject.name);
-      setCode(subject.code);
-      setDescription(subject.description || "");
-    } else {
-      setName("");
-      setCode("");
-      setDescription("");
-    }
-    setError("");
-  }, [subject, open]);
+function SubjectDialogForm({
+  onClose,
+  subject,
+  onSave,
+}: Omit<SubjectDialogProps, "open">) {
+  const isEditing = Boolean(subject);
+  const [name, setName] = useState(subject?.name ?? "");
+  const [code, setCode] = useState(subject?.code ?? "");
+  const [description, setDescription] = useState(subject?.description || "");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,8 +72,7 @@ export function SubjectDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="grid size-8 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100">
@@ -156,6 +161,5 @@ export function SubjectDialog({
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
   );
 }

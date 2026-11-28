@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BookOpen, Plus, Save } from "lucide-react";
 import {
   Dialog,
@@ -30,27 +30,35 @@ export function ChapterDialog({
   defaultPosition = 1,
   onSave,
 }: ChapterDialogProps) {
-  const isEditing = Boolean(chapter);
-  const [title, setTitle] = useState("");
-  const [position, setPosition] = useState(defaultPosition);
-  const [description, setDescription] = useState("");
-  const [isActive, setIsActive] = useState(true);
-  const [error, setError] = useState("");
+  return (
+    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+      {open && (
+        <ChapterDialogForm
+          key={chapter?.id ?? `new-${defaultPosition}`}
+          onClose={onClose}
+          chapter={chapter}
+          subjectName={subjectName}
+          defaultPosition={defaultPosition}
+          onSave={onSave}
+        />
+      )}
+    </Dialog>
+  );
+}
 
-  useEffect(() => {
-    if (chapter) {
-      setTitle(chapter.title);
-      setPosition(chapter.position);
-      setDescription(chapter.description || "");
-      setIsActive(chapter.isActive);
-    } else {
-      setTitle("");
-      setPosition(defaultPosition);
-      setDescription("");
-      setIsActive(true);
-    }
-    setError("");
-  }, [chapter, defaultPosition, open]);
+function ChapterDialogForm({
+  onClose,
+  chapter,
+  subjectName,
+  defaultPosition = 1,
+  onSave,
+}: Omit<ChapterDialogProps, "open">) {
+  const isEditing = Boolean(chapter);
+  const [title, setTitle] = useState(chapter?.title ?? "");
+  const [position, setPosition] = useState(chapter?.position ?? defaultPosition);
+  const [description, setDescription] = useState(chapter?.description || "");
+  const [isActive, setIsActive] = useState(chapter?.isActive ?? true);
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +77,7 @@ export function ChapterDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="grid size-9 place-items-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
@@ -180,6 +187,5 @@ export function ChapterDialog({
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
   );
 }

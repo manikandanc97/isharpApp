@@ -1,21 +1,29 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
-import { AssessmentTestType } from '../generated/prisma/client.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type {
   CreateAssessmentTestDto,
   CreateCategoryDto,
+  CreateStandaloneTestDto,
   CreateTestSeriesDto,
+  DuplicateTestDto,
   SetTestBlueprintDto,
   SetTestQuestionsDto,
   UpdateAssessmentTestDto,
   UpdateCategoryDto,
+  UpdateStandaloneTestDto,
   UpdateTestSeriesDto,
 } from './dto/test-series.dto.js';
+import { QuestionSelectionEngine } from './question-selection.engine.js';
+import { AssessmentTestService } from './services/assessment-test.service.js';
+import { TestCategoryService } from './services/test-category.service.js';
+import { TestConfigurationService } from './services/test-configuration.service.js';
+import { TestQuestionAssignmentService } from './services/test-question-assignment.service.js';
 
 export type DerivedTestLifecycleStatus =
   | 'UPCOMING'
@@ -40,119 +48,146 @@ export function deriveTestLifecycleStatus(
   return 'ONGOING';
 }
 
+/**
+ * Coordinates test-series CRUD and overview statistics while delegating
+ * category management, exam configuration, assessment tests, and question
+ * assignment to focused domain services.
+ */
 @Injectable()
 export class TestSeriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly categories: TestCategoryService;
+  private readonly configuration: TestConfigurationService;
+  private readonly assessmentTests: AssessmentTestService;
+  private readonly questionAssignment: TestQuestionAssignmentService;
 
-  // --------------------------------------------------------------------------
-  // CATEGORIES
-  // --------------------------------------------------------------------------
-
-  async getCategories() {
-    await this.ensureDefaultCategories();
-    return this.prisma.testSeriesCategory.findMany({
-      orderBy: [{ position: 'asc' }, { name: 'asc' }],
-    });
-  }
-
-  async createCategory(dto: CreateCategoryDto) {
-    if (!dto.name || !dto.name.trim()) {
-      throw new BadRequestException('Category name is required');
-    }
-    const slug =
-      dto.slug?.trim().toLowerCase() ||
-      dto.name
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-
-    const existing = await this.prisma.testSeriesCategory.findUnique({
-      where: { slug },
-    });
-    if (existing) {
-      throw new ConflictException(`Category with slug "${slug}" already exists`);
-    }
-
-    return this.prisma.testSeriesCategory.create({
-      data: {
-        name: dto.name.trim(),
-        slug,
-        description: dto.description?.trim() || null,
-        position: dto.position ?? 0,
-        isActive: dto.isActive ?? true,
-      },
-    });
-  }
-
-  async updateCategory(id: string, dto: UpdateCategoryDto) {
-    const existing = await this.prisma.testSeriesCategory.findUnique({
-      where: { id },
-    });
-    if (!existing) {
-      throw new NotFoundException('Category not found');
-    }
-
-    return this.prisma.testSeriesCategory.update({
-      where: { id },
-      data: {
-        ...(dto.name ? { name: dto.name.trim() } : {}),
-        ...(dto.slug ? { slug: dto.slug.trim().toLowerCase() } : {}),
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
-        ...(dto.position !== undefined ? { position: dto.position } : {}),
-        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
-      },
-    });
-  }
-
-  async deleteCategory(id: string) {
-    const seriesCount = await this.prisma.testSeries.count({
-      where: { categoryId: id },
-    });
-    if (seriesCount > 0) {
-      throw new BadRequestException(
-        `Cannot delete category: it is assigned to ${seriesCount} test series`,
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly questionEngine: QuestionSelectionEngine,
+    @Optional() categories?: TestCategoryService,
+    @Optional() configuration?: TestConfigurationService,
+    @Optional() assessmentTests?: AssessmentTestService,
+    @Optional() questionAssignment?: TestQuestionAssignmentService,
+  ) {
+    this.categories = categories ?? new TestCategoryService(prisma);
+    this.configuration =
+      configuration ?? new TestConfigurationService(questionEngine);
+    this.questionAssignment =
+      questionAssignment ?? new TestQuestionAssignmentService(prisma);
+    this.assessmentTests =
+      assessmentTests ??
+      new AssessmentTestService(
+        prisma,
+        questionEngine,
+        this.categories,
+        this.questionAssignment,
       );
-    }
-    return this.prisma.testSeriesCategory.delete({ where: { id } });
-  }
-
-  private async ensureDefaultCategories() {
-    const count = await this.prisma.testSeriesCategory.count();
-    if (count > 0) return;
-
-    const defaults = [
-      {
-        name: 'Class 11',
-        slug: 'class-11',
-        description: 'Targeted NEET Foundation & Advanced Test Series for Grade 11',
-        position: 1,
-      },
-      {
-        name: 'Class 12',
-        slug: 'class-12',
-        description: 'Rigorous Board & National Entrance Mock Series for Grade 12',
-        position: 2,
-      },
-      {
-        name: 'Repeater Course',
-        slug: 'repeater-course',
-        description: 'Intensive 1-Year Droppers & Repeater Rank Booster Mock Papers',
-        position: 3,
-      },
-    ];
-
-    for (const d of defaults) {
-      await this.prisma.testSeriesCategory.upsert({
-        where: { slug: d.slug },
-        update: {},
-        create: d,
-      });
-    }
   }
 
   // --------------------------------------------------------------------------
-  // TEST SERIES
+  // CATEGORIES (Delegated to TestCategoryService)
+  // --------------------------------------------------------------------------
+
+  getCategories() {
+    return this.categories.getCategories();
+  }
+
+  createCategory(dto: CreateCategoryDto) {
+    return this.categories.createCategory(dto);
+  }
+
+  updateCategory(id: string, dto: UpdateCategoryDto) {
+    return this.categories.updateCategory(id, dto);
+  }
+
+  deleteCategory(id: string, moveToCategoryId?: string) {
+    return this.categories.deleteCategory(id, moveToCategoryId);
+  }
+
+  // --------------------------------------------------------------------------
+  // CONFIGURATION (Delegated to TestConfigurationService)
+  // --------------------------------------------------------------------------
+
+  getExamConfiguration() {
+    return this.configuration.getExamConfiguration();
+  }
+
+  // --------------------------------------------------------------------------
+  // ASSESSMENT TESTS (Delegated to AssessmentTestService & TestQuestionAssignmentService)
+  // --------------------------------------------------------------------------
+
+  listTests(filters: {
+    categoryId?: string;
+    search?: string;
+    subjectCode?: string;
+    isActive?: boolean;
+    page?: number;
+    limit?: number;
+  }) {
+    return this.assessmentTests.listTests(filters);
+  }
+
+  createStandaloneTest(profileId: string | null, dto: CreateStandaloneTestDto) {
+    return this.assessmentTests.createStandaloneTest(profileId, dto);
+  }
+
+  updateStandaloneTest(testId: string, dto: UpdateStandaloneTestDto) {
+    return this.assessmentTests.updateStandaloneTest(testId, dto);
+  }
+
+  duplicateStandaloneTest(
+    profileId: string | null,
+    testId: string,
+    dto?: DuplicateTestDto,
+  ) {
+    return this.assessmentTests.duplicateStandaloneTest(profileId, testId, dto);
+  }
+
+  deleteStandaloneTest(testId: string) {
+    return this.assessmentTests.deleteStandaloneTest(testId);
+  }
+
+  createTest(
+    profileId: string | null,
+    seriesId: string,
+    dto: CreateAssessmentTestDto,
+  ) {
+    return this.assessmentTests.createTest(profileId, seriesId, dto);
+  }
+
+  getTestById(testId: string) {
+    return this.assessmentTests.getTestById(testId);
+  }
+
+  updateTest(testId: string, dto: UpdateAssessmentTestDto) {
+    return this.assessmentTests.updateTest(testId, dto);
+  }
+
+  deleteTest(testId: string) {
+    return this.assessmentTests.deleteStandaloneTest(testId);
+  }
+
+  duplicateTest(
+    profileId: string | null,
+    testId: string,
+    dto?: DuplicateTestDto,
+  ) {
+    return this.assessmentTests.duplicateStandaloneTest(profileId, testId, dto);
+  }
+
+  reorderTests(seriesId: string, orderedTestIds: string[]) {
+    return this.assessmentTests.reorderTests(seriesId, orderedTestIds);
+  }
+
+  setTestQuestions(testId: string, dto: SetTestQuestionsDto) {
+    return this.questionAssignment.setTestQuestions(testId, dto);
+  }
+
+  setTestBlueprint(testId: string, dto: SetTestBlueprintDto) {
+    return this.questionAssignment.setTestBlueprint(testId, dto);
+  }
+
+  // --------------------------------------------------------------------------
+  // TEST SERIES CRUD & OVERVIEW
   // --------------------------------------------------------------------------
 
   async listSeries(filters: {
@@ -161,7 +196,7 @@ export class TestSeriesService {
     academicYear?: string;
     search?: string;
   }) {
-    await this.ensureDefaultCategories();
+    await this.categories.getCategories().catch(() => undefined);
 
     const where: Record<string, unknown> = {};
     if (filters.categoryId && filters.categoryId !== 'ALL') {
@@ -176,7 +211,9 @@ export class TestSeriesService {
     if (filters.search?.trim()) {
       where.OR = [
         { title: { contains: filters.search.trim(), mode: 'insensitive' } },
-        { description: { contains: filters.search.trim(), mode: 'insensitive' } },
+        {
+          description: { contains: filters.search.trim(), mode: 'insensitive' },
+        },
       ];
     }
 
@@ -233,7 +270,10 @@ export class TestSeriesService {
         endDate: s.endDate?.toISOString() ?? null,
         totalTests: s.tests.length,
         totalMarks: s.tests.reduce((acc, t) => acc + t.totalMarks, 0),
-        durationMinutes: s.tests.reduce((acc, t) => Math.max(acc, t.durationMinutes), 0),
+        durationMinutes: s.tests.reduce(
+          (acc, t) => Math.max(acc, t.durationMinutes),
+          0,
+        ),
         createdAt: s.createdAt.toISOString(),
         updatedAt: s.updatedAt.toISOString(),
         tests: s.tests.map((t) => ({
@@ -271,7 +311,9 @@ export class TestSeriesService {
         tests: {
           orderBy: { orderIndex: 'asc' },
           include: {
-            _count: { select: { questions: true, attempts: true, paperSets: true } },
+            _count: {
+              select: { questions: true, attempts: true, paperSets: true },
+            },
           },
         },
       },
@@ -373,11 +415,19 @@ export class TestSeriesService {
       data: {
         ...(dto.title ? { title: dto.title.trim() } : {}),
         ...(dto.slug ? { slug: dto.slug.trim().toLowerCase() } : {}),
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
         ...(dto.categoryId ? { categoryId: dto.categoryId } : {}),
-        ...(dto.academicYear ? { academicYear: dto.academicYear.trim() } : {}),
-        ...(dto.coverImageUrl !== undefined ? { coverImageUrl: dto.coverImageUrl } : {}),
-        ...(dto.courseId !== undefined ? { courseId: dto.courseId || null } : {}),
+        ...(dto.academicYear
+          ? { academicYear: dto.academicYear.trim() }
+          : {}),
+        ...(dto.coverImageUrl !== undefined
+          ? { coverImageUrl: dto.coverImageUrl }
+          : {}),
+        ...(dto.courseId !== undefined
+          ? { courseId: dto.courseId || null }
+          : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
         ...(dto.startDate !== undefined
           ? { startDate: dto.startDate ? new Date(dto.startDate) : null }
@@ -395,8 +445,6 @@ export class TestSeriesService {
       include: { _count: { select: { tests: true } } },
     });
     if (!existing) throw new NotFoundException('Test series not found');
-
-    // Cascade deletes tests & questions because of relation onDelete: Cascade
     return this.prisma.testSeries.delete({ where: { id } });
   }
 
@@ -406,10 +454,7 @@ export class TestSeriesService {
       where: { id },
       include: {
         tests: {
-          include: {
-            questions: true,
-            blueprints: true,
-          },
+          include: { questions: true, blueprints: true },
         },
       },
     });
@@ -439,12 +484,18 @@ export class TestSeriesService {
         const testCopy = await tx.assessmentTest.create({
           data: {
             testSeriesId: duplicated.id,
+            categoryId: t.categoryId ?? source.categoryId,
             code: `${t.code}-CPY-${Date.now().toString().slice(-3)}`,
             title: `${t.title} (Copy)`,
             description: t.description,
             instructionsEn: t.instructionsEn,
             instructionsTa: t.instructionsTa,
             testType: t.testType,
+            examPatternMode: t.examPatternMode,
+            examPatternVersion: t.examPatternVersion,
+            questionSelectionMode: t.questionSelectionMode,
+            durationMode: t.durationMode,
+            subjectDistribution: t.subjectDistribution ?? Prisma.JsonNull,
             isActive: t.isActive,
             isCancelled: false,
             durationMinutes: t.durationMinutes,
@@ -501,325 +552,6 @@ export class TestSeriesService {
     });
   }
 
-  // --------------------------------------------------------------------------
-  // INDIVIDUAL ASSESSMENT TESTS
-  // --------------------------------------------------------------------------
-
-  async createTest(profileId: string | null, seriesId: string, dto: CreateAssessmentTestDto) {
-    if (!profileId) throw new BadRequestException('User profile is required');
-    const series = await this.prisma.testSeries.findUnique({
-      where: { id: seriesId },
-    });
-    if (!series) throw new NotFoundException('Test series not found');
-
-    const code =
-      dto.code?.trim().toUpperCase() || `TEST-${Date.now().toString().slice(-6)}`;
-
-    const lastTest = await this.prisma.assessmentTest.findFirst({
-      where: { testSeriesId: seriesId },
-      orderBy: { orderIndex: 'desc' },
-      select: { orderIndex: true },
-    });
-    const orderIndex = dto.orderIndex ?? (lastTest ? lastTest.orderIndex + 1 : 1);
-
-    return this.prisma.assessmentTest.create({
-      data: {
-        testSeriesId: seriesId,
-        code,
-        title: dto.title.trim(),
-        description: dto.description?.trim() || null,
-        instructionsEn: dto.instructionsEn?.trim() || null,
-        instructionsTa: dto.instructionsTa?.trim() || null,
-        testType: dto.testType || AssessmentTestType.FULL_SYLLABUS,
-        isActive: dto.isActive !== false,
-        isCancelled: dto.isCancelled ?? false,
-        durationMinutes: dto.durationMinutes ?? 180,
-        totalQuestions: dto.totalQuestions ?? 180,
-        totalMarks: dto.totalMarks ?? 720,
-        passingMarks: dto.passingMarks ?? 350,
-        hasNegativeMarking: dto.hasNegativeMarking !== false,
-        correctMarks: dto.correctMarks ?? 4,
-        negativeMarks: dto.negativeMarks ?? 1,
-        maxAttempts: dto.maxAttempts ?? 1,
-        randomizeQuestions: dto.randomizeQuestions !== false,
-        randomizeOptions: dto.randomizeOptions !== false,
-        showResultsImmediately: dto.showResultsImmediately ?? false,
-        isOfflineAvailable: dto.isOfflineAvailable !== false,
-        orderIndex,
-        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
-        availableUntil: dto.availableUntil ? new Date(dto.availableUntil) : null,
-        createdById: profileId,
-      },
-    });
-  }
-
-  async getTestById(testId: string) {
-    const t = await this.prisma.assessmentTest.findUnique({
-      where: { id: testId },
-      include: {
-        testSeries: { select: { id: true, title: true, academicYear: true } },
-        questions: {
-          orderBy: { position: 'asc' },
-          include: {
-            question: {
-              include: {
-                options: { orderBy: { position: 'asc' } },
-                chapter: true,
-                courseSubject: { include: { subject: true } },
-              },
-            },
-          },
-        },
-        blueprints: { orderBy: { orderIndex: 'asc' } },
-        _count: { select: { attempts: true, paperSets: true, offlineSessions: true } },
-      },
-    });
-    if (!t) throw new NotFoundException('Assessment test not found');
-    return t;
-  }
-
-  async updateTest(testId: string, dto: UpdateAssessmentTestDto) {
-    const existing = await this.prisma.assessmentTest.findUnique({
-      where: { id: testId },
-    });
-    if (!existing) throw new NotFoundException('Assessment test not found');
-
-    return this.prisma.assessmentTest.update({
-      where: { id: testId },
-      data: {
-        ...(dto.code ? { code: dto.code.trim().toUpperCase() } : {}),
-        ...(dto.title ? { title: dto.title.trim() } : {}),
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
-        ...(dto.instructionsEn !== undefined ? { instructionsEn: dto.instructionsEn } : {}),
-        ...(dto.instructionsTa !== undefined ? { instructionsTa: dto.instructionsTa } : {}),
-        ...(dto.testType ? { testType: dto.testType } : {}),
-        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
-        ...(dto.isCancelled !== undefined ? { isCancelled: dto.isCancelled } : {}),
-        ...(dto.durationMinutes !== undefined ? { durationMinutes: dto.durationMinutes } : {}),
-        ...(dto.totalQuestions !== undefined ? { totalQuestions: dto.totalQuestions } : {}),
-        ...(dto.totalMarks !== undefined ? { totalMarks: dto.totalMarks } : {}),
-        ...(dto.passingMarks !== undefined ? { passingMarks: dto.passingMarks } : {}),
-        ...(dto.hasNegativeMarking !== undefined
-          ? { hasNegativeMarking: dto.hasNegativeMarking }
-          : {}),
-        ...(dto.correctMarks !== undefined ? { correctMarks: dto.correctMarks } : {}),
-        ...(dto.negativeMarks !== undefined ? { negativeMarks: dto.negativeMarks } : {}),
-        ...(dto.maxAttempts !== undefined ? { maxAttempts: dto.maxAttempts } : {}),
-        ...(dto.randomizeQuestions !== undefined
-          ? { randomizeQuestions: dto.randomizeQuestions }
-          : {}),
-        ...(dto.randomizeOptions !== undefined
-          ? { randomizeOptions: dto.randomizeOptions }
-          : {}),
-        ...(dto.showResultsImmediately !== undefined
-          ? { showResultsImmediately: dto.showResultsImmediately }
-          : {}),
-        ...(dto.isOfflineAvailable !== undefined
-          ? { isOfflineAvailable: dto.isOfflineAvailable }
-          : {}),
-        ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
-        ...(dto.scheduledAt !== undefined
-          ? { scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null }
-          : {}),
-        ...(dto.availableUntil !== undefined
-          ? { availableUntil: dto.availableUntil ? new Date(dto.availableUntil) : null }
-          : {}),
-      },
-    });
-  }
-
-  async deleteTest(testId: string) {
-    const existing = await this.prisma.assessmentTest.findUnique({
-      where: { id: testId },
-    });
-    if (!existing) throw new NotFoundException('Assessment test not found');
-    return this.prisma.assessmentTest.delete({ where: { id: testId } });
-  }
-
-  async duplicateTest(profileId: string | null, testId: string) {
-    if (!profileId) throw new BadRequestException('User profile is required');
-    const source = await this.prisma.assessmentTest.findUnique({
-      where: { id: testId },
-      include: { questions: true, blueprints: true },
-    });
-    if (!source) throw new NotFoundException('Assessment test not found');
-
-    const copyCode = `${source.code}-CPY-${Date.now().toString().slice(-3)}`;
-    const copyTitle = `${source.title} (Copy)`;
-
-    return this.prisma.$transaction(async (tx) => {
-      const copy = await tx.assessmentTest.create({
-        data: {
-          testSeriesId: source.testSeriesId,
-          code: copyCode,
-          title: copyTitle,
-          description: source.description,
-          instructionsEn: source.instructionsEn,
-          instructionsTa: source.instructionsTa,
-          testType: source.testType,
-          isActive: source.isActive,
-          isCancelled: false,
-          durationMinutes: source.durationMinutes,
-          totalQuestions: source.totalQuestions,
-          totalMarks: source.totalMarks,
-          passingMarks: source.passingMarks,
-          hasNegativeMarking: source.hasNegativeMarking,
-          correctMarks: source.correctMarks,
-          negativeMarks: source.negativeMarks,
-          maxAttempts: source.maxAttempts,
-          randomizeQuestions: source.randomizeQuestions,
-          randomizeOptions: source.randomizeOptions,
-          showResultsImmediately: source.showResultsImmediately,
-          isOfflineAvailable: source.isOfflineAvailable,
-          orderIndex: source.orderIndex + 1,
-          createdById: profileId,
-        },
-      });
-
-      if (source.questions.length > 0) {
-        await tx.assessmentTestQuestion.createMany({
-          data: source.questions.map((q) => ({
-            assessmentTestId: copy.id,
-            questionId: q.questionId,
-            position: q.position,
-            section: q.section,
-            correctMarks: q.correctMarks,
-            negativeMarks: q.negativeMarks,
-          })),
-        });
-      }
-
-      if (source.blueprints.length > 0) {
-        await tx.testBlueprint.createMany({
-          data: source.blueprints.map((b) => ({
-            assessmentTestId: copy.id,
-            subjectCode: b.subjectCode,
-            subjectName: b.subjectName,
-            chapterId: b.chapterId,
-            sectionName: b.sectionName,
-            totalQuestions: b.totalQuestions,
-            mandatoryCount: b.mandatoryCount,
-            correctMarks: b.correctMarks,
-            negativeMarks: b.negativeMarks,
-            orderIndex: b.orderIndex,
-          })),
-        });
-      }
-
-      return copy;
-    });
-  }
-
-  async reorderTests(seriesId: string, orderedTestIds: string[]) {
-    return this.prisma.$transaction(
-      orderedTestIds.map((id, index) =>
-        this.prisma.assessmentTest.updateMany({
-          where: { id, testSeriesId: seriesId },
-          data: { orderIndex: index + 1 },
-        }),
-      ),
-    );
-  }
-
-  async setTestQuestions(testId: string, dto: SetTestQuestionsDto) {
-    const test = await this.prisma.assessmentTest.findUnique({
-      where: { id: testId },
-    });
-    if (!test) throw new NotFoundException('Assessment test not found');
-
-    const questionIds = dto.questions.map((q) => q.questionId);
-    if (new Set(questionIds).size !== questionIds.length) {
-      throw new BadRequestException('Duplicate questions are not permitted');
-    }
-
-    const dbQuestions = await this.prisma.question.findMany({
-      where: { id: { in: questionIds }, isActive: true },
-    });
-    if (dbQuestions.length !== questionIds.length) {
-      throw new BadRequestException('One or more selected questions are invalid or inactive');
-    }
-
-    const byId = new Map(dbQuestions.map((q) => [q.id, q]));
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.assessmentTestQuestion.deleteMany({
-        where: { assessmentTestId: testId },
-      });
-
-      if (dto.questions.length > 0) {
-        await tx.assessmentTestQuestion.createMany({
-          data: dto.questions.map((item, index) => {
-            const q = byId.get(item.questionId)!;
-            return {
-              assessmentTestId: testId,
-              questionId: item.questionId,
-              position: item.position ?? index + 1,
-              section: item.section || 'A',
-              correctMarks: item.correctMarks ?? q.correctMarks ?? test.correctMarks,
-              negativeMarks: item.negativeMarks ?? q.negativeMarks ?? test.negativeMarks,
-            };
-          }),
-        });
-      }
-
-      // Update total questions and total marks on the test
-      const totalMarks = dto.questions.reduce((sum, item) => {
-        const q = byId.get(item.questionId)!;
-        return sum + (item.correctMarks ?? q.correctMarks ?? test.correctMarks);
-      }, 0);
-
-      await tx.assessmentTest.update({
-        where: { id: testId },
-        data: {
-          totalQuestions: dto.questions.length,
-          totalMarks: totalMarks > 0 ? totalMarks : test.totalMarks,
-        },
-      });
-    });
-
-    return {
-      testId,
-      questionCount: dto.questions.length,
-      totalMarks: dto.questions.reduce((sum, item) => {
-        const q = byId.get(item.questionId)!;
-        return sum + (item.correctMarks ?? q.correctMarks ?? test.correctMarks);
-      }, 0),
-    };
-  }
-
-  async setTestBlueprint(testId: string, dto: SetTestBlueprintDto) {
-    const test = await this.prisma.assessmentTest.findUnique({
-      where: { id: testId },
-    });
-    if (!test) throw new NotFoundException('Assessment test not found');
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.testBlueprint.deleteMany({ where: { assessmentTestId: testId } });
-      if (dto.blueprints.length > 0) {
-        await tx.testBlueprint.createMany({
-          data: dto.blueprints.map((b, i) => ({
-            assessmentTestId: testId,
-            subjectCode: b.subjectCode.toUpperCase(),
-            subjectName: b.subjectName,
-            chapterId: b.chapterId || null,
-            sectionName: b.sectionName || 'Section A',
-            totalQuestions: b.totalQuestions,
-            mandatoryCount: b.mandatoryCount,
-            correctMarks: b.correctMarks ?? 4,
-            negativeMarks: b.negativeMarks ?? 1,
-            orderIndex: b.orderIndex ?? i + 1,
-          })),
-        });
-      }
-    });
-
-    return { testId, blueprintCount: dto.blueprints.length };
-  }
-
-  // --------------------------------------------------------------------------
-  // STATS
-  // --------------------------------------------------------------------------
-
   private async getOverviewStats() {
     const now = new Date();
     const [totalSeries, totalTests, upcomingTests, completedTests] =
@@ -827,11 +559,7 @@ export class TestSeriesService {
         this.prisma.testSeries.count(),
         this.prisma.assessmentTest.count(),
         this.prisma.assessmentTest.count({
-          where: {
-            isActive: true,
-            isCancelled: false,
-            scheduledAt: { gt: now },
-          },
+          where: { isActive: true, isCancelled: false, scheduledAt: { gt: now } },
         }),
         this.prisma.assessmentTest.count({
           where: {
@@ -842,11 +570,6 @@ export class TestSeriesService {
         }),
       ]);
 
-    return {
-      totalSeries,
-      totalTests,
-      upcomingTests,
-      completedTests,
-    };
+    return { totalSeries, totalTests, upcomingTests, completedTests };
   }
 }

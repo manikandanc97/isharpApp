@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { QuestionDuplicateDetectionService } from '../src/question-bank/question-duplicate-detection.service.js';
 import { QuestionBankService } from '../src/question-bank/question-bank.service.js';
@@ -10,7 +11,11 @@ async function main() {
 
   try {
     const dupService = new QuestionDuplicateDetectionService();
-    const service = new QuestionBankService(prisma, dupService);
+    const service = new QuestionBankService(
+      prisma,
+      new ConfigService(),
+      dupService,
+    );
 
     const initialNullCount = await prisma.question.count({
       where: { contentFingerprint: null },
@@ -40,4 +45,4 @@ async function main() {
   }
 }
 
-main();
+void main();

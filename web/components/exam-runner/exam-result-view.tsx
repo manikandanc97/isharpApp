@@ -3,25 +3,22 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AlertCircle,
   ArrowLeft,
   Award,
   BookOpen,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Clock,
-  ExternalLink,
   HelpCircle,
   Lock,
-  PieChart,
   ShieldCheck,
   TrendingUp,
   XCircle,
 } from "lucide-react";
+import { QuestionDiagram } from "@/components/shared/questions/question-diagram";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ExamResultPayload, ExamResultReviewItem } from "./exam.types";
+import type { ExamResultPayload } from "./exam.types";
 
 interface ExamResultViewProps {
   result: ExamResultPayload;
@@ -299,7 +296,7 @@ export function ExamResultView({ result }: ExamResultViewProps) {
                           </p>
                         )}
                         {item.questionImageUrl && (
-                          <img
+                          <QuestionDiagram
                             src={item.questionImageUrl}
                             alt="Question Diagram"
                             className="max-h-48 object-contain rounded-lg border border-slate-200 p-1"

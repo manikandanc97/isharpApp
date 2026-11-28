@@ -18,7 +18,7 @@ export interface CoursesSectionProps {
 export function CoursesSection({
   courses,
   onCreate: _onCreate,
-  onToggle,
+  onToggle: _onToggle,
 }: CoursesSectionProps) {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [academicYear] = useState<string>("2026-2027");

@@ -2,7 +2,6 @@ import {
   Award,
   BarChart3,
   BookOpen,
-  CalendarCheck,
   HelpCircle,
   History,
   LayoutDashboard,
@@ -18,7 +17,6 @@ export type AdminDashboardSection =
   | "questions"
   | "test-series"
   | "tests"
-  | "exams"
   | "results"
   | "roles"
   | "settings"
@@ -33,7 +31,6 @@ export const sectionPaths: Record<Section, string> = {
   questions: "/admin/question-bank",
   "test-series": "/admin/test-series",
   tests: "/admin/test-series",
-  exams: "/admin/exams",
   results: "/admin/results",
   roles: "/admin/roles",
   settings: "/admin/settings",
@@ -46,7 +43,6 @@ export const platformOperationSections: Section[] = [
   "courses",
   "questions",
   "test-series",
-  "exams",
   "results",
 ];
 
@@ -207,12 +203,6 @@ export const sectionMeta = {
     label: "Test Series",
     icon: Award,
     description: "Assessment & Test Series Control",
-    group: "operations",
-  },
-  exams: {
-    label: "Exam Management",
-    icon: CalendarCheck,
-    description: "Scheduling, Monitoring & Proctoring",
     group: "operations",
   },
   results: {

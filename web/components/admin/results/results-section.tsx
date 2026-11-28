@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Atom,
-  BarChart3,
-  CheckCircle2,
   Dna,
   FileSpreadsheet,
   FlaskConical,
   GraduationCap,
+  LoaderCircle,
   Printer,
   RefreshCw,
   Search,
@@ -18,10 +17,10 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { api } from "@/components/admin/admin-api";
 import { TablePagination } from "@/components/admin/admin-helpers";
 import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin/admin-content-skeleton";
 import type { ResultsOverview } from "@/lib/results-store";
-import ExcelJS from "exceljs";
 
 interface ResultsSectionProps {
   onNotice: (msg: string) => void;
@@ -32,27 +31,26 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
   const [data, setData] = useState<ResultsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | "INTERNAL" | "EXTERNAL">("ALL");
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
   // Reset page on search or category filter change
-  useEffect(() => {
+  const filterKey = `${searchQuery}|${categoryFilter}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [searchQuery, categoryFilter]);
+  }
 
   const loadData = useCallback(async (quiet = false) => {
     if (quiet) setRefreshing(true);
     else setLoading(true);
     try {
-      const res = await fetch("/api/admin/results", { cache: "no-store" });
-      if (res.ok) {
-        const payload = await res.json();
-        setData(payload);
-      } else {
-        onError("Failed to load results and performance analytics");
-      }
+      const payload = await api<ResultsOverview>("results");
+      setData(payload);
     } catch {
       onError("Failed to load results and performance analytics");
     } finally {
@@ -62,12 +60,27 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
   }, [onError]);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    let active = true;
+    api<ResultsOverview>("results")
+      .then((payload) => {
+        if (active) setData(payload);
+      })
+      .catch(() => {
+        if (active) onError("Failed to load results and performance analytics");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [onError]);
 
   const handleExportExcel = async () => {
-    if (!data) return;
+    if (!data || exporting) return;
+    setExporting(true);
     try {
+      const { default: ExcelJS } = await import("exceljs");
       const wb = new ExcelJS.Workbook();
       wb.creator = "I-SHARP Academy";
       const ws = wb.addWorksheet("NEET Results Leaderboard");
@@ -123,6 +136,8 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
       onNotice("Results exported to Excel successfully");
     } catch {
       onError("Failed to export results");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -130,18 +145,23 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
     window.print();
   };
 
-  const filteredLeaderboard = (data?.leaderboard || []).filter((item) => {
-    if (categoryFilter !== "ALL" && item.category !== categoryFilter) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        item.studentName.toLowerCase().includes(q) ||
-        item.studentId.toLowerCase().includes(q) ||
-        item.testName.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const filteredLeaderboard = useMemo(() => {
+    const rows = data?.leaderboard || [];
+    const q = searchQuery.trim().toLowerCase();
+    return rows.filter((item) => {
+      if (categoryFilter !== "ALL" && item.category !== categoryFilter) {
+        return false;
+      }
+      if (q) {
+        return (
+          item.studentName.toLowerCase().includes(q) ||
+          item.studentId.toLowerCase().includes(q) ||
+          item.testName.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [data?.leaderboard, categoryFilter, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeaderboard.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -187,11 +207,16 @@ export function ResultsSection({ onNotice, onError }: ResultsSectionProps) {
             <Button
               variant="outline"
               size="sm"
+              disabled={exporting}
               onClick={handleExportExcel}
               className="gap-1.5 rounded-full border-slate-200 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition shadow-2xs"
             >
-              <FileSpreadsheet className="size-3.5 text-emerald-600" />
-              <span>Export Excel</span>
+              {exporting ? (
+                <LoaderCircle className="size-3.5 animate-spin text-emerald-600" />
+              ) : (
+                <FileSpreadsheet className="size-3.5 text-emerald-600" />
+              )}
+              <span>{exporting ? "Exporting..." : "Export Excel"}</span>
             </Button>
             <Button
               variant="outline"

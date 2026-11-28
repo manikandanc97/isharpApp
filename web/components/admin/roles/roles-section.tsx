@@ -67,8 +67,27 @@ export function RolesSection({ onNotice, onError }: RolesSectionProps) {
   }, [onNotice, onError]);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    let active = true;
+    fetch("/api/admin/roles", { cache: "no-store" })
+      .then(async (res) => {
+        if (!active) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (active) setRoles(data || []);
+        } else {
+          onError("Failed to load roles and permissions matrix");
+        }
+      })
+      .catch(() => {
+        if (active) onError("Failed to load roles and permissions matrix");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [onError]);
 
   if (loading) return <AdminWorkspaceContentSkeleton section="roles" />;
 

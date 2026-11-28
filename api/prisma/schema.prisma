@@ -321,6 +321,7 @@ model Question {
   demoGlobalStat      DemoQuestionGlobalStat?
 
   @@index([courseSubjectId, chapterId], map: "questions_course_subject_chapter_idx")
+  @@index([chapterId], map: "questions_chapter_id_idx")
   @@index([type, difficulty, isActive], map: "questions_type_difficulty_active_idx")
   @@index([createdById], map: "questions_created_by_id_idx")
   @@index([contentFingerprint], map: "questions_content_fingerprint_idx")
@@ -565,6 +566,7 @@ model DemoVisitorQuestionExposure {
   @@index([visitorId, lastExposedAt], map: "demo_visitor_exposures_visitor_last_idx")
   @@index([visitorId, contentFingerprint], map: "demo_visitor_exposures_visitor_cfp_idx")
   @@index([visitorId, equivalentFingerprint], map: "demo_visitor_exposures_visitor_efp_idx")
+  @@index([questionId], map: "demo_visitor_exposures_question_id_idx")
   @@map("demo_visitor_question_exposures")
 }
 
@@ -713,6 +715,7 @@ model TestSeriesCategory {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   series TestSeries[]
+  tests  AssessmentTest[]
 
   @@index([isActive, position], map: "test_series_categories_active_pos_idx")
   @@map("test_series_categories")
@@ -758,12 +761,18 @@ enum AssessmentTestType {
 model AssessmentTest {
   id                     String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   testSeriesId           String             @map("test_series_id") @db.Uuid
+  categoryId             String?            @map("category_id") @db.Uuid
   code                   String             @unique(map: "assessment_tests_code_key") @db.VarChar(64)
   title                  String             @db.VarChar(200)
   description            String?            @db.Text
   instructionsEn         String?            @map("instructions_en") @db.Text
   instructionsTa         String?            @map("instructions_ta") @db.Text
   testType               AssessmentTestType @default(FULL_SYLLABUS) @map("test_type")
+  examPatternMode        String             @default("DEFAULT_NEET") @map("exam_pattern_mode") @db.VarChar(32)
+  examPatternVersion     String             @default("NEET_2026_V1") @map("exam_pattern_version") @db.VarChar(32)
+  questionSelectionMode  String             @default("AUTOMATIC") @map("question_selection_mode") @db.VarChar(32)
+  durationMode           String             @default("AUTOMATIC") @map("duration_mode") @db.VarChar(32)
+  subjectDistribution    Json?              @map("subject_distribution")
   isActive               Boolean            @default(true) @map("is_active")
   isCancelled            Boolean            @default(false) @map("is_cancelled")
   durationMinutes        Int                @default(180) @map("duration_minutes") @db.SmallInt
@@ -786,6 +795,7 @@ model AssessmentTest {
   updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   testSeries      TestSeries               @relation(fields: [testSeriesId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  category        TestSeriesCategory?      @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   createdBy       UserProfile              @relation("AssessmentTestCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
   questions       AssessmentTestQuestion[]
   blueprints      TestBlueprint[]
@@ -796,6 +806,7 @@ model AssessmentTest {
   answerKeyAudits AnswerKeyAudit[]
 
   @@index([testSeriesId, orderIndex], map: "assessment_tests_series_order_idx")
+  @@index([categoryId, isActive], map: "assessment_tests_category_active_idx")
   @@index([isActive, isCancelled, scheduledAt], map: "assessment_tests_active_scheduled_idx")
   @@map("assessment_tests")
 }
@@ -937,6 +948,7 @@ model AttemptOptionMapping {
 
   @@unique([attemptQuestionId, shuffledPosition], map: "attempt_option_mapping_pos_key")
   @@unique([attemptQuestionId, canonicalOptionId], map: "attempt_option_mapping_opt_key")
+  @@index([canonicalOptionId], map: "attempt_option_mapping_canonical_opt_idx")
   @@map("attempt_option_mappings")
 }
 
@@ -960,6 +972,8 @@ model AttemptAnswer {
 
   @@unique([attemptId, questionId], map: "attempt_answers_attempt_question_key")
   @@index([attemptId], map: "attempt_answers_attempt_idx")
+  @@index([questionId], map: "attempt_answers_question_id_idx")
+  @@index([selectedOptionId], map: "attempt_answers_selected_opt_idx")
   @@map("attempt_answers")
 }
 
@@ -1077,5 +1091,6 @@ model AnswerKeyAudit {
   changedBy      UserProfile    @relation("AnswerKeyAuditActor", fields: [changedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([assessmentTestId, createdAt], map: "answer_key_audits_test_created_idx")
+  @@index([questionId], map: "answer_key_audits_question_id_idx")
   @@map("answer_key_audits")
 }

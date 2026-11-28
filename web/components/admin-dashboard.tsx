@@ -1,18 +1,60 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { CoursesSection } from "@/components/admin/courses-section";
 import { OverviewSection } from "@/components/admin/overview-section";
 import { StudentsSection } from "@/components/admin/students-section";
-import { TestSeriesSection } from "@/components/admin/test-series/test-series-section";
-import { QuestionBankManager } from "@/components/question-bank-manager";
-import { ExamManagementSection } from "@/components/admin/exams/exam-management-section";
-import { ResultsSection } from "@/components/admin/results/results-section";
-import { RolesSection } from "@/components/admin/roles/roles-section";
-import { SettingsSection } from "@/components/admin/settings/settings-section";
-import { AuditLogsSection } from "@/components/admin/audit-logs/audit-logs-section";
 import { AdminWorkspaceContentSkeleton } from "@/components/skeletons/admin-layout-skeleton";
 import type { AdminDashboardSection } from "@/components/admin/admin-types";
 import { useAdminDashboardContext } from "./admin/admin-dashboard-context";
+
+const TestSeriesSection = dynamic(
+  () =>
+    import("@/components/admin/test-series/test-series-section").then(
+      (m) => m.TestSeriesSection,
+    ),
+  { loading: () => <AdminWorkspaceContentSkeleton section="test-series" /> },
+);
+
+const QuestionBankManager = dynamic(
+  () =>
+    import("@/components/question-bank-manager").then(
+      (m) => m.QuestionBankManager,
+    ),
+  { loading: () => <AdminWorkspaceContentSkeleton section="questions" /> },
+);
+
+const ResultsSection = dynamic(
+  () =>
+    import("@/components/admin/results/results-section").then(
+      (m) => m.ResultsSection,
+    ),
+  { loading: () => <AdminWorkspaceContentSkeleton section="results" /> },
+);
+
+const RolesSection = dynamic(
+  () =>
+    import("@/components/admin/roles/roles-section").then(
+      (m) => m.RolesSection,
+    ),
+  { loading: () => <AdminWorkspaceContentSkeleton section="roles" /> },
+);
+
+const SettingsSection = dynamic(
+  () =>
+    import("@/components/admin/settings/settings-section").then(
+      (m) => m.SettingsSection,
+    ),
+  { loading: () => <AdminWorkspaceContentSkeleton section="settings" /> },
+);
+
+const AuditLogsSection = dynamic(
+  () =>
+    import("@/components/admin/audit-logs/audit-logs-section").then(
+      (m) => m.AuditLogsSection,
+    ),
+  { loading: () => <AdminWorkspaceContentSkeleton section="audit-logs" /> },
+);
 
 export type { AdminDashboardSection };
 
@@ -101,10 +143,6 @@ export function AdminSectionView({
 
   if (section === "test-series" || section === "tests") {
     return <TestSeriesSection onNotice={showNotice} onError={setError} />;
-  }
-
-  if (section === "exams") {
-    return <ExamManagementSection onNotice={showNotice} onError={setError} />;
   }
 
   if (section === "results") {

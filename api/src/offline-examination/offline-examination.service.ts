@@ -6,7 +6,6 @@ import {
 import {
   AttendanceStatus,
   ExamDeliveryMode,
-  OfflineSessionStatus,
   TestAttemptStatus,
 } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -14,6 +13,7 @@ import {
   evaluateStudentAttempt,
   type AttemptQuestionEvaluationInput,
 } from '../examination-engine/examination-evaluation.helper.js';
+import { buildTestResultPersistencePayload } from '../examination-engine/helpers/test-evaluation.helper.js';
 import type {
   CreateOfflineSessionDto,
   EnterOfflineAnswersDto,
@@ -282,44 +282,15 @@ export class OfflineExaminationService {
       });
 
       // 3. Upsert unified TestResult for leaderboard & rankings
-      const result = await tx.testResult.upsert({
-        where: { attemptId: attempt.id },
-        create: {
-          attemptId: attempt.id,
-          assessmentTestId: test.id,
-          studentProfileId: dto.studentProfileId,
-          totalMarksScored: evaluation.totalMarksScored,
-          maxMarks: evaluation.maxMarks,
-          percentage: evaluation.percentage,
-          accuracyPercentage: evaluation.accuracyPercentage,
-          correctCount: evaluation.correctCount,
-          incorrectCount: evaluation.incorrectCount,
-          unansweredCount: evaluation.unansweredCount,
-          physicsScore: evaluation.physicsScore,
-          chemistryScore: evaluation.chemistryScore,
-          biologyScore: evaluation.biologyScore,
-          botanyScore: evaluation.botanyScore,
-          zoologyScore: evaluation.zoologyScore,
-          subjectBreakdown: evaluation.subjectBreakdown,
-          calculatedAt: new Date(),
-        },
-        update: {
-          totalMarksScored: evaluation.totalMarksScored,
-          maxMarks: evaluation.maxMarks,
-          percentage: evaluation.percentage,
-          accuracyPercentage: evaluation.accuracyPercentage,
-          correctCount: evaluation.correctCount,
-          incorrectCount: evaluation.incorrectCount,
-          unansweredCount: evaluation.unansweredCount,
-          physicsScore: evaluation.physicsScore,
-          chemistryScore: evaluation.chemistryScore,
-          biologyScore: evaluation.biologyScore,
-          botanyScore: evaluation.botanyScore,
-          zoologyScore: evaluation.zoologyScore,
-          subjectBreakdown: evaluation.subjectBreakdown,
-          calculatedAt: new Date(),
-        },
-      });
+      const result = await tx.testResult.upsert(
+        buildTestResultPersistencePayload(
+          attempt.id,
+          test.id,
+          dto.studentProfileId,
+          evaluation,
+          new Date(),
+        ),
+      );
 
       return {
         sessionId,

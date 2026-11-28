@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
-  CheckCircle2,
   ChevronRight,
   Layers3,
   MoreVertical,

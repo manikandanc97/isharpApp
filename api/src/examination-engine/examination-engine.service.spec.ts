@@ -63,6 +63,7 @@ describe('ExaminationEngineService', () => {
     },
     attemptQuestion: {
       create: vi.fn(),
+      createMany: vi.fn(),
       findUnique: vi.fn(),
     },
     attemptOptionMapping: {
@@ -70,6 +71,7 @@ describe('ExaminationEngineService', () => {
     },
     attemptAnswer: {
       upsert: vi.fn(),
+      createMany: vi.fn(),
       updateMany: vi.fn(),
     },
     testResult: {
@@ -120,7 +122,7 @@ describe('ExaminationEngineService', () => {
     };
     mockPrisma.testAttempt.findUnique.mockResolvedValue(createdAttemptData);
 
-    const payload = await service.startOrResumeAttempt('student-profile-1', 'test-uuid-1');
+    const payload = (await service.startOrResumeAttempt('student-profile-1', 'test-uuid-1')) as any;
 
     expect(payload.attemptId).toBe('att-1');
     expect(payload.questions.length).toBe(1);
@@ -175,7 +177,7 @@ describe('ExaminationEngineService', () => {
 
     mockPrisma.testAttempt.findFirst.mockResolvedValue(existingAttempt);
 
-    const payload = await service.startOrResumeAttempt('student-profile-1', 'test-uuid-1');
+    const payload = (await service.startOrResumeAttempt('student-profile-1', 'test-uuid-1')) as any;
 
     expect(payload.attemptId).toBe('att-existing');
     expect(payload.questions[0].savedAnswer?.selectedOptionId).toBe('opt-2');
@@ -336,5 +338,127 @@ describe('ExaminationEngineService', () => {
     expect(result.score).toBe(4);
     // Review and solutions must be null when showResultsImmediately is false
     expect(result.review).toBeNull();
+  });
+
+  it('batches 180-question start into single attemptQuestion.createMany and chunked optionMappings', async () => {
+    const questions180 = Array.from({ length: 180 }, (_, idx) => ({
+      questionId: `q-${idx + 1}`,
+      position: idx + 1,
+      section: 'A',
+      correctMarks: 4,
+      negativeMarks: 1,
+      isDropped: false,
+      question: {
+        id: `q-${idx + 1}`,
+        textEn: `Question ${idx + 1}`,
+        textTa: null,
+        solutionEn: 'Hidden',
+        options: [
+          { id: `opt-${idx + 1}-1`, label: 'A', position: 1, textEn: '1', isCorrect: true },
+          { id: `opt-${idx + 1}-2`, label: 'B', position: 2, textEn: '2', isCorrect: false },
+          { id: `opt-${idx + 1}-3`, label: 'C', position: 3, textEn: '3', isCorrect: false },
+          { id: `opt-${idx + 1}-4`, label: 'D', position: 4, textEn: '4', isCorrect: false },
+        ],
+        courseSubject: { subject: { code: 'PHY', name: 'Physics' } },
+      },
+    }));
+
+    const test180 = {
+      ...mockTest,
+      totalQuestions: 180,
+      questions: questions180,
+    };
+
+    mockPrisma.assessmentTest.findUnique.mockResolvedValue(test180);
+    mockPrisma.testAttempt.findFirst.mockResolvedValue(null);
+    mockPrisma.testAttempt.count.mockResolvedValue(0);
+    mockPrisma.institutionMembership.findUnique.mockResolvedValue({ id: 'mem-1' });
+    mockPrisma.testAttempt.create.mockResolvedValue({ id: 'att-180' });
+    mockPrisma.attemptQuestion.createMany.mockResolvedValue({ count: 180 });
+    mockPrisma.attemptOptionMapping.createMany.mockResolvedValue({ count: 500 });
+    mockPrisma.testAttempt.findUnique.mockResolvedValue({
+      id: 'att-180',
+      assessmentTestId: test180.id,
+      attemptNumber: 1,
+      status: TestAttemptStatus.IN_PROGRESS,
+      startedAt: new Date(),
+      expiresAt: new Date(Date.now() + 180 * 60 * 1000),
+      questions: [],
+      answers: [],
+    });
+
+    await service.startOrResumeAttempt('student-180', test180.id);
+
+    expect(mockPrisma.attemptQuestion.createMany).toHaveBeenCalledTimes(1);
+    const aqPayload = mockPrisma.attemptQuestion.createMany.mock.calls[0][0].data;
+    expect(aqPayload).toHaveLength(180);
+
+    // 180 * 4 = 720 mappings -> 2 chunks (500 + 220)
+    expect(mockPrisma.attemptOptionMapping.createMany).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.attemptOptionMapping.createMany.mock.calls[0][0].data).toHaveLength(500);
+    expect(mockPrisma.attemptOptionMapping.createMany.mock.calls[1][0].data).toHaveLength(220);
+  });
+
+  it('resumes active attempt without loading full test questions graph', async () => {
+    const activeAttempt = {
+      id: 'att-resume',
+      assessmentTestId: mockTest.id,
+      attemptNumber: 1,
+      status: TestAttemptStatus.IN_PROGRESS,
+      startedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
+      questions: [],
+      answers: [],
+    };
+    mockPrisma.assessmentTest.findUnique.mockResolvedValue({
+      ...mockTest,
+      questions: undefined,
+    });
+    mockPrisma.testAttempt.findFirst.mockResolvedValue(activeAttempt);
+
+    const res = (await service.startOrResumeAttempt('student-1', mockTest.id)) as any;
+    expect(res.attemptId).toBe('att-resume');
+    expect(mockPrisma.assessmentTest.findUnique).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.testAttempt.create).not.toHaveBeenCalled();
+  });
+
+  it('guards against concurrent start requests inside transaction', async () => {
+    const concurrentAttempt = {
+      id: 'att-concurrent',
+      assessmentTestId: mockTest.id,
+      attemptNumber: 1,
+      status: TestAttemptStatus.IN_PROGRESS,
+      startedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
+      questions: [],
+      answers: [],
+    };
+
+    mockPrisma.assessmentTest.findUnique.mockResolvedValue(mockTest);
+    mockPrisma.testAttempt.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(concurrentAttempt);
+    mockPrisma.testAttempt.count.mockResolvedValue(0);
+    mockPrisma.institutionMembership.findUnique.mockResolvedValue(null);
+
+    const res = (await service.startOrResumeAttempt('student-1', mockTest.id)) as any;
+    expect(res.attemptId).toBe('att-concurrent');
+    expect(mockPrisma.testAttempt.create).not.toHaveBeenCalled();
+  });
+
+  it('propagates transaction failure without partial attempt return', async () => {
+    mockPrisma.assessmentTest.findUnique.mockResolvedValue(mockTest);
+    mockPrisma.testAttempt.findFirst.mockResolvedValue(null);
+    mockPrisma.testAttempt.count.mockResolvedValue(0);
+    mockPrisma.institutionMembership.findUnique.mockResolvedValue(null);
+    mockPrisma.testAttempt.create.mockResolvedValue({ id: 'att-fail' });
+    mockPrisma.attemptQuestion.createMany.mockResolvedValue({ count: 1 });
+    mockPrisma.attemptOptionMapping.createMany.mockRejectedValue(
+      new Error('DB write failure'),
+    );
+
+    await expect(
+      service.startOrResumeAttempt('student-1', mockTest.id),
+    ).rejects.toThrow('DB write failure');
   });
 });

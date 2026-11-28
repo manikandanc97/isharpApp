@@ -7,7 +7,6 @@ import {
   Clock3,
   GraduationCap,
   ShieldCheck,
-  Sparkles,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -25,7 +24,6 @@ import type {
   Section,
   User,
 } from "./admin-types";
-import { Stack } from "@/components/layout/layout-primitives";
 
 export interface OverviewSectionProps {
   overview: { metrics: Metrics; recentVerifications: Membership[] };

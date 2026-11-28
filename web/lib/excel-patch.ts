@@ -58,7 +58,13 @@ export function ensureExcelJsPatched() {
     if (proto) {
       if (typeof proto.reconcile === "function") {
         const originalReconcile = proto.reconcile;
-        proto.reconcile = function (model: any, options: any) {
+        proto.reconcile = function (
+          model: {
+            drawings?: Record<string, { anchors?: unknown[] }>;
+            drawingRels?: Record<string, unknown>;
+          } | null | undefined,
+          options: unknown,
+        ) {
           if (model) {
             if (!model.drawings) {
               model.drawings = {};
@@ -86,7 +92,7 @@ export function ensureExcelJsPatched() {
 
       if (typeof proto.load === "function") {
         const originalLoad = proto.load;
-        proto.load = async function (data: any, options: any) {
+        proto.load = async function (data: unknown, options: unknown) {
           if (Buffer.isBuffer(data)) {
             const normalized = await normalizeExcelXmlBuffer(data);
             return originalLoad.call(this, normalized, options);

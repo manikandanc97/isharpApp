@@ -8,10 +8,14 @@ import {
   Clock,
   Languages,
   Play,
-  X,
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DemoOtpGate, type DemoOtpPublicStatus } from "./demo-otp-gate";
 
 interface DemoTestCardProps {
@@ -50,22 +54,12 @@ export function DemoTestCard({ className = "", compact = false }: DemoTestCardPr
     setModalOpen(true);
   };
 
-  const modal = modalOpen ? (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Demo Test Mobile Verification"
-    >
-      <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-        <button
-          type="button"
-          onClick={() => setModalOpen(false)}
-          aria-label="Close verification modal"
-          className="absolute right-4 top-4 grid size-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-        >
-          <X className="size-4" />
-        </button>
+  const modal = (
+    <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <DialogContent className="sm:max-w-md rounded-3xl p-6">
+        <DialogTitle className="sr-only">
+          Demo Test Mobile Verification
+        </DialogTitle>
         <DemoOtpGate
           otpStatus={otpStatus}
           onVerified={() => {
@@ -74,9 +68,9 @@ export function DemoTestCard({ className = "", compact = false }: DemoTestCardPr
           }}
           onCancel={() => setModalOpen(false)}
         />
-      </div>
-    </div>
-  ) : null;
+      </DialogContent>
+    </Dialog>
+  );
 
   if (compact) {
     return (

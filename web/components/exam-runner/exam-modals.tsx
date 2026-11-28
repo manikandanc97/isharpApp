@@ -2,17 +2,14 @@
 
 import {
   AlertTriangle,
-  Award,
   CheckCircle2,
   Clock,
-  FileQuestion,
   Flag,
   HelpCircle,
   LayoutGrid,
   Loader2,
   LogOut,
   Send,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +23,7 @@ import {
 import type { ExamQuestion, QuestionStatus } from "./exam.types";
 import type { SummaryCounts } from "./exam-palette";
 import { formatExamTimer } from "./use-exam-timer";
+import { ExamExitConfirmDialog } from "@/components/shared/examination/exam-confirm-dialog";
 
 // ----------------------------------------------------------------------------
 // 1. SUBMIT CONFIRMATION DIALOG
@@ -150,39 +148,17 @@ export function ExitConfirmDialog({
   onExit,
 }: ExitConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-6">
-        <DialogHeader className="space-y-1.5">
-          <div className="flex items-center gap-2 text-rose-600">
-            <AlertTriangle className="size-5" />
-            <DialogTitle className="text-base font-bold text-slate-900">
-              Exit to Dashboard?
-            </DialogTitle>
-          </div>
-          <DialogDescription className="text-xs text-slate-600 leading-relaxed">
-            Your examination timer continues running in the background. You can resume this attempt from your Student Dashboard before the test window expires.
-          </DialogDescription>
-        </DialogHeader>
-
-        <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="rounded-full text-xs font-semibold"
-          >
-            Continue Examination
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onExit}
-            className="rounded-full text-xs font-bold"
-          >
-            <LogOut className="mr-1.5 size-3.5" />
-            Exit Dashboard
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ExamExitConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      onExit={onExit}
+      title="Exit to Dashboard?"
+      description="Your examination timer continues running in the background. You can resume this attempt from your Student Dashboard before the test window expires."
+      cancelLabel="Continue Examination"
+      confirmLabel="Exit Dashboard"
+      titleIcon={<AlertTriangle className="size-5 text-rose-600" />}
+      confirmIcon={<LogOut className="mr-1.5 size-3.5" />}
+    />
   );
 }
 
@@ -213,7 +189,7 @@ export function MobilePaletteDialog({
   currentIndex,
   summaryCounts,
   attemptedCount,
-  remainingCount,
+  remainingCount: _remainingCount,
   progressPercent,
   getQuestionStatus,
   onJumpTo,

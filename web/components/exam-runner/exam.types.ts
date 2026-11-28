@@ -116,7 +116,7 @@ export interface ExamResultPayload {
   biologyScore?: number;
   botanyScore?: number;
   zoologyScore?: number;
-  subjectBreakdown?: any;
+  subjectBreakdown?: Record<string, unknown> | null;
   calculatedAt: string;
   review?: ExamResultReviewItem[] | null;
 }

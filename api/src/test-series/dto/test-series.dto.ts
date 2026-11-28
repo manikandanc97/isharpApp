@@ -1,4 +1,5 @@
 import { AssessmentTestType } from '../../generated/prisma/client.js';
+import type { SubjectAllocationInput } from '../question-selection.engine.js';
 
 export interface CreateCategoryDto {
   name: string;
@@ -40,6 +41,70 @@ export interface UpdateTestSeriesDto {
   isActive?: boolean;
   startDate?: string | null;
   endDate?: string | null;
+}
+
+export type ExamPatternMode = 'DEFAULT_NEET' | 'MANUAL';
+export type QuestionSelectionMode = 'AUTOMATIC' | 'MANUAL';
+export type DurationMode = 'AUTOMATIC' | 'MANUAL';
+
+export interface CreateStandaloneTestDto {
+  categoryId: string;
+  title: string;
+  code?: string;
+  description?: string;
+  isActive?: boolean;
+  scheduledAt?: string | null;
+  availableUntil?: string | null;
+  examPatternMode?: ExamPatternMode;
+  examPatternVersion?: string;
+  questionSelectionMode?: QuestionSelectionMode;
+  durationMode?: DurationMode;
+  durationMinutes?: number;
+  totalQuestions?: number;
+  correctMarks?: number;
+  negativeMarks?: number;
+  hasNegativeMarking?: boolean;
+  passingMarks?: number | null;
+  maxAttempts?: number;
+  randomizeQuestions?: boolean;
+  randomizeOptions?: boolean;
+  showResultsImmediately?: boolean;
+  subjectDistribution?: SubjectAllocationInput[];
+  questionIds?: string[];
+}
+
+export interface UpdateStandaloneTestDto {
+  categoryId?: string;
+  title?: string;
+  description?: string;
+  isActive?: boolean;
+  scheduledAt?: string | null;
+  availableUntil?: string | null;
+  examPatternMode?: ExamPatternMode;
+  examPatternVersion?: string;
+  questionSelectionMode?: QuestionSelectionMode;
+  durationMode?: DurationMode;
+  durationMinutes?: number;
+  totalQuestions?: number;
+  correctMarks?: number;
+  negativeMarks?: number;
+  hasNegativeMarking?: boolean;
+  passingMarks?: number | null;
+  maxAttempts?: number;
+  randomizeQuestions?: boolean;
+  randomizeOptions?: boolean;
+  showResultsImmediately?: boolean;
+  subjectDistribution?: SubjectAllocationInput[];
+  questionIds?: string[];
+}
+
+export interface DuplicateTestDto {
+  mode?: 'COPY_QUESTIONS' | 'REGENERATE_QUESTIONS';
+}
+
+export interface GenerateQuestionsDto {
+  subjectAllocations: SubjectAllocationInput[];
+  excludeQuestionIds?: string[];
 }
 
 export interface CreateAssessmentTestDto {

@@ -25,27 +25,36 @@ export function normalizeDatabaseConnectionString(connectionString: string) {
   return url.toString();
 }
 
+const MAX_SAFE_POOL_LIMIT = 50;
+
+function parsePoolEnvInt(name: string, raw: string | undefined): number | undefined {
+  if (raw === undefined || raw.trim() === '') {
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  if (!/^-?\d+$/.test(trimmed)) {
+    throw new Error(`${name} must be an integer, received "${raw}"`);
+  }
+  return Number.parseInt(trimmed, 10);
+}
+
 export function databasePoolConfig(connectionString: string): PoolConfig {
-  const url = new URL(connectionString);
-  const isSupabaseSharedPooler =
-    url.hostname === 'pooler.supabase.com' ||
-    url.hostname.endsWith('.pooler.supabase.com');
+  const envMax = parsePoolEnvInt('DATABASE_POOL_MAX', process.env.DATABASE_POOL_MAX);
+  const envMin = parsePoolEnvInt('DATABASE_POOL_MIN', process.env.DATABASE_POOL_MIN);
 
-  const envMax = process.env.DATABASE_POOL_MAX
-    ? parseInt(process.env.DATABASE_POOL_MAX, 10)
-    : undefined;
-  const envMin = process.env.DATABASE_POOL_MIN
-    ? parseInt(process.env.DATABASE_POOL_MIN, 10)
-    : undefined;
+  const max = envMax ?? 1;
+  if (max < 1 || max > MAX_SAFE_POOL_LIMIT) {
+    throw new Error(
+      `DATABASE_POOL_MAX must be between 1 and ${MAX_SAFE_POOL_LIMIT}, received ${max}`,
+    );
+  }
 
-  const max =
-    typeof envMax === 'number' && !Number.isNaN(envMax) && envMax > 0
-      ? envMax
-      : 1;
-  const min =
-    typeof envMin === 'number' && !Number.isNaN(envMin) && envMin >= 0
-      ? envMin
-      : 0;
+  const min = envMin ?? 0;
+  if (min < 0 || min > max) {
+    throw new Error(
+      `DATABASE_POOL_MIN must be between 0 and DATABASE_POOL_MAX (${max}), received ${min}`,
+    );
+  }
 
   return {
     connectionString: normalizeDatabaseConnectionString(connectionString),

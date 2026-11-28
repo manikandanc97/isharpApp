@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Clock, Eraser, Flag, Image as ImageIcon } from "lucide-react";
-import Image from "next/image";
+import { ArrowLeft, ArrowRight, Clock, Eraser, Flag } from "lucide-react";
+import { QuestionDiagram } from "@/components/shared/questions/question-diagram";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ExamQuestion, LanguageMode, StudentAnswerState } from "./exam.types";
@@ -105,7 +105,7 @@ export function ExamQuestionView({
         {/* Optional Question Image */}
         {currentQuestion.questionImageUrl && (
           <div className="relative my-3 max-h-72 w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-2">
-            <img
+            <QuestionDiagram
               src={currentQuestion.questionImageUrl}
               alt="Question Diagram"
               className="mx-auto max-h-64 object-contain"
@@ -174,7 +174,7 @@ export function ExamQuestionView({
 
                   {opt.imageUrl && (
                     <div className="mt-2 max-h-36 max-w-xs overflow-hidden rounded-lg border border-slate-200 bg-white p-1">
-                      <img
+                      <QuestionDiagram
                         src={opt.imageUrl}
                         alt={`Option ${displayLabel}`}
                         className="max-h-32 object-contain"

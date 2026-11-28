@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -78,5 +79,13 @@ export class DemoTestAdminController {
     @Body() body: UpdateDemoLeadInput,
   ) {
     return this.demoLeads.updateLeadFollowUp(id, body, req.user.profileId);
+  }
+
+  @Delete('leads/:id')
+  deleteLead(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.demoLeads.deleteLead(id, req.user.profileId);
   }
 }

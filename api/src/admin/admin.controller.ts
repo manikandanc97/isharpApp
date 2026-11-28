@@ -125,42 +125,4 @@ export class AdminController {
   ) {
     return this.admin.updateCourse(id, body);
   }
-
-  // --------------------------------------------------------------------------
-  // EXAM MANAGEMENT & LIVE PROCTORING
-  // --------------------------------------------------------------------------
-
-  @Get('exams')
-  exams(@Query('status') status?: string) {
-    return this.admin.listScheduledExams(status);
-  }
-
-  @Patch('exams/:id')
-  updateExam(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Body()
-    body: {
-      status?: 'UPCOMING' | 'LIVE' | 'COMPLETED' | 'CANCELLED';
-      assignmentTarget?: string;
-      assignedStudentIds?: string[];
-    },
-  ) {
-    return this.admin.updateExam(id, body);
-  }
-
-  @Get('exams/attempts')
-  attempts(@Query('examId') examId?: string) {
-    return this.admin.listAttempts(examId);
-  }
-
-  @Post('exams/attempts')
-  handleAttemptAction(
-    @Body()
-    body: {
-      attemptId: string;
-      action: 'AUTO_SUBMIT' | 'GRANT_REATTEMPT' | 'RESET';
-    },
-  ) {
-    return this.admin.handleAttemptAction(body.attemptId, body.action);
-  }
 }

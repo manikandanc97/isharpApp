@@ -4,7 +4,7 @@ export type AuditLogEntry = {
   actorEmail: string;
   actorRole: string;
   action: string;
-  module: "COURSES" | "QUESTION_BANK" | "TEST_SERIES" | "EXAM_MANAGEMENT" | "RESULTS" | "ROLES" | "SETTINGS" | "STUDENTS";
+  module: "COURSES" | "QUESTION_BANK" | "TEST_SERIES" | "RESULTS" | "ROLES" | "SETTINGS" | "STUDENTS";
   targetEntityId?: string | null;
   targetEntityName?: string | null;
   details: string;
@@ -33,7 +33,6 @@ class AuditLogsDataStore {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __auditLogsStore: AuditLogsDataStore | undefined;
 }
 

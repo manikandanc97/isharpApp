@@ -1,6 +1,7 @@
 import {
   databasePoolConfig,
   normalizeDatabaseConnectionString,
+  PrismaService,
 } from './prisma.service.js';
 
 describe('normalizeDatabaseConnectionString', () => {
@@ -75,6 +76,58 @@ describe('databasePoolConfig', () => {
     );
     expect(config.max).toBe(8);
     expect(config.min).toBe(2);
+    vi.unstubAllEnvs();
+  });
+
+  it('rejects non-numeric, out-of-range, or inverted pool configuration values', () => {
+    vi.stubEnv('DATABASE_POOL_MAX', 'abc');
+    expect(() =>
+      databasePoolConfig('postgresql://user:pass@database.example.com:5432/app'),
+    ).toThrow('DATABASE_POOL_MAX must be an integer');
+    vi.unstubAllEnvs();
+
+    vi.stubEnv('DATABASE_POOL_MAX', '0');
+    expect(() =>
+      databasePoolConfig('postgresql://user:pass@database.example.com:5432/app'),
+    ).toThrow('DATABASE_POOL_MAX must be between 1 and 50');
+    vi.unstubAllEnvs();
+
+    vi.stubEnv('DATABASE_POOL_MAX', '51');
+    expect(() =>
+      databasePoolConfig('postgresql://user:pass@database.example.com:5432/app'),
+    ).toThrow('DATABASE_POOL_MAX must be between 1 and 50');
+    vi.unstubAllEnvs();
+
+    vi.stubEnv('DATABASE_POOL_MAX', '4');
+    vi.stubEnv('DATABASE_POOL_MIN', '5');
+    expect(() =>
+      databasePoolConfig('postgresql://user:pass@database.example.com:5432/app'),
+    ).toThrow('DATABASE_POOL_MIN must be between 0 and DATABASE_POOL_MAX (4)');
+    vi.unstubAllEnvs();
+  });
+});
+
+describe('PrismaService lifecycle', () => {
+  it('releases Prisma and pg.Pool resources on shutdown', async () => {
+    vi.stubEnv(
+      'DATABASE_URL',
+      'postgresql://user:pass@database.example.com:5432/app',
+    );
+    const service = new PrismaService();
+    const disconnectSpy = vi
+      .spyOn(service, '$disconnect')
+      .mockResolvedValue(undefined);
+    const poolEndSpy = vi
+      .spyOn(
+        (service as unknown as { pool: { end: () => Promise<void> } }).pool,
+        'end',
+      )
+      .mockResolvedValue(undefined);
+
+    await service.onModuleDestroy();
+
+    expect(disconnectSpy).toHaveBeenCalledTimes(1);
+    expect(poolEndSpy).toHaveBeenCalledTimes(1);
     vi.unstubAllEnvs();
   });
 });
