@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BrandLogo } from "@/components/brand-logo";
@@ -56,6 +57,10 @@ export function DemoTestScreen({
   const handleExitToHome = () => {
     router.push("/");
   };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [phase]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-slate-50 font-sans text-slate-900 selection:bg-brand-red selection:text-white antialiased">

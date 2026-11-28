@@ -17,7 +17,9 @@ export const ROLE_GRANTS: Readonly<Record<RoleName, readonly RoleName[]>> = {
   EXAM_MANAGER: ['EXAM_MANAGER'],
   EVALUATOR: ['EVALUATOR'],
   ADMIN: [
+    'STUDENT',
     'ADMIN',
+    'SUPERADMIN',
     'QUESTION_MANAGER',
     'ACADEMIC_MANAGER',
     'EXAM_MANAGER',

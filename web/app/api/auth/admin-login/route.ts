@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         destination: '/admin',
-        role: isSuperadmin ? 'Super Administrator' : 'Academy Administrator',
+        role: 'Administrator',
         displayName: data.user.user_metadata?.display_name ?? 'Administrator',
       },
       { headers: { 'Cache-Control': 'no-store, private' } },

@@ -85,9 +85,11 @@ export async function setStudentAccessRecord(
     const privileged = current.user.userRoles.some(
       ({ role }) => role.name === 'ADMIN' || role.name === 'SUPERADMIN',
     );
-    if (privileged && !actor.roles.includes('SUPERADMIN'))
+    const actorIsAdmin =
+      actor.roles.includes('ADMIN') || actor.roles.includes('SUPERADMIN');
+    if (privileged && !actorIsAdmin)
       throw new ForbiddenException(
-        'Only SUPERADMIN can manage administrator access',
+        'Only ADMIN can manage administrator access',
       );
     if (current.studentCategory === 'EXTERNAL' && category === 'INTERNAL')
       throw new BadRequestException(
@@ -184,9 +186,11 @@ export async function convertExternalStudentRecord(
     const privileged = current.user.userRoles.some(
       ({ role }) => role.name === 'ADMIN' || role.name === 'SUPERADMIN',
     );
-    if (privileged && !actor.roles.includes('SUPERADMIN'))
+    const actorIsAdmin =
+      actor.roles.includes('ADMIN') || actor.roles.includes('SUPERADMIN');
+    if (privileged && !actorIsAdmin)
       throw new ForbiddenException(
-        'Only SUPERADMIN can manage administrator access',
+        'Only ADMIN can manage administrator access',
       );
 
     const studentId = await generateStudentCode(tx, 'INTERNAL');

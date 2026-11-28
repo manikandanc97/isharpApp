@@ -103,7 +103,9 @@ export function AdminSectionView({
           users={users}
           internalStudents={internalStudents}
           currentProfileId={session?.profileId}
-          canManagePrivileged={session?.roles.includes("SUPERADMIN") ?? false}
+          canManagePrivileged={Boolean(
+            session?.roles.some((role) => role === "ADMIN" || role === "SUPERADMIN"),
+          )}
           onToggle={setUserActive}
           onManageAccess={manageStudentAccess}
           onRosterCreated={(student) => {

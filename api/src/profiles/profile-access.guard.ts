@@ -23,7 +23,10 @@ export class ProfileAccessGuard implements CanActivate {
     ) {
       throw new BadRequestException('A valid profile UUID is required');
     }
-    if (request.user.roles.includes('SUPERADMIN')) {
+    if (
+      request.user.roles.includes('ADMIN') ||
+      request.user.roles.includes('SUPERADMIN')
+    ) {
       return true;
     }
     if (request.user.profileId === targetId) {

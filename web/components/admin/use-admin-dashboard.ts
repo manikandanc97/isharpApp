@@ -39,9 +39,9 @@ export function useAdminDashboard() {
 
   const navigateToSection = useCallback(
     (nextSection: Section) => {
-      router.push(sectionPaths[nextSection], { scroll: false });
+      router.push(sectionPaths[nextSection]);
     },
-    [/* loadAll only uses stable state setters */],
+    [router],
   );
 
   const loadAll = useCallback(

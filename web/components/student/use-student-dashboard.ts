@@ -26,7 +26,13 @@ export function useStudentDashboard() {
   const [profileName, setProfileName] = useState("");
   const [profileError, setProfileError] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTabState] = useState<TabId>("overview");
+  const setActiveTab = (nextTab: TabId) => {
+    setActiveTabState(nextTab);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  };
   const [selectedLanguage, setSelectedLanguage] =
     useState<LanguageMode>("bilingual");
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);

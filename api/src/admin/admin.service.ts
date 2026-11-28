@@ -231,12 +231,14 @@ export class AdminService {
     if (!target) throw new NotFoundException('Profile not found');
 
     const targetRoles = target.userRoles.map(({ role }) => role.name);
+    const actorIsAdmin =
+      actor.roles.includes('ADMIN') || actor.roles.includes('SUPERADMIN');
     if (
-      !actor.roles.includes('SUPERADMIN') &&
+      !actorIsAdmin &&
       targetRoles.some((role) => role === 'ADMIN' || role === 'SUPERADMIN')
     ) {
       throw new ForbiddenException(
-        'Only SUPERADMIN can manage administrator accounts',
+        'Only ADMIN can manage administrator accounts',
       );
     }
 

@@ -16,32 +16,70 @@ interface SettingsSectionProps {
   onError: (msg: string) => void;
 }
 
+type ResultReleasePolicy = "IMMEDIATE" | "SCHEDULED" | "MANUAL";
+
+interface SettingsFormState {
+  institutionName: string;
+  tagline: string;
+  supportEmail: string;
+  supportPhone: string;
+  currentAcademicYear: string;
+  defaultTestDurationMinutes: number;
+  defaultPositiveMarks: number;
+  defaultNegativeMarks: number;
+  passingScorePercentage: number;
+  autoSubmitOnTimeout: boolean;
+  resultReleasePolicy: ResultReleasePolicy;
+  bilingualDefault: boolean;
+  allowStudentReviewAfterRelease: boolean;
+}
+
+const DEFAULT_SETTINGS: SettingsFormState = {
+  institutionName: "I-SHARP Academy",
+  tagline: "Premier NEET & Medical Entrance Coaching Centre",
+  supportEmail: "support@isharpacademy.in",
+  supportPhone: "+91 94440 12345",
+  currentAcademicYear: "2026-2027",
+  defaultTestDurationMinutes: 180,
+  defaultPositiveMarks: 4,
+  defaultNegativeMarks: 1,
+  passingScorePercentage: 50,
+  autoSubmitOnTimeout: true,
+  resultReleasePolicy: "SCHEDULED",
+  bilingualDefault: true,
+  allowStudentReviewAfterRelease: true,
+};
+
+const RELEASE_POLICIES: readonly {
+  key: ResultReleasePolicy;
+  label: string;
+  desc: string;
+}[] = [
+  { key: "SCHEDULED", label: "Scheduled Release", desc: "Results released at exam window end time" },
+  { key: "IMMEDIATE", label: "Immediate Release", desc: "Student sees scorecard right after submission" },
+  { key: "MANUAL", label: "Manual Administrator Release", desc: "Scores held until manual admin verification" },
+];
+
 export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
-  const [form, setForm] = useState({
-    institutionName: "I-SHARP Academy",
-    tagline: "Premier NEET & Medical Entrance Coaching Centre",
-    supportEmail: "support@isharpacademy.in",
-    supportPhone: "+91 94440 12345",
-    currentAcademicYear: "2026-2027",
-    defaultTestDurationMinutes: 180,
-    defaultPositiveMarks: 4,
-    defaultNegativeMarks: 1,
-    passingScorePercentage: 50,
-    autoSubmitOnTimeout: true,
-    resultReleasePolicy: "SCHEDULED" as "IMMEDIATE" | "SCHEDULED" | "MANUAL",
-    bilingualDefault: true,
-    allowStudentReviewAfterRelease: true,
-  });
+  const [form, setForm] = useState<SettingsFormState>(DEFAULT_SETTINGS);
+  const [savedForm, setSavedForm] = useState<SettingsFormState>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const isDirty = (Object.keys(DEFAULT_SETTINGS) as (keyof SettingsFormState)[]).some(
+    (key) => !Object.is(form[key], savedForm[key])
+  );
 
   useEffect(() => {
     let active = true;
     fetch("/api/admin/settings", { cache: "no-store" })
       .then(async (res) => {
-        if (active && res.ok) {
-          const data = await res.json();
-          setForm((prev) => ({ ...prev, ...data }));
+        if (!res.ok) throw new Error("Failed to load system settings");
+        const data = await res.json();
+        if (active) {
+          const nextForm: SettingsFormState = { ...DEFAULT_SETTINGS, ...data };
+          setForm(nextForm);
+          setSavedForm(nextForm);
         }
       })
       .catch(() => {
@@ -57,6 +95,7 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isDirty || saving) return;
     setSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
@@ -65,6 +104,12 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error("Failed to save settings");
+      const updated = await res.json().catch(() => null);
+      const nextSaved: SettingsFormState = updated
+        ? { ...DEFAULT_SETTINGS, ...updated }
+        : form;
+      setForm(nextSaved);
+      setSavedForm(nextSaved);
       onNotice("System configuration updated successfully");
     } catch (err) {
       onError(err instanceof Error ? err.message : "Error saving configuration");
@@ -92,11 +137,11 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
         </div>
         <Button
           type="submit"
-          disabled={saving}
+          disabled={!isDirty || saving}
           className="gap-2 rounded-full bg-brand-red font-semibold text-white shadow-primary hover:bg-brand-red-hover active:scale-95"
         >
           {saving ? <LoaderCircle className="size-4 animate-spin" /> : <Save className="size-4" />}
-          <span>Save Settings</span>
+          <span>{saving ? "Saving..." : "Save Settings"}</span>
         </Button>
       </div>
 
@@ -192,11 +237,7 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
         <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
           <Label className="text-xs font-semibold text-slate-700">Scorecard & Result Release Policy</Label>
           <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { key: "SCHEDULED", label: "Scheduled Release", desc: "Results released at exam window end time" },
-              { key: "IMMEDIATE", label: "Immediate Release", desc: "Student sees scorecard right after submission" },
-              { key: "MANUAL", label: "Manual Administrator Release", desc: "Scores held until manual admin verification" },
-            ].map((item) => (
+            {RELEASE_POLICIES.map((item) => (
               <label
                 key={item.key}
                 className={`flex items-start gap-3 rounded-xl border p-3.5 cursor-pointer transition ${
@@ -207,7 +248,7 @@ export function SettingsSection({ onNotice, onError }: SettingsSectionProps) {
                   type="radio"
                   name="releasePolicy"
                   checked={form.resultReleasePolicy === item.key}
-                  onChange={() => setForm({ ...form, resultReleasePolicy: item.key as never })}
+                  onChange={() => setForm({ ...form, resultReleasePolicy: item.key })}
                   className="mt-0.5"
                 />
                 <div>

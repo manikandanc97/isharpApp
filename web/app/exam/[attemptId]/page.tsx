@@ -114,6 +114,7 @@ export default function ExamAttemptPage() {
         initialAttempt={attempt}
         onSubmitted={(res) => {
           setResult(res);
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
         }}
       />
     );

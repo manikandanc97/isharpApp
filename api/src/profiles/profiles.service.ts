@@ -120,9 +120,11 @@ export class ProfilesService {
       throw new ForbiddenException('Users cannot change their own roles');
     }
     if (!isRoleName(rawRole)) throw new BadRequestException('Unknown role');
-    if (!actor.roles.includes('SUPERADMIN') && rawRole !== 'STUDENT') {
+    const actorIsAdmin =
+      actor.roles.includes('ADMIN') || actor.roles.includes('SUPERADMIN');
+    if (!actorIsAdmin && rawRole !== 'STUDENT') {
       throw new ForbiddenException(
-        'Only SUPERADMIN can assign or revoke privileged roles',
+        'Only ADMIN can assign or revoke privileged roles',
       );
     }
     return rawRole;
@@ -141,12 +143,14 @@ export class ProfilesService {
     actor: AuthUser,
     targetRoles: string[],
   ): void {
+    const actorIsAdmin =
+      actor.roles.includes('ADMIN') || actor.roles.includes('SUPERADMIN');
     if (
-      !actor.roles.includes('SUPERADMIN') &&
+      !actorIsAdmin &&
       targetRoles.some((role) => role === 'ADMIN' || role === 'SUPERADMIN')
     ) {
       throw new ForbiddenException(
-        'Only SUPERADMIN can manage administrator accounts',
+        'Only ADMIN can manage administrator accounts',
       );
     }
   }

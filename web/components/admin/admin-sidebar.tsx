@@ -57,7 +57,6 @@ export function AdminSidebar({
           <Link
             key={key}
             href={sectionPaths[key]}
-            scroll={false}
             onClick={onCloseSidebar}
             className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition-all ${
               isActive

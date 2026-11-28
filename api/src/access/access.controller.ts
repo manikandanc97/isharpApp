@@ -42,7 +42,7 @@ export class AccessController {
   }
 
   @Get('system/settings')
-  @Roles('SUPERADMIN')
+  @Roles('ADMIN', 'SUPERADMIN')
   systemSettings() {
     return { access: 'system-settings' };
   }

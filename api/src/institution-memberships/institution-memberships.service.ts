@@ -136,12 +136,14 @@ export class InstitutionMembershipsService {
       const targetRoles = membership.user.userRoles.map(
         ({ role }) => role.name,
       );
+      const actorIsAdmin =
+        actor.roles.includes('ADMIN') || actor.roles.includes('SUPERADMIN');
       if (
-        !actor.roles.includes('SUPERADMIN') &&
+        !actorIsAdmin &&
         targetRoles.some((role) => role === 'ADMIN' || role === 'SUPERADMIN')
       ) {
         throw new ForbiddenException(
-          'Only SUPERADMIN can review administrator memberships',
+          'Only ADMIN can review administrator memberships',
         );
       }
       if (membership.status === status) {
