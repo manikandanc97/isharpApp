@@ -10,6 +10,12 @@ import {
   isOptionOrderDependent,
   type CandidateQuestionRecord,
 } from './demo-test-eligibility.helper.js';
+import {
+  countUniqueEquivalentQuestions,
+  pickBlueprintBalancedPaper,
+  rankTierWithBalancing,
+  type GlobalExposureStat,
+} from './demo-test-paper-picker.js';
 import type {
   DemoBlueprint,
   DemoSelectionRules,
@@ -18,17 +24,13 @@ import type {
   SubjectMode,
 } from './demo-test.types.js';
 
+export type { GlobalExposureStat };
+
 export interface VisitorExposureRecord {
   questionId: string;
   contentFingerprint: string | null;
   equivalentFingerprint: string | null;
   lastExposedAt: Date;
-}
-
-export interface GlobalExposureStat {
-  questionId: string;
-  exposureCount: number;
-  lastExposedAt: Date | null;
 }
 
 export interface RecentPaperRecord {
@@ -100,8 +102,6 @@ export function selectDemoQuestions(
     now = new Date(),
   } = input;
 
-  // 1. Filter by eligibility (active, non-restricted, valid options/answers, language completeness)
-  //    and subject filter if single-subject mode.
   const eligibleCandidates = candidates.filter((q) => {
     const subjCode = q.courseSubject?.subject?.code?.toUpperCase() ?? 'GENERAL';
     if (subjectMode !== 'ALL' && subjCode !== subjectMode) {
@@ -116,7 +116,6 @@ export function selectDemoQuestions(
     );
   }
 
-  // 2. Build visitor exposure lookup maps
   const exposedQuestionIds = new Set<string>();
   const exposedContentFps = new Set<string>();
   const exposedEquivFps = new Set<string>();
@@ -126,30 +125,30 @@ export function selectDemoQuestions(
     exposedQuestionIds.add(exp.questionId);
     lastExposedMap.set(exp.questionId, exp.lastExposedAt);
     if (exp.contentFingerprint) exposedContentFps.add(exp.contentFingerprint);
-    if (exp.equivalentFingerprint)
+    if (exp.equivalentFingerprint) {
       exposedEquivFps.add(exp.equivalentFingerprint);
+    }
   }
 
-  // 3. Deduplicate candidate pool by content & equivalent fingerprint for intra-paper uniqueness,
-  //    shuffling first so duplicate representatives aren't biased by ID order.
   const shuffledAll = secureShuffle(eligibleCandidates);
 
   const isVisitorExposed = (q: CandidateQuestionRecord): boolean => {
     if (!rules.visitorRepeatPrevention) return false;
     if (exposedQuestionIds.has(q.id)) return true;
     if (rules.equivalentRepeatPrevention) {
-      if (q.contentFingerprint && exposedContentFps.has(q.contentFingerprint))
+      if (q.contentFingerprint && exposedContentFps.has(q.contentFingerprint)) {
         return true;
+      }
       if (
         q.equivalentFingerprint &&
         exposedEquivFps.has(q.equivalentFingerprint)
-      )
+      ) {
         return true;
+      }
     }
     return false;
   };
 
-  // Partition into Unseen vs Previously Exposed (sorted least-recently-exposed first)
   const unseenPool = shuffledAll.filter((q) => !isVisitorExposed(q));
   const cooldownMs = Math.max(0, rules.cooldownHours) * 3_600_000;
   const seenPool = shuffledAll
@@ -157,10 +156,9 @@ export function selectDemoQuestions(
     .sort((a, b) => {
       const aTime = lastExposedMap.get(a.id)?.getTime() ?? 0;
       const bTime = lastExposedMap.get(b.id)?.getTime() ?? 0;
-      return aTime - bTime; // oldest exposed first
+      return aTime - bTime;
     });
 
-  // Check if unseen questions are sufficient (accounting for subject & equivalence constraints)
   const uniqueUnseenCount = countUniqueEquivalentQuestions(unseenPool);
   let controlledReuseUsed = false;
   let poolExhausted = false;
@@ -175,9 +173,6 @@ export function selectDemoQuestions(
     controlledReuseUsed = true;
   }
 
-  // Build ordered candidate tiers:
-  // Tier 1: Unseen questions
-  // Tier 2 (only if controlled reuse needed): seen questions outside cooldown, then inside cooldown
   const outsideCooldown = seenPool.filter((q) => {
     const last = lastExposedMap.get(q.id)?.getTime() ?? 0;
     return now.getTime() - last >= cooldownMs;
@@ -213,10 +208,8 @@ export function selectDemoQuestions(
     rules.difficultyDistribution,
   );
 
-  // Try up to 6 randomized sampling passes to satisfy recent-paper uniqueness & overlap threshold
   let bestSelection: CandidateQuestionRecord[] | null = null;
   let bestOverlapScore = Infinity;
-
   const maxAttempts = rules.recentPaperUniqueness ? 6 : 1;
 
   for (let attemptIdx = 0; attemptIdx < maxAttempts; attemptIdx++) {
@@ -256,9 +249,7 @@ export function selectDemoQuestions(
       rules,
     });
 
-    if (picked.length < questionCount) {
-      continue;
-    }
+    if (picked.length < questionCount) continue;
 
     const pickedIds = picked.map((q) => q.id);
     const fp = computePaperFingerprint(pickedIds);
@@ -290,7 +281,6 @@ export function selectDemoQuestions(
     );
   }
 
-  // Final question order shuffling
   const finalQuestions = rules.shuffleQuestions
     ? secureShuffle(bestSelection)
     : bestSelection;
@@ -299,17 +289,13 @@ export function selectDemoQuestions(
     finalQuestions.map((q) => q.id),
   );
 
-  // Build option mappings (respecting position-dependent options like "All of the above")
   const mappedQuestions: SelectedPaperQuestion[] = finalQuestions.map((q) => {
     const shouldShuffleOpts =
       rules.shuffleOptions &&
       q.type !== 'NUMERICAL' &&
       !isOptionOrderDependent(q.options);
     const optionMappings = createOptionMappings(q.options, shouldShuffleOpts);
-    return {
-      question: q,
-      optionMappings,
-    };
+    return { question: q, optionMappings };
   });
 
   return {
@@ -321,184 +307,4 @@ export function selectDemoQuestions(
       ? 'Visitor has seen all unique eligible questions; controlled reuse applied.'
       : undefined,
   };
-}
-
-function countUniqueEquivalentQuestions(
-  questions: CandidateQuestionRecord[],
-): number {
-  const seenCfp = new Set<string>();
-  const seenEfp = new Set<string>();
-  let count = 0;
-  for (const q of questions) {
-    if (q.contentFingerprint && seenCfp.has(q.contentFingerprint)) continue;
-    if (q.equivalentFingerprint && seenEfp.has(q.equivalentFingerprint))
-      continue;
-    if (q.contentFingerprint) seenCfp.add(q.contentFingerprint);
-    if (q.equivalentFingerprint) seenEfp.add(q.equivalentFingerprint);
-    count += 1;
-  }
-  return count;
-}
-
-/**
- * Ranks a tier of questions using global exposure count + random jitter so
- * less-exposed questions are preferred without becoming predictably sequential.
- */
-function rankTierWithBalancing(
-  pool: CandidateQuestionRecord[],
-  globalStats: Map<string, GlobalExposureStat>,
-  recentUsage: Map<string, number>,
-  enableBalancing: boolean,
-  preserveRecencyOrder = false,
-): CandidateQuestionRecord[] {
-  const shuffled = secureShuffle(pool);
-  if (preserveRecencyOrder) {
-    // Keep least-recently-exposed order with slight jitter within same timestamp bucket
-    return pool;
-  }
-  if (!enableBalancing) {
-    return shuffled;
-  }
-  return shuffled
-    .map((q, idx) => {
-      const globalCount = globalStats.get(q.id)?.exposureCount ?? 0;
-      const recentCount = recentUsage.get(q.id) ?? 0;
-      // Add bounded random jitter [0, 1.5) so equally or closely exposed items shuffle freely
-      const jitter = (idx % 7) * 0.12 + (secureRandomFraction() * 1.5);
-      const score = globalCount * 1.0 + recentCount * 1.5 + jitter;
-      return { q, score };
-    })
-    .sort((a, b) => a.score - b.score)
-    .map((entry) => entry.q);
-}
-
-function secureRandomFraction(): number {
-  const buf = secureShuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  return buf[0] / 10;
-}
-
-function pickBlueprintBalancedPaper(params: {
-  tiers: CandidateQuestionRecord[][];
-  questionCount: number;
-  subjectMode: SubjectMode;
-  subjectTargets: Record<'PHYSICS' | 'CHEMISTRY' | 'BIOLOGY', number>;
-  difficultyTargets: { EASY: number; MEDIUM: number; HARD: number };
-  rules: DemoSelectionRules;
-}): CandidateQuestionRecord[] {
-  const {
-    tiers,
-    questionCount,
-    subjectMode,
-    subjectTargets,
-    difficultyTargets,
-    rules,
-  } = params;
-
-  const selected: CandidateQuestionRecord[] = [];
-  const selectedIds = new Set<string>();
-  const usedContentFps = new Set<string>();
-  const usedEquivFps = new Set<string>();
-  const usedChapters = new Set<string>();
-  const usedTypes = new Set<string>();
-
-  const subjectCounts: Record<string, number> = {
-    PHYSICS: 0,
-    CHEMISTRY: 0,
-    BIOLOGY: 0,
-  };
-  const diffCounts: Record<string, number> = {
-    EASY: 0,
-    MEDIUM: 0,
-    HARD: 0,
-  };
-  let imageCount = 0;
-
-  const canAdd = (q: CandidateQuestionRecord): boolean => {
-    if (selectedIds.has(q.id)) return false;
-    if (q.contentFingerprint && usedContentFps.has(q.contentFingerprint))
-      return false;
-    if (q.equivalentFingerprint && usedEquivFps.has(q.equivalentFingerprint))
-      return false;
-    return true;
-  };
-
-  const commit = (q: CandidateQuestionRecord) => {
-    selected.push(q);
-    selectedIds.add(q.id);
-    if (q.contentFingerprint) usedContentFps.add(q.contentFingerprint);
-    if (q.equivalentFingerprint) usedEquivFps.add(q.equivalentFingerprint);
-    if (q.chapterId) usedChapters.add(q.chapterId);
-    usedTypes.add(q.type);
-    const subj = q.courseSubject?.subject?.code?.toUpperCase() ?? 'GENERAL';
-    subjectCounts[subj] = (subjectCounts[subj] ?? 0) + 1;
-    diffCounts[q.difficulty] = (diffCounts[q.difficulty] ?? 0) + 1;
-    if (q.questionImageUrl) imageCount += 1;
-  };
-
-  // Multi-pass selection:
-  // Pass 1: Match subject target + difficulty target + diversity (chapter/type/image)
-  // Pass 2: Match subject target (relax difficulty)
-  // Pass 3: Fill remaining slots from any eligible non-duplicate in tiers
-  for (const tier of tiers) {
-    if (selected.length >= questionCount) break;
-
-    // Pass 1: Strict subject + difficulty + diversity preference
-    for (const q of tier) {
-      if (selected.length >= questionCount) break;
-      if (!canAdd(q)) continue;
-
-      const subj = q.courseSubject?.subject?.code?.toUpperCase() ?? 'GENERAL';
-      if (subjectMode === 'ALL') {
-        const target = subjectTargets[subj as keyof typeof subjectTargets] ?? 0;
-        if ((subjectCounts[subj] ?? 0) >= target) continue;
-      }
-
-      const diffTarget =
-        difficultyTargets[q.difficulty as keyof typeof difficultyTargets] ?? 0;
-      if ((diffCounts[q.difficulty] ?? 0) >= diffTarget) continue;
-
-      if (
-        rules.minImageQuestions > 0 &&
-        imageCount < rules.minImageQuestions &&
-        !q.questionImageUrl &&
-        questionCount - selected.length <= rules.minImageQuestions - imageCount
-      ) {
-        continue;
-      }
-
-      if (
-        rules.chapterDiversity &&
-        q.chapterId &&
-        usedChapters.has(q.chapterId)
-      ) {
-        // Defer repeated chapter to pass 2 if other chapters might exist
-        continue;
-      }
-
-      commit(q);
-    }
-
-    // Pass 2: Match subject target (allow repeated chapters or relaxed difficulty)
-    for (const q of tier) {
-      if (selected.length >= questionCount) break;
-      if (!canAdd(q)) continue;
-
-      const subj = q.courseSubject?.subject?.code?.toUpperCase() ?? 'GENERAL';
-      if (subjectMode === 'ALL') {
-        const target = subjectTargets[subj as keyof typeof subjectTargets] ?? 0;
-        if ((subjectCounts[subj] ?? 0) >= target) continue;
-      }
-
-      commit(q);
-    }
-
-    // Pass 3: Fill any remaining slots if a particular subject lacked questions
-    for (const q of tier) {
-      if (selected.length >= questionCount) break;
-      if (!canAdd(q)) continue;
-      commit(q);
-    }
-  }
-
-  return selected;
 }

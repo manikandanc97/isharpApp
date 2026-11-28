@@ -2,8 +2,8 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
-import { buildPaginationMeta } from '../../common/utils/pagination.util.js';
 import { AssessmentTestType, Prisma } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type {
@@ -22,19 +22,32 @@ import {
   QuestionSelectionEngine,
   type SubjectAllocationInput,
 } from '../question-selection.engine.js';
+import { AssessmentTestDuplicationService } from './assessment-test-duplication.service.js';
+import { AssessmentTestQueryService } from './assessment-test-query.service.js';
 import { TestCategoryService } from './test-category.service.js';
 import { TestQuestionAssignmentService } from './test-question-assignment.service.js';
 
 @Injectable()
 export class AssessmentTestService {
+  private readonly queries: AssessmentTestQueryService;
+  private readonly duplication: AssessmentTestDuplicationService;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly questionEngine: QuestionSelectionEngine,
     private readonly categoryService: TestCategoryService,
     private readonly questionAssignment: TestQuestionAssignmentService,
-  ) {}
+    @Optional() queries?: AssessmentTestQueryService,
+    @Optional() duplication?: AssessmentTestDuplicationService,
+  ) {
+    this.queries =
+      queries ?? new AssessmentTestQueryService(prisma, categoryService);
+    this.duplication =
+      duplication ??
+      new AssessmentTestDuplicationService(prisma, questionEngine);
+  }
 
-  async listTests(filters: {
+  listTests(filters: {
     categoryId?: string;
     search?: string;
     subjectCode?: string;
@@ -42,214 +55,19 @@ export class AssessmentTestService {
     page?: number;
     limit?: number;
   }) {
-    await this.categoryService.getCategories().catch(() => undefined);
-
-    const page = Math.max(1, filters.page ?? 1);
-    const limit = Math.min(50, Math.max(1, filters.limit ?? 20));
-    const skip = (page - 1) * limit;
-
-    const whereConditions: Prisma.AssessmentTestWhereInput[] = [];
-
-    if (filters.categoryId) {
-      whereConditions.push({
-        OR: [
-          { categoryId: filters.categoryId },
-          { categoryId: null, testSeries: { categoryId: filters.categoryId } },
-        ],
-      });
-    }
-
-    if (filters.isActive !== undefined) {
-      whereConditions.push({ isActive: filters.isActive });
-    }
-
-    if (filters.search?.trim()) {
-      const q = filters.search.trim();
-      whereConditions.push({
-        OR: [
-          { title: { contains: q, mode: 'insensitive' } },
-          { code: { contains: q, mode: 'insensitive' } },
-          { description: { contains: q, mode: 'insensitive' } },
-        ],
-      });
-    }
-
-    if (filters.subjectCode && filters.subjectCode !== 'ALL') {
-      const code = filters.subjectCode.toUpperCase();
-      whereConditions.push({
-        OR: [
-          { blueprints: { some: { subjectCode: code } } },
-          {
-            questions: {
-              some: {
-                question: {
-                  courseSubject: { subject: { code } },
-                },
-              },
-            },
-          },
-        ],
-      });
-    }
-
-    const where: Prisma.AssessmentTestWhereInput =
-      whereConditions.length > 0 ? { AND: whereConditions } : {};
-
-    const [total, rows] = await Promise.all([
-      this.prisma.assessmentTest.count({ where }),
-      this.prisma.assessmentTest.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
-        include: {
-          category: { select: { id: true, name: true } },
-          testSeries: {
-            select: {
-              id: true,
-              title: true,
-              categoryId: true,
-              category: { select: { id: true, name: true } },
-            },
-          },
-          blueprints: {
-            orderBy: { orderIndex: 'asc' },
-            select: {
-              subjectCode: true,
-              subjectName: true,
-              chapterId: true,
-              totalQuestions: true,
-            },
-          },
-          _count: {
-            select: {
-              questions: true,
-              attempts: true,
-              results: true,
-            },
-          },
-        },
-      }),
-    ]);
-
-    return {
-      items: rows.map((t) => {
-        const effectiveCategory = t.category ?? t.testSeries?.category ?? null;
-        const subjectMap = new Map<
-          string,
-          { subjectCode: string; subjectName: string; count: number }
-        >();
-
-        if (Array.isArray(t.subjectDistribution)) {
-          for (const item of t.subjectDistribution as Array<{
-            subjectCode?: string;
-            subjectName?: string;
-            questionCount?: number;
-          }>) {
-            if (item.subjectCode && (item.questionCount ?? 0) > 0) {
-              subjectMap.set(item.subjectCode, {
-                subjectCode: item.subjectCode,
-                subjectName: item.subjectName ?? item.subjectCode,
-                count: item.questionCount ?? 0,
-              });
-            }
-          }
-        } else {
-          for (const b of t.blueprints) {
-            const existing = subjectMap.get(b.subjectCode);
-            subjectMap.set(b.subjectCode, {
-              subjectCode: b.subjectCode,
-              subjectName: b.subjectName,
-              count: (existing?.count ?? 0) + b.totalQuestions,
-            });
-          }
-        }
-
-        const subjectsSummary = Array.from(subjectMap.values());
-        const configurationWarnings = this.computeConfigurationWarnings({
-          totalQuestions: t.totalQuestions,
-          assignedQuestionCount: t._count.questions,
-          totalMarks: t.totalMarks,
-          correctMarks: t.correctMarks,
-          durationMinutes: t.durationMinutes,
-          subjectsSummary,
-        });
-
-        return {
-          id: t.id,
-          testSeriesId: t.testSeriesId,
-          categoryId: t.categoryId ?? t.testSeries?.categoryId ?? null,
-          categoryName: effectiveCategory?.name ?? 'Uncategorized',
-          code: t.code,
-          title: t.title,
-          description: t.description,
-          isActive: t.isActive,
-          examPatternMode: t.examPatternMode,
-          examPatternVersion: t.examPatternVersion,
-          questionSelectionMode: t.questionSelectionMode,
-          durationMode: t.durationMode,
-          durationMinutes: t.durationMinutes,
-          totalQuestions: t.totalQuestions,
-          totalMarks: t.totalMarks,
-          correctMarks: t.correctMarks,
-          negativeMarks: t.negativeMarks,
-          hasNegativeMarking: t.hasNegativeMarking,
-          scheduledAt: t.scheduledAt?.toISOString() ?? null,
-          availableUntil: t.availableUntil?.toISOString() ?? null,
-          assignedQuestionCount: t._count.questions,
-          attemptCount: t._count.attempts,
-          resultCount: t._count.results,
-          subjectsSummary,
-          configurationWarnings,
-          isConfigurationValid: configurationWarnings.length === 0,
-          createdAt: t.createdAt.toISOString(),
-          updatedAt: t.updatedAt.toISOString(),
-        };
-      }),
-      ...buildPaginationMeta(total, page, limit),
-    };
+    return this.queries.listTests(filters);
   }
 
-  private computeConfigurationWarnings(params: {
-    totalQuestions: number;
-    assignedQuestionCount: number;
-    totalMarks: number;
-    correctMarks: number;
-    durationMinutes: number;
-    subjectsSummary: Array<{ count: number }>;
-  }): string[] {
-    const warnings: string[] = [];
-    if (params.totalQuestions <= 0) {
-      warnings.push('Configured question count must be greater than 0.');
-    }
-    if (params.assignedQuestionCount !== params.totalQuestions) {
-      warnings.push(
-        `Assigned questions (${params.assignedQuestionCount}) do not match configured total (${params.totalQuestions}).`,
-      );
-    }
-    if (params.subjectsSummary.length === 0) {
-      warnings.push('Subject distribution is not configured.');
-    } else {
-      const subjectTotal = params.subjectsSummary.reduce(
-        (sum, s) => sum + s.count,
-        0,
-      );
-      if (subjectTotal !== params.totalQuestions) {
-        warnings.push(
-          `Subject allocation total (${subjectTotal}) does not match configured total (${params.totalQuestions}).`,
-        );
-      }
-    }
-    if (params.durationMinutes <= 0) {
-      warnings.push('Examination duration must be greater than 0 minutes.');
-    }
-    const expectedMarks = params.totalQuestions * params.correctMarks;
-    if (params.totalMarks !== expectedMarks) {
-      warnings.push(
-        `Maximum marks (${params.totalMarks}) do not match ${params.totalQuestions} × ${params.correctMarks} (${expectedMarks}).`,
-      );
-    }
-    return warnings;
+  getTestById(testId: string) {
+    return this.queries.getTestById(testId);
+  }
+
+  duplicateStandaloneTest(
+    profileId: string | null,
+    testId: string,
+    dto?: DuplicateTestDto,
+  ) {
+    return this.duplication.duplicateStandaloneTest(profileId, testId, dto);
   }
 
   private async getOrCreateInternalSeriesForCategory(
@@ -500,7 +318,6 @@ export class AssessmentTestService {
     if (!existing) throw new NotFoundException('Assessment test not found');
 
     const hasAttempts = existing._count.attempts > 0;
-
     if (hasAttempts) {
       const attemptsDestructiveChange =
         dto.questionIds !== undefined ||
@@ -668,131 +485,6 @@ export class AssessmentTestService {
     });
   }
 
-  async duplicateStandaloneTest(
-    profileId: string | null,
-    testId: string,
-    dto?: DuplicateTestDto,
-  ) {
-    if (!profileId) throw new BadRequestException('User profile is required');
-    const source = await this.prisma.assessmentTest.findUnique({
-      where: { id: testId },
-      include: {
-        questions: { orderBy: { position: 'asc' } },
-        blueprints: { orderBy: { orderIndex: 'asc' } },
-        testSeries: { select: { categoryId: true } },
-      },
-    });
-    if (!source) throw new NotFoundException('Assessment test not found');
-
-    const mode = dto?.mode ?? 'COPY_QUESTIONS';
-    const copyCode = `${source.code}-CPY-${Date.now().toString(36).slice(-4).toUpperCase()}`;
-    const copyTitle = `${source.title} (Copy)`;
-    const categoryId = source.categoryId ?? source.testSeries.categoryId;
-
-    let regeneratedQuestions: Array<{ id: string; subjectCode: string }> | null =
-      null;
-    if (mode === 'REGENERATE_QUESTIONS') {
-      const dist = source.subjectDistribution as SubjectAllocationInput[] | null;
-      if (!dist || dist.length === 0) {
-        throw new BadRequestException(
-          'Cannot regenerate questions because this test has no saved subject distribution',
-        );
-      }
-      const result = await this.questionEngine.generateQuestions({
-        subjectAllocations: dist,
-      });
-      if (result.shortages.length > 0) {
-        throw new BadRequestException({
-          message: 'Insufficient eligible questions to regenerate test',
-          shortages: result.shortages,
-        });
-      }
-      regeneratedQuestions = result.questions.map((q) => ({
-        id: q.id,
-        subjectCode: q.subjectCode,
-      }));
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      const copy = await tx.assessmentTest.create({
-        data: {
-          testSeriesId: source.testSeriesId,
-          categoryId,
-          code: copyCode,
-          title: copyTitle,
-          description: source.description,
-          instructionsEn: source.instructionsEn,
-          instructionsTa: source.instructionsTa,
-          testType: source.testType,
-          examPatternMode: source.examPatternMode,
-          examPatternVersion: source.examPatternVersion,
-          questionSelectionMode: source.questionSelectionMode,
-          durationMode: source.durationMode,
-          subjectDistribution: source.subjectDistribution ?? Prisma.JsonNull,
-          isActive: source.isActive,
-          isCancelled: false,
-          durationMinutes: source.durationMinutes,
-          totalQuestions: source.totalQuestions,
-          totalMarks: source.totalMarks,
-          passingMarks: source.passingMarks,
-          hasNegativeMarking: source.hasNegativeMarking,
-          correctMarks: source.correctMarks,
-          negativeMarks: source.negativeMarks,
-          maxAttempts: source.maxAttempts,
-          randomizeQuestions: source.randomizeQuestions,
-          randomizeOptions: source.randomizeOptions,
-          showResultsImmediately: source.showResultsImmediately,
-          isOfflineAvailable: source.isOfflineAvailable,
-          orderIndex: source.orderIndex + 1,
-          createdById: profileId,
-        },
-      });
-
-      if (regeneratedQuestions) {
-        await tx.assessmentTestQuestion.createMany({
-          data: regeneratedQuestions.map((q, index) => ({
-            assessmentTestId: copy.id,
-            questionId: q.id,
-            position: index + 1,
-            section: q.subjectCode,
-            correctMarks: source.correctMarks,
-            negativeMarks: source.negativeMarks,
-          })),
-        });
-      } else if (source.questions.length > 0) {
-        await tx.assessmentTestQuestion.createMany({
-          data: source.questions.map((q) => ({
-            assessmentTestId: copy.id,
-            questionId: q.questionId,
-            position: q.position,
-            section: q.section,
-            correctMarks: q.correctMarks,
-            negativeMarks: q.negativeMarks,
-          })),
-        });
-      }
-
-      if (source.blueprints.length > 0) {
-        await tx.testBlueprint.createMany({
-          data: source.blueprints.map((b) => ({
-            assessmentTestId: copy.id,
-            subjectCode: b.subjectCode,
-            subjectName: b.subjectName,
-            chapterId: b.chapterId,
-            sectionName: b.sectionName,
-            totalQuestions: b.totalQuestions,
-            mandatoryCount: b.mandatoryCount,
-            correctMarks: b.correctMarks,
-            negativeMarks: b.negativeMarks,
-            orderIndex: b.orderIndex,
-          })),
-        });
-      }
-
-      return copy;
-    });
-  }
-
   async deleteStandaloneTest(testId: string) {
     const existing = await this.prisma.assessmentTest.findUnique({
       where: { id: testId },
@@ -861,46 +553,6 @@ export class AssessmentTestService {
         createdById: profileId,
       },
     });
-  }
-
-  async getTestById(testId: string) {
-    const t = await this.prisma.assessmentTest.findUnique({
-      where: { id: testId },
-      include: {
-        category: { select: { id: true, name: true } },
-        testSeries: {
-          select: {
-            id: true,
-            title: true,
-            academicYear: true,
-            categoryId: true,
-            category: { select: { id: true, name: true } },
-          },
-        },
-        questions: {
-          orderBy: { position: 'asc' },
-          include: {
-            question: {
-              include: {
-                options: { orderBy: { position: 'asc' } },
-                chapter: true,
-                courseSubject: { include: { subject: true } },
-              },
-            },
-          },
-        },
-        blueprints: { orderBy: { orderIndex: 'asc' } },
-        _count: {
-          select: { attempts: true, paperSets: true, offlineSessions: true },
-        },
-      },
-    });
-    if (!t) throw new NotFoundException('Assessment test not found');
-    return {
-      ...t,
-      categoryId: t.categoryId ?? t.testSeries?.categoryId ?? null,
-      categoryName: t.category?.name ?? t.testSeries?.category?.name ?? null,
-    };
   }
 
   async updateTest(testId: string, dto: UpdateAssessmentTestDto) {

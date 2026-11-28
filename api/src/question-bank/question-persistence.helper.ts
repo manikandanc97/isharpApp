@@ -1,8 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import {
-  calculateOptionContentHash,
-  normalizeText,
+  checkDatabaseQuestionDuplicates,
+  resolveOrCreateChapterId,
+} from './question-duplicate-check.helper.js';
+import {
   QuestionDuplicateDetectionService,
   type QuestionFingerprints,
 } from './question-duplicate-detection.service.js';
@@ -59,16 +61,18 @@ export async function persistQuestionRecord(
   body: unknown,
   savePolicy: QuestionSavePolicy = {},
 ): Promise<any> {
-  if (!profileId)
+  if (!profileId) {
     throw new BadRequestException('Administrator profile is not linked');
+  }
   const input = obj(body);
   const targetId = str(input.id, 'id', false, 64);
   const courseCode = str(input.courseCode, 'courseCode', false, 50) || 'NEET';
   const subjectCode = str(input.subjectCode, 'subjectCode', true, 50)!;
-  if (!NEET_SUBJECTS.includes(subjectCode.toUpperCase()))
+  if (!NEET_SUBJECTS.includes(subjectCode.toUpperCase())) {
     throw new BadRequestException(
       'subjectCode must be PHYSICS, CHEMISTRY or BIOLOGY',
     );
+  }
   const rawExternalId = str(input.externalId, 'externalId', false, 64);
   const externalId =
     rawExternalId ||
@@ -85,16 +89,19 @@ export async function persistQuestionRecord(
     input.questionImageUrl,
     'questionImageUrl',
   );
-  if (!textEn && !textTa && !questionImageUrl)
+  if (!textEn && !textTa && !questionImageUrl) {
     throw new BadRequestException('Question text or image is required');
+  }
   const solutionEn = str(input.solutionEn, 'solutionEn');
   const solutionTa = str(input.solutionTa, 'solutionTa');
   const solutionImageUrl = httpUrl(
     input.solutionImageUrl,
     'solutionImageUrl',
   );
-  if (!solutionEn && !solutionTa && !solutionImageUrl)
+  if (!solutionEn && !solutionTa && !solutionImageUrl) {
     throw new BadRequestException('Solution text or image is required');
+  }
+
   const cacheKey = `${courseCode.toLowerCase()}:${subjectCode.toLowerCase()}`;
   let courseSubject = savePolicy.courseSubjectCache?.get(cacheKey);
   if (!courseSubject) {
@@ -109,35 +116,40 @@ export async function persistQuestionRecord(
       savePolicy.courseSubjectCache.set(cacheKey, courseSubject);
     }
   }
-  if (!courseSubject)
+  if (!courseSubject) {
     throw new BadRequestException(
       `Course/subject not found: ${courseCode}/${subjectCode}`,
     );
+  }
+
   const chapterTitle = str(input.chapterTitle, 'chapterTitle', false, 200);
   const chapter = chapterTitle
     ? (courseSubject.chapters as Array<{ id: string; title: string }>).find(
-        (item: { id: string; title: string }) =>
-          item.title.toLowerCase() === chapterTitle.toLowerCase(),
+        (item) => item.title.toLowerCase() === chapterTitle.toLowerCase(),
       )
     : undefined;
-  if (chapterTitle && !chapter && !savePolicy.createMissingChapter)
+  if (chapterTitle && !chapter && !savePolicy.createMissingChapter) {
     throw new BadRequestException(`Chapter not found: ${chapterTitle}`);
+  }
+
   const options = (Array.isArray(input.options) ? input.options : []).map(
     (value, index) => {
       const option = obj(value);
       const rawLabel = str(option.label, `options[${index}].label`, false, 8);
       const legacy = ['A', 'B', 'C', 'D', 'E', 'F'];
       const legacyIdx = rawLabel ? legacy.indexOf(rawLabel.toUpperCase()) : -1;
-      const label = legacyIdx !== -1
-        ? String(legacyIdx + 1)
-        : (rawLabel || String(index + 1));
+      const label =
+        legacyIdx !== -1
+          ? String(legacyIdx + 1)
+          : rawLabel || String(index + 1);
       const optionTextEn = str(option.textEn, `${label} textEn`);
       const optionTextTa = str(option.textTa, `${label} textTa`);
       const imageUrl = httpUrl(option.imageUrl, `${label} imageUrl`);
-      if (!optionTextEn && !optionTextTa && !imageUrl)
+      if (!optionTextEn && !optionTextTa && !imageUrl) {
         throw new BadRequestException(
           `Option ${label} needs text or an image`,
         );
+      }
       return {
         label,
         textEn: optionTextEn,
@@ -148,29 +160,33 @@ export async function persistQuestionRecord(
       };
     },
   );
+
   const numericalAnswer = str(
     input.numericalAnswer,
     'numericalAnswer',
     false,
     100,
   );
-  if (type === 'NUMERICAL' && !numericalAnswer)
+  if (type === 'NUMERICAL' && !numericalAnswer) {
     throw new BadRequestException('numericalAnswer is required');
+  }
   if (type !== 'NUMERICAL') {
-    if (options.length < 2 || options.length > 6)
+    if (options.length < 2 || options.length > 6) {
       throw new BadRequestException('MCQ questions require 2 to 6 options');
+    }
     const correct = options.filter((option) => option.isCorrect).length;
-    if (type === 'SINGLE_CORRECT' && correct !== 1)
+    if (type === 'SINGLE_CORRECT' && correct !== 1) {
       throw new BadRequestException(
         'Single-correct question requires exactly one correct option',
       );
-    if (type === 'MULTIPLE_CORRECT' && correct < 1)
+    }
+    if (type === 'MULTIPLE_CORRECT' && correct < 1) {
       throw new BadRequestException(
         'Multiple-correct question requires at least one correct option',
       );
+    }
   }
 
-  // Duplicate detection & fingerprinting
   const dupService =
     savePolicy.duplicateService ?? new QuestionDuplicateDetectionService();
   const rawQHash = str(input.questionImageHash, 'questionImageHash');
@@ -253,240 +269,105 @@ export async function persistQuestionRecord(
   };
 
   const persist = () =>
-    prisma.$transaction(
-      async (tx) => {
-        // Concurrency protection: advisory transaction lock on fingerprint
-        try {
-          if (typeof tx.$executeRawUnsafe === 'function') {
-            await tx.$executeRawUnsafe(
-              `SELECT pg_advisory_xact_lock(hashtext($1))`,
-              `q:${fingerprints.contentFingerprint}`,
-            );
-          }
-        } catch {
-          // Advisory lock might not be available in mock or test runners
+    prisma.$transaction(async (tx) => {
+      try {
+        if (typeof tx.$executeRawUnsafe === 'function') {
+          await tx.$executeRawUnsafe(
+            `SELECT pg_advisory_xact_lock(hashtext($1))`,
+            `q:${fingerprints.contentFingerprint}`,
+          );
         }
+      } catch {
+        // Advisory lock might not be available in mock or test runners
+      }
 
-        let existing: any = null;
-
-        if (targetId) {
-          existing = await tx.question.findUnique({ where: { id: targetId } });
-        } else if (!isExplicitUpdate) {
-          // 1. Exact match check
-          const exactMatch = await tx.question.findFirst({
-            where: {
-              contentFingerprint: fingerprints.contentFingerprint,
-            },
-          });
-          if (exactMatch) {
-            return {
-              isSkipped: true,
-              id: exactMatch.id,
-              externalId: exactMatch.externalId,
-              status: 'skipped' as const,
-              duplicateCategory: 'database' as const,
-              duplicateType: 'exact' as const,
-              matchedQuestionId: exactMatch.id,
-              matchedExternalId: exactMatch.externalId,
-              reason: `Duplicate of database question ${exactMatch.externalId || exactMatch.id} (exact match)`,
-            };
-          }
-
-          // 2. Equivalent match check (reordered options with matching answer)
-          if (!fingerprints.hasAmbiguousOptions && fingerprints.equivalentFingerprint) {
-            const equivMatch = await tx.question.findFirst({
-              where: {
-                equivalentFingerprint: fingerprints.equivalentFingerprint,
-              },
-            });
-            if (equivMatch) {
-              return {
-                isSkipped: true,
-                id: equivMatch.id,
-                externalId: equivMatch.externalId,
-                status: 'skipped' as const,
-                duplicateCategory: 'database' as const,
-                duplicateType: 'equivalent' as const,
-                matchedQuestionId: equivMatch.id,
-                matchedExternalId: equivMatch.externalId,
-                reason: `Duplicate of database question ${equivMatch.externalId || equivMatch.id} (equivalent match)`,
-              };
-            }
-          }
-
-          // 3. Answer conflict check: same question text + options, different answer
-          if ((textEn || textTa) && typeof tx.question?.findMany === 'function') {
-            const potentialAnswerConflicts = await tx.question.findMany({
-              where: {
-                courseSubjectId: courseSubject.id,
-                type,
-                textEn: textEn ? { equals: textEn, mode: 'insensitive' } : null,
-                textTa: textTa ? { equals: textTa, mode: 'insensitive' } : null,
-              },
-              include: { options: true },
-            });
-            for (const candidate of potentialAnswerConflicts) {
-              if (!Array.isArray(candidate?.options) || candidate.options.length === 0)
-                continue;
-              // Diagram check: if either has a diagram/image, verify they match before considering an answer conflict
-              const currentDiagram = questionImageHash || normalizeText(questionImageUrl);
-              const candidateDiagram =
-                (candidate as any).questionImageHash ||
-                normalizeText((candidate as any).questionImageUrl);
-              if (Boolean(currentDiagram || candidateDiagram) && currentDiagram !== candidateDiagram) {
-                continue;
-              }
-              const currentSorted = options
-                .map((o, idx) =>
-                  calculateOptionContentHash({
-                    textEn: normalizeText(o.textEn),
-                    textTa: normalizeText(o.textTa),
-                    imageHash: optionImageHashes[idx],
-                    imageUrl: (o as any).imageUrl,
-                  }),
-                )
-                .sort();
-              const candidateSorted = candidate.options
-                .map((o) =>
-                  calculateOptionContentHash({
-                    textEn: normalizeText(o.textEn),
-                    textTa: normalizeText(o.textTa),
-                    imageHash: (o as any).imageHash || null,
-                    imageUrl: (o as any).imageUrl || null,
-                  }),
-                )
-                .sort();
-              if (
-                currentSorted.length === candidateSorted.length &&
-                JSON.stringify(currentSorted) === JSON.stringify(candidateSorted)
-              ) {
-                return {
-                  isSkipped: true,
-                  id: candidate.id,
-                  externalId: candidate.externalId,
-                  status: 'failed' as const,
-                  duplicateCategory: 'database' as const,
-                  duplicateType: 'answer_conflict' as const,
-                  matchedQuestionId: candidate.id,
-                  matchedExternalId: candidate.externalId,
-                  reason: `Conflict: Answer conflict with existing question ${candidate.externalId || candidate.id}`,
-                };
-              }
-            }
-          }
-
-          // 4. External ID conflict check: same external ID with different content
-          const externalMatch = await tx.question.findFirst({
-            where: {
-              externalId: { equals: externalId, mode: 'insensitive' },
-            },
-          });
-          if (externalMatch) {
-            return {
-              isSkipped: true,
-              id: externalMatch.id,
-              externalId: externalMatch.externalId,
-              status: 'failed' as const,
-              duplicateCategory: 'database' as const,
-              duplicateType: 'id_conflict' as const,
-              matchedQuestionId: externalMatch.id,
-              matchedExternalId: externalMatch.externalId,
-              reason: `Conflict: External ID "${externalId}" already exists with different question content`,
-            };
-          }
-        } else {
-          // Explicit update mode requested
-          existing = await tx.question.findFirst({
-            where: {
-              OR: [
-                { externalId: { equals: externalId, mode: 'insensitive' as const } },
-                ...(textEn
-                  ? [
-                      {
-                        courseSubjectId: courseSubject.id,
-                        textEn: { equals: textEn, mode: 'insensitive' as const },
-                      },
-                    ]
-                  : []),
-              ],
-            },
-          });
-        }
-
-        let chapterId = chapter?.id ?? null;
-        let createdChapter: string | null = null;
-        if (chapterTitle && !chapterId) {
-          const concurrentChapter = await tx.chapter.findFirst({
-            where: {
-              courseSubjectId: courseSubject.id,
-              title: { equals: chapterTitle, mode: 'insensitive' },
-            },
-          });
-          if (concurrentChapter) {
-            chapterId = concurrentChapter.id;
-          } else {
-            const highestPosition = await tx.chapter.aggregate({
-              where: { courseSubjectId: courseSubject.id },
-              _max: { position: true },
-            });
-            const created = await tx.chapter.create({
-              data: {
-                courseSubjectId: courseSubject.id,
-                title: chapterTitle,
-                position: (highestPosition._max.position ?? 0) + 1,
-              },
-            });
-            chapterId = created.id;
-            createdChapter = created.title;
-            if (savePolicy.courseSubjectCache) {
-              courseSubject.chapters.push(created);
-            }
-          }
-        }
-
-        const questionData = { ...data, chapterId };
-        const question = existing
-          ? await tx.question.update({
-              where: { id: existing.id },
-              data: questionData,
-            })
-          : await tx.question.create({
-              data: {
-                externalId,
-                createdById: profileId,
-                ...questionData,
-              },
-            });
-        await tx.questionOption.deleteMany({
-          where: { questionId: question.id },
+      let existing: any = null;
+      if (targetId) {
+        existing = await tx.question.findUnique({ where: { id: targetId } });
+      } else if (!isExplicitUpdate) {
+        const duplicateResult = await checkDatabaseQuestionDuplicates(tx, {
+          courseSubjectId: courseSubject.id,
+          type,
+          textEn,
+          textTa,
+          questionImageUrl,
+          questionImageHash,
+          externalId,
+          options,
+          optionImageHashes,
+          fingerprints,
         });
-        if (type !== 'NUMERICAL')
-          await tx.questionOption.createMany({
-            data: options.map((option) => ({
-              questionId: question.id,
-              ...option,
-            })),
+        if (duplicateResult) return duplicateResult;
+      } else {
+        existing = await tx.question.findFirst({
+          where: {
+            OR: [
+              { externalId: { equals: externalId, mode: 'insensitive' as const } },
+              ...(textEn
+                ? [
+                    {
+                      courseSubjectId: courseSubject.id,
+                      textEn: { equals: textEn, mode: 'insensitive' as const },
+                    },
+                  ]
+                : []),
+            ],
+          },
+        });
+      }
+
+      const { chapterId, createdChapter } = await resolveOrCreateChapterId(
+        tx,
+        courseSubject,
+        chapterTitle,
+        chapter?.id ?? null,
+        Boolean(savePolicy.courseSubjectCache),
+      );
+
+      const questionData = { ...data, chapterId };
+      const question = existing
+        ? await tx.question.update({
+            where: { id: existing.id },
+            data: questionData,
+          })
+        : await tx.question.create({
+            data: {
+              externalId,
+              createdById: profileId,
+              ...questionData,
+            },
           });
 
-        if (savePolicy.skipReturnDetails) {
-          return {
-            id: question.id,
-            externalId: question.externalId,
-            importMeta: { createdChapter },
-          } as never;
-        }
-
-        const saved = await tx.question.findUnique({
-          where: { id: question.id },
-          include: { options: { orderBy: { position: 'asc' } } },
+      await tx.questionOption.deleteMany({
+        where: { questionId: question.id },
+      });
+      if (type !== 'NUMERICAL') {
+        await tx.questionOption.createMany({
+          data: options.map((option) => ({
+            questionId: question.id,
+            ...option,
+          })),
         });
-        if (!saved) throw new Error('Question could not be read after save');
+      }
+
+      if (savePolicy.skipReturnDetails) {
         return {
-          ...saved,
+          id: question.id,
+          externalId: question.externalId,
           importMeta: { createdChapter },
-        };
-      },
-    );
+        } as never;
+      }
+
+      const saved = await tx.question.findUnique({
+        where: { id: question.id },
+        include: { options: { orderBy: { position: 'asc' } } },
+      });
+      if (!saved) throw new Error('Question could not be read after save');
+      return {
+        ...saved,
+        importMeta: { createdChapter },
+      };
+    });
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -496,8 +377,9 @@ export async function persistQuestionRecord(
         Boolean(chapterTitle) &&
         savePolicy.createMissingChapter &&
         isUniqueConstraintError(error);
-      if (attempt < 2 && (isTransactionConflict(error) || chapterRace))
+      if (attempt < 2 && (isTransactionConflict(error) || chapterRace)) {
         continue;
+      }
       throw error;
     }
   }

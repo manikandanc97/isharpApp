@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Poppins, Noto_Sans_Tamil } from "next/font/google";
 import { SessionExpiryProvider } from "@/components/auth/session-expiry-provider";
@@ -39,7 +40,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col font-sans">
-        <ScrollToTop />
+        <Suspense fallback={null}>
+          <ScrollToTop />
+        </Suspense>
         <SessionExpiryProvider />
         {children}
       </body>

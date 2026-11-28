@@ -3,14 +3,10 @@
 import { useMemo, useState } from "react";
 import {
   Check,
-  CheckCircle2,
-  Clock,
   LoaderCircle,
-  Plus,
   Save,
   ShieldCheck,
   SlidersHorizontal,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
@@ -19,6 +15,10 @@ import type {
   LanguageMode,
   SubjectMode,
 } from "@/components/demo-test/demo-test.types";
+import {
+  DemoSettingsOptionsEditor,
+  type CountOptionItem,
+} from "./demo-settings-options-editor";
 
 export interface DemoSettingsSavePayload {
   isEnabled: boolean;
@@ -36,12 +36,6 @@ export interface DemoSettingsSavePayload {
   showResultsImmediately: boolean;
   showSolutionsAfterSubmit: boolean;
   admissionCtaEnabled: boolean;
-}
-
-interface CountOptionItem {
-  count: number;
-  durationMinutes: number;
-  label: string;
 }
 
 interface SettingsBaseline {
@@ -84,7 +78,9 @@ const PRESET_SUGGESTIONS: CountOptionItem[] = [
   { count: 90, durationMinutes: 90, label: "Half NEET" },
 ];
 
-function normalizeCountOptions(config: DemoTestConfiguration): CountOptionItem[] {
+function normalizeCountOptions(
+  config: DemoTestConfiguration,
+): CountOptionItem[] {
   if (config.countOptions?.length) {
     return config.countOptions.map((o) => ({
       count: o.count,
@@ -114,7 +110,8 @@ export function DemoSettingsTab({ config, onSave }: Props) {
   }));
 
   const [isEnabled, setIsEnabled] = useState(config.isEnabled);
-  const [countOptions, setCountOptions] = useState<CountOptionItem[]>(initialOptions);
+  const [countOptions, setCountOptions] =
+    useState<CountOptionItem[]>(initialOptions);
   const [defaultCount, setDefaultCount] = useState<number>(initialDefaultCount);
 
   const [validationError, setValidationError] = useState("");
@@ -145,15 +142,19 @@ export function DemoSettingsTab({ config, onSave }: Props) {
     if (countOptions.length >= 8) return;
     clearSavedNotice();
     const usedCounts = new Set(countOptions.map((o) => o.count));
-    const suggested =
-      PRESET_SUGGESTIONS.find((p) => !usedCounts.has(p.count)) ?? {
-        count: Math.min(180, (countOptions[countOptions.length - 1]?.count || 15) + 15),
-        durationMinutes: Math.min(
-          240,
-          (countOptions[countOptions.length - 1]?.durationMinutes || 20) + 15,
-        ),
-        label: "Custom Pack",
-      };
+    const suggested = PRESET_SUGGESTIONS.find(
+      (p) => !usedCounts.has(p.count),
+    ) ?? {
+      count: Math.min(
+        180,
+        (countOptions[countOptions.length - 1]?.count || 15) + 15,
+      ),
+      durationMinutes: Math.min(
+        240,
+        (countOptions[countOptions.length - 1]?.durationMinutes || 20) + 15,
+      ),
+      label: "Custom Pack",
+    };
 
     let nextCount = suggested.count;
     while (usedCounts.has(nextCount) && nextCount < 180) {
@@ -181,10 +182,7 @@ export function DemoSettingsTab({ config, onSave }: Props) {
     }
   };
 
-  const updateOption = (
-    index: number,
-    patch: Partial<CountOptionItem>,
-  ) => {
+  const updateOption = (index: number, patch: Partial<CountOptionItem>) => {
     clearSavedNotice();
     setCountOptions((prev) =>
       prev.map((item, idx) => {
@@ -208,11 +206,15 @@ export function DemoSettingsTab({ config, onSave }: Props) {
     const seenCounts = new Set<number>();
     for (const opt of countOptions) {
       if (opt.count < 1 || opt.count > 180) {
-        setValidationError("Question count in each option must be between 1 and 180.");
+        setValidationError(
+          "Question count in each option must be between 1 and 180.",
+        );
         return;
       }
       if (opt.durationMinutes < 1 || opt.durationMinutes > 240) {
-        setValidationError("Duration in each option must be between 1 and 240 minutes.");
+        setValidationError(
+          "Duration in each option must be between 1 and 240 minutes.",
+        );
         return;
       }
       if (seenCounts.has(opt.count)) {
@@ -231,7 +233,8 @@ export function DemoSettingsTab({ config, onSave }: Props) {
     }));
 
     const defaultOpt =
-      normalizedOptions.find((o) => o.count === defaultCount) ?? normalizedOptions[0];
+      normalizedOptions.find((o) => o.count === defaultCount) ??
+      normalizedOptions[0];
 
     const filteredSubjects = config.allowedSubjects.filter(
       (s): s is "PHYSICS" | "CHEMISTRY" | "BIOLOGY" =>
@@ -283,18 +286,14 @@ export function DemoSettingsTab({ config, onSave }: Props) {
   };
 
   return (
-    <form
-      onSubmit={(e) => void handleSubmit(e)}
-      className="w-full space-y-5"
-    >
+    <form onSubmit={(e) => void handleSubmit(e)} className="w-full space-y-5">
       {validationError && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
           {validationError}
         </div>
       )}
 
-      {/* 1. Public Demo Availability */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-4">
+      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs">
         <div className="flex items-start gap-3">
           <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
             <SlidersHorizontal className="size-4" />
@@ -304,7 +303,8 @@ export function DemoSettingsTab({ config, onSave }: Props) {
               Demo Test Availability
             </h4>
             <p className="mt-0.5 text-xs text-slate-500">
-              Control whether prospective students can access the public Demo Test.
+              Control whether prospective students can access the public Demo
+              Test.
             </p>
           </div>
         </div>
@@ -315,7 +315,8 @@ export function DemoSettingsTab({ config, onSave }: Props) {
               Enable Public Demo Test
             </p>
             <p className="mt-0.5 text-2xs text-slate-500">
-              Allow prospective students to verify their mobile number and attend the demo test.
+              Allow prospective students to verify their mobile number and
+              attend the demo test.
             </p>
           </div>
           <input
@@ -330,135 +331,18 @@ export function DemoSettingsTab({ config, onSave }: Props) {
         </label>
       </section>
 
-      {/* 2. Multi-Type Question Count & Duration Options */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Clock className="size-4" />
-            </span>
-            <div>
-              <h4 className="text-sm font-bold text-slate-950">
-                Question Count &amp; Duration Options (Multi-Type)
-              </h4>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Configure multiple test length options for students to choose from under &ldquo;Choose Test Duration&rdquo;.
-              </p>
-            </div>
-          </div>
+      <DemoSettingsOptionsEditor
+        countOptions={countOptions}
+        defaultCount={defaultCount}
+        onAddOption={handleAddOption}
+        onRemoveOption={handleRemoveOption}
+        onUpdateOption={updateOption}
+        onSetDefaultCount={(count) => {
+          clearSavedNotice();
+          setDefaultCount(count);
+        }}
+      />
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddOption}
-            disabled={countOptions.length >= 8}
-            className="gap-1.5 rounded-full text-xs font-semibold"
-          >
-            <Plus className="size-3.5" />
-            Add Option
-          </Button>
-        </div>
-
-        <div className="space-y-3">
-          {countOptions.map((opt, idx) => {
-            const isDefault = defaultCount === opt.count;
-            return (
-              <div
-                key={idx}
-                className={`grid grid-cols-1 gap-3 rounded-xl border p-3.5 sm:grid-cols-12 sm:items-end ${
-                  isDefault
-                    ? "border-indigo-300 bg-indigo-50/40"
-                    : "border-slate-200 bg-slate-50/50"
-                }`}
-              >
-                <div className="sm:col-span-4">
-                  <label className="block text-2xs font-semibold text-slate-600">
-                    Option Label
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={60}
-                    placeholder={`${opt.count} Questions`}
-                    value={opt.label}
-                    onChange={(e) => updateOption(idx, { label: e.target.value })}
-                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-2xs font-semibold text-slate-600">
-                    Questions (1–180)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={180}
-                    value={opt.count}
-                    onChange={(e) =>
-                      updateOption(idx, {
-                        count: Math.max(1, Math.min(180, Number(e.target.value) || 1)),
-                      })
-                    }
-                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-2xs font-semibold text-slate-600">
-                    Mins (1–240)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={240}
-                    value={opt.durationMinutes}
-                    onChange={(e) =>
-                      updateOption(idx, {
-                        durationMinutes: Math.max(
-                          1,
-                          Math.min(240, Number(e.target.value) || 1),
-                        ),
-                      })
-                    }
-                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between gap-2 sm:col-span-3 sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearSavedNotice();
-                      setDefaultCount(opt.count);
-                    }}
-                    className={`inline-flex h-9 items-center gap-1 rounded-lg border px-2.5 text-2xs font-bold transition-colors ${
-                      isDefault
-                        ? "border-indigo-600 bg-indigo-600 text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    <CheckCircle2 className="size-3.5" />
-                    {isDefault ? "Default" : "Set Default"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveOption(idx)}
-                    disabled={countOptions.length <= 1}
-                    title="Remove option"
-                    className="grid size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 3. Randomization & Non-Repeat Engine Info */}
       <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-brand-red">
@@ -469,7 +353,9 @@ export function DemoSettingsTab({ config, onSave }: Props) {
               Randomization &amp; Non-Repeat Engine Active
             </h4>
             <p className="mt-0.5 text-2xs text-slate-500">
-              Questions &amp; options are automatically shuffled per attempt, repeat questions are prevented per visitor, and all 3 subjects follow NEET-weighted distribution.
+              Questions &amp; options are automatically shuffled per attempt,
+              repeat questions are prevented per visitor, and all 3 subjects
+              follow NEET-weighted distribution.
             </p>
           </div>
         </div>
@@ -479,7 +365,6 @@ export function DemoSettingsTab({ config, onSave }: Props) {
         </span>
       </section>
 
-      {/* Footer Actions & Saved Message */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         <div>
           {savedNotice && (

@@ -78,11 +78,16 @@ describe("Phase 1 & 1.1 Regression Guardrails", () => {
       path.join(WEB_ROOT, "components/admin/results/results-section.tsx"),
       "utf8",
     );
+    const resultsExportSrc = readFileSync(
+      path.join(WEB_ROOT, "components/admin/results/results-export.ts"),
+      "utf8",
+    );
 
     expect(questionExportSrc).not.toMatch(/^import\s+ExcelJS\s+from/m);
     expect(resultsSectionSrc).not.toMatch(/^import\s+ExcelJS\s+from/m);
+    expect(resultsExportSrc).not.toMatch(/^import\s+ExcelJS\s+from/m);
     expect(questionExportSrc).toContain('await import("exceljs")');
-    expect(resultsSectionSrc).toContain('await import("exceljs")');
+    expect(resultsExportSrc).toContain('await import("exceljs")');
   });
 
   it("preserves secondary-soft variant in shared Button component", () => {

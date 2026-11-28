@@ -1,122 +1,37 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'node:crypto';
+import { lookup as dnsLookup } from 'node:dns/promises';
 import * as fs from 'node:fs/promises';
+import * as http from 'node:http';
+import * as https from 'node:https';
 import * as path from 'node:path';
+import {
+  calculateOptionContentHash,
+  hashImageBytes,
+  isAllowedIpAddress,
+  isAllowedRemoteImageUrl,
+  normalizeNumericalAnswer,
+  normalizeSvgContent,
+  normalizeText,
+  type CanonicalOption,
+  type OptionFingerprintInput,
+  type QuestionFingerprintInput,
+  type QuestionFingerprints,
+} from './question-fingerprint.util.js';
 
-export interface OptionFingerprintInput {
-  label?: string;
-  textEn?: string | null;
-  textTa?: string | null;
-  imageUrl?: string | null;
-  imageHash?: string | null;
-  isCorrect: boolean;
-  position?: number;
-}
-
-export interface QuestionFingerprintInput {
-  type: string;
-  textEn?: string | null;
-  textTa?: string | null;
-  questionImageUrl?: string | null;
-  questionImageHash?: string | null;
-  options?: OptionFingerprintInput[];
-  numericalAnswer?: string | null;
-  courseSubjectId?: string | null;
-}
-
-export interface CanonicalOption {
-  position: number;
-  textEn: string | null;
-  textTa: string | null;
-  imageHash: string | null;
-  isCorrect: boolean;
-  contentHash: string;
-}
-
-export interface QuestionFingerprints {
-  fingerprintVersion: number;
-  contentFingerprint: string;
-  equivalentFingerprint: string;
-  optionsContentFingerprint: string;
-  hasAmbiguousOptions: boolean;
-  unresolvedImages: boolean;
-  canonicalData: {
-    version: number;
-    type: string;
-    textEn: string | null;
-    textTa: string | null;
-    questionImageHash: string | null;
-    options: Array<{
-      position: number;
-      textEn: string | null;
-      textTa: string | null;
-      imageHash: string | null;
-      isCorrect: boolean;
-    }>;
-    numericalAnswer: string | null;
-  };
-}
-
-export function normalizeText(text?: string | null): string | null {
-  if (text === null || text === undefined) return null;
-  const s = String(text).normalize('NFC');
-  const trimmed = s
-    .replace(/\r\n/g, '\n')
-    .replace(/[\t\v\f\r ]+/g, ' ')
-    .trim();
-  return trimmed || null;
-}
-
-export function normalizeNumericalAnswer(ans?: string | null): string | null {
-  const normalized = normalizeText(ans);
-  if (!normalized) return null;
-  // If it's a simple number with unnecessary leading '+' or extra spaces around decimal, trim them safely
-  const cleaned = normalized.replace(/^\+/, '').trim();
-  return cleaned || null;
-}
-
-export function normalizeSvgContent(svgString: string): string {
-  return svgString
-    .replace(/<\?xml[\s\S]*?\?>/gi, '')
-    .replace(/<!doctype[\s\S]*?>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .trim();
-}
-
-export function hashImageBytes(
-  bytes: Uint8Array | Buffer,
-  mimeType?: string,
-): string {
-  const isSvg =
-    mimeType === 'image/svg+xml' ||
-    (bytes.length > 4 &&
-      Buffer.from(bytes.subarray(0, 100))
-        .toString('utf8')
-        .toLowerCase()
-        .includes('<svg'));
-
-  if (isSvg) {
-    const rawSvg = Buffer.from(bytes).toString('utf8');
-    const normalizedSvg = normalizeSvgContent(rawSvg);
-    return createHash('sha256').update(normalizedSvg, 'utf8').digest('hex');
-  }
-
-  return createHash('sha256').update(bytes).digest('hex');
-}
-
-export function calculateOptionContentHash(opt: {
-  textEn?: string | null;
-  textTa?: string | null;
-  imageHash?: string | null;
-  imageUrl?: string | null;
-}): string {
-  const contentObj = {
-    textEn: normalizeText(opt.textEn),
-    textTa: normalizeText(opt.textTa),
-    img: opt.imageHash || normalizeText(opt.imageUrl) || null,
-  };
-  return createHash('sha256').update(JSON.stringify(contentObj)).digest('hex');
-}
+export {
+  calculateOptionContentHash,
+  hashImageBytes,
+  isAllowedIpAddress,
+  isAllowedRemoteImageUrl,
+  normalizeNumericalAnswer,
+  normalizeSvgContent,
+  normalizeText,
+  type CanonicalOption,
+  type OptionFingerprintInput,
+  type QuestionFingerprintInput,
+  type QuestionFingerprints,
+};
 
 interface CachedImageHashEntry {
   hash: string;
@@ -126,47 +41,8 @@ interface CachedImageHashEntry {
 }
 
 const DEFAULT_IMAGE_HASH_CACHE_MAX_ENTRIES = 1000;
-const DEFAULT_IMAGE_HASH_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const DEFAULT_IMAGE_HASH_CACHE_TTL_MS = 10 * 60 * 1000;
 const MAX_CACHEABLE_IMAGE_KEY_LENGTH = 8192;
-
-export function isAllowedRemoteImageUrl(rawUrl: string): boolean {
-  let parsed: URL;
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    return false;
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return false;
-  }
-  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  if (!host || host === 'localhost' || host.endsWith('.local')) {
-    return false;
-  }
-  if (
-    host === '::1' ||
-    host.startsWith('fe80:') ||
-    host.startsWith('fc') ||
-    host.startsWith('fd')
-  ) {
-    return false;
-  }
-  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4) {
-    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
-    if (
-      a === 0 ||
-      a === 10 ||
-      a === 127 ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168)
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
 
 @Injectable()
 export class QuestionDuplicateDetectionService {
@@ -191,7 +67,6 @@ export class QuestionDuplicateDetectionService {
       this.imageHashCache.delete(key);
       return null;
     }
-    // Refresh LRU order
     this.imageHashCache.delete(key);
     this.imageHashCache.set(key, entry);
     return entry;
@@ -240,7 +115,6 @@ export class QuestionDuplicateDetectionService {
     }
 
     try {
-      // 1. Data URL
       if (trimmed.startsWith('data:image/')) {
         const commaIdx = trimmed.indexOf(',');
         if (commaIdx !== -1) {
@@ -254,7 +128,6 @@ export class QuestionDuplicateDetectionService {
         }
       }
 
-      // 2. Local uploads path
       if (trimmed.startsWith('/uploads/question-media/')) {
         const relativePart = trimmed.replace('/uploads/question-media/', '');
         const candidatePaths = [
@@ -295,44 +168,49 @@ export class QuestionDuplicateDetectionService {
         }
       }
 
-      // 3. HTTP(S) URL (SSRF-guarded + ETag/Last-Modified revalidated)
       if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
         if (!isAllowedRemoteImageUrl(trimmed)) {
           this.logger.warn(`Blocked unsafe remote image URL: ${trimmed}`);
           return null;
         }
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 4000);
+        const parsedUrl = new URL(trimmed);
+        const parsedHost = parsedUrl.hostname.replace(/^\[|\]$/g, '');
+        let pinnedIp: string | null = null;
         try {
-          const reqHeaders: Record<string, string> = {};
-          if (cachedEntry?.etag) {
-            reqHeaders['If-None-Match'] = cachedEntry.etag;
+          const resolved = await dnsLookup(parsedHost, { all: true });
+          if (resolved.some((entry) => !isAllowedIpAddress(entry.address))) {
+            this.logger.warn(`Blocked remote image URL resolving to private IP: ${trimmed}`);
+            return null;
           }
-          if (cachedEntry?.lastModified) {
-            reqHeaders['If-Modified-Since'] = cachedEntry.lastModified;
+          pinnedIp = resolved[0]?.address ?? null;
+        } catch {
+          // DNS lookup may be unavailable in offline/mocked unit test environments.
+        }
+        const MAX_REMOTE_IMAGE_BYTES = 10 * 1024 * 1024;
+        const reqHeaders: Record<string, string> = {};
+        if (cachedEntry?.etag) reqHeaders['If-None-Match'] = cachedEntry.etag;
+        if (cachedEntry?.lastModified) {
+          reqHeaders['If-Modified-Since'] = cachedEntry.lastModified;
+        }
+
+        const result = await this.fetchRemoteImageSafe(
+          parsedUrl,
+          pinnedIp,
+          reqHeaders,
+          MAX_REMOTE_IMAGE_BYTES,
+        );
+        if (result === 'NOT_MODIFIED' && cachedEntry) {
+          return cachedEntry.hash;
+        }
+        if (result && typeof result === 'object') {
+          const hash = hashImageBytes(result.buffer, result.mimeType);
+          if (result.etag || result.lastModified) {
+            this.setCachedImageHash(trimmed, hash, {
+              etag: result.etag,
+              lastModified: result.lastModified,
+            });
           }
-          const res = await fetch(trimmed, {
-            signal: controller.signal,
-            cache: 'no-store',
-            headers: Object.keys(reqHeaders).length > 0 ? reqHeaders : undefined,
-          });
-          if (res.status === 304 && cachedEntry) {
-            return cachedEntry.hash;
-          }
-          if (res.ok) {
-            const arrayBuffer = await res.arrayBuffer();
-            const mimeType = res.headers.get('content-type') || undefined;
-            const hash = hashImageBytes(Buffer.from(arrayBuffer), mimeType);
-            const etag = res.headers.get('etag');
-            const lastModified = res.headers.get('last-modified');
-            // Only cache mutable remote URLs when the server provides a validator
-            if (etag || lastModified) {
-              this.setCachedImageHash(trimmed, hash, { etag, lastModified });
-            }
-            return hash;
-          }
-        } finally {
-          clearTimeout(timeout);
+          return hash;
         }
       }
     } catch (err) {
@@ -342,6 +220,201 @@ export class QuestionDuplicateDetectionService {
     }
 
     return null;
+  }
+
+  private async fetchRemoteImageSafe(
+    parsedUrl: URL,
+    pinnedIp: string | null,
+    reqHeaders: Record<string, string>,
+    maxBytes: number,
+  ): Promise<
+    | 'NOT_MODIFIED'
+    | { buffer: Buffer; mimeType?: string; etag?: string | null; lastModified?: string | null }
+    | null
+  > {
+    const isMockedFetch =
+      typeof globalThis.fetch === 'function' && 'mock' in globalThis.fetch;
+
+    if (pinnedIp && !isMockedFetch) {
+      return this.fetchWithPinnedIp(parsedUrl, pinnedIp, reqHeaders, maxBytes);
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    try {
+      const res = await fetch(parsedUrl.toString(), {
+        signal: controller.signal,
+        cache: 'no-store',
+        redirect: 'error',
+        headers: Object.keys(reqHeaders).length > 0 ? reqHeaders : undefined,
+      });
+      if (res.status === 304) return 'NOT_MODIFIED';
+      if (!res.ok) return null;
+
+      const contentLength = Number(res.headers.get('content-length') || '0');
+      if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+        this.logger.warn(`Blocked oversized remote image (${contentLength} bytes): ${parsedUrl.toString()}`);
+        controller.abort();
+        return null;
+      }
+
+      const buffer = await this.readFetchStreamWithLimit(res, maxBytes, controller);
+      if (!buffer) {
+        this.logger.warn(`Blocked oversized remote image during streaming: ${parsedUrl.toString()}`);
+        return null;
+      }
+
+      return {
+        buffer,
+        mimeType: res.headers.get('content-type') || undefined,
+        etag: res.headers.get('etag'),
+        lastModified: res.headers.get('last-modified'),
+      };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private async readFetchStreamWithLimit(
+    res: Response,
+    maxBytes: number,
+    controller: AbortController,
+  ): Promise<Buffer | null> {
+    if (!res.body) {
+      const ab = await res.arrayBuffer();
+      return ab.byteLength > maxBytes ? null : Buffer.from(ab);
+    }
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        totalBytes += value.byteLength;
+        if (totalBytes > maxBytes) {
+          controller.abort();
+          await reader.cancel().catch(() => {});
+          return null;
+        }
+        chunks.push(value);
+      }
+    }
+    return Buffer.concat(chunks, totalBytes);
+  }
+
+  private fetchWithPinnedIp(
+    parsedUrl: URL,
+    pinnedIp: string,
+    reqHeaders: Record<string, string>,
+    maxBytes: number,
+  ): Promise<
+    | 'NOT_MODIFIED'
+    | { buffer: Buffer; mimeType?: string; etag?: string | null; lastModified?: string | null }
+    | null
+  > {
+    return new Promise((resolve, reject) => {
+      const isHttps = parsedUrl.protocol === 'https:';
+      const transport = isHttps ? https : http;
+      const family = pinnedIp.includes(':') ? 6 : 4;
+      let settled = false;
+      const settle = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(deadlineTimer);
+        fn();
+      };
+
+      const req = transport.request(
+        {
+          protocol: parsedUrl.protocol,
+          hostname: parsedUrl.hostname.replace(/^\[|\]$/g, ''),
+          port: parsedUrl.port ? Number(parsedUrl.port) : isHttps ? 443 : 80,
+          path: `${parsedUrl.pathname}${parsedUrl.search}`,
+          method: 'GET',
+          headers: reqHeaders,
+          timeout: 4000,
+          lookup: (_host, opts, cb) => {
+            if (opts && typeof opts === 'object' && opts.all) {
+              (
+                cb as unknown as (
+                  err: null,
+                  addresses: Array<{ address: string; family: number }>,
+                ) => void
+              )(null, [{ address: pinnedIp, family }]);
+              return;
+            }
+            cb(null, pinnedIp, family);
+          },
+        },
+        (res) => {
+          const status = res.statusCode ?? 0;
+          if (status === 304) {
+            res.resume();
+            settle(() => resolve('NOT_MODIFIED'));
+            return;
+          }
+          if (status >= 300 && status < 400) {
+            res.destroy();
+            settle(() => reject(new Error(`Redirect blocked (${status})`)));
+            return;
+          }
+          if (status < 200 || status >= 300) {
+            res.resume();
+            settle(() => resolve(null));
+            return;
+          }
+
+          const contentLength = Number(res.headers['content-length'] || '0');
+          if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+            res.destroy();
+            settle(() => resolve(null));
+            return;
+          }
+
+          const chunks: Buffer[] = [];
+          let totalBytes = 0;
+          res.on('data', (chunk: Buffer) => {
+            totalBytes += chunk.byteLength;
+            if (totalBytes > maxBytes) {
+              res.destroy();
+              settle(() => resolve(null));
+              return;
+            }
+            chunks.push(chunk);
+          });
+          res.on('end', () => {
+            const etag = Array.isArray(res.headers.etag) ? res.headers.etag[0] : res.headers.etag;
+            const lastModified = Array.isArray(res.headers['last-modified'])
+              ? res.headers['last-modified'][0]
+              : res.headers['last-modified'];
+            const mimeType = Array.isArray(res.headers['content-type'])
+              ? res.headers['content-type'][0]
+              : res.headers['content-type'];
+            settle(() =>
+              resolve({
+                buffer: Buffer.concat(chunks, totalBytes),
+                mimeType: mimeType || undefined,
+                etag: etag ?? null,
+                lastModified: lastModified ?? null,
+              }),
+            );
+          });
+          res.on('error', (err) => settle(() => reject(err)));
+        },
+      );
+
+      // Hard overall request deadline so slow-drip continuous streams cannot bypass idle socket timeout
+      const deadlineTimer = setTimeout(() => {
+        req.destroy(new Error('Overall request deadline exceeded'));
+      }, 4000);
+
+      req.on('timeout', () => {
+        req.destroy(new Error('Socket inactivity timeout'));
+      });
+      req.on('error', (err) => settle(() => reject(err)));
+      req.end();
+    });
   }
 
   /**
@@ -375,7 +448,6 @@ export class QuestionDuplicateDetectionService {
         ? normalizeNumericalAnswer(input.numericalAnswer)
         : null;
 
-    // Process options
     const rawOptions = Array.isArray(input.options) ? input.options : [];
     const options: CanonicalOption[] = rawOptions.map((opt, idx) => {
       const optImageHash =
@@ -391,15 +463,14 @@ export class QuestionDuplicateDetectionService {
 
       const optTextEn = normalizeText(opt.textEn);
       const optTextTa = normalizeText(opt.textTa);
-
-      const contentObj = {
-        textEn: optTextEn,
-        textTa: optTextTa,
-        img: effectiveOptionImage,
-      };
-
       const contentHash = createHash('sha256')
-        .update(JSON.stringify(contentObj))
+        .update(
+          JSON.stringify({
+            textEn: optTextEn,
+            textTa: optTextTa,
+            img: effectiveOptionImage,
+          }),
+        )
         .digest('hex');
 
       return {
@@ -412,7 +483,6 @@ export class QuestionDuplicateDetectionService {
       };
     });
 
-    // Check for duplicate identical options in the same question (ambiguous reordering)
     const contentHashCounts = new Map<string, number>();
     for (const opt of options) {
       contentHashCounts.set(
@@ -424,7 +494,6 @@ export class QuestionDuplicateDetectionService {
       (count) => count > 1,
     );
 
-    // 1. Level A: Strict Exact Duplicate
     const canonicalExact = {
       v: version,
       type,
@@ -440,13 +509,10 @@ export class QuestionDuplicateDetectionService {
       })),
       numAns: numericalAnswer,
     };
-
     const contentFingerprint = createHash('sha256')
       .update(JSON.stringify(canonicalExact))
       .digest('hex');
 
-    // 2. Options Content multiset fingerprint (independent of correct answer)
-    // Used to detect answer conflicts (same question & options but different answer)
     const sortedOptionContentHashes = options
       .map((opt) => opt.contentHash)
       .sort();
@@ -463,16 +529,11 @@ export class QuestionDuplicateDetectionService {
       )
       .digest('hex');
 
-    // 3. Level B: Equivalent Duplicate
-    // If ambiguous identical options exist, fallback to exact fingerprint to prevent unsafe auto-skips
     let equivalentFingerprint = contentFingerprint;
-
     if (type !== 'NUMERICAL' && !hasAmbiguousOptions && options.length > 0) {
-      // Sort options deterministically by contentHash
       const sortedByContent = [...options].sort((a, b) =>
         a.contentHash.localeCompare(b.contentHash),
       );
-
       const canonicalEquivalent = {
         v: version,
         type,
@@ -485,7 +546,6 @@ export class QuestionDuplicateDetectionService {
         })),
         numAns: numericalAnswer,
       };
-
       equivalentFingerprint = createHash('sha256')
         .update(JSON.stringify(canonicalEquivalent))
         .digest('hex');

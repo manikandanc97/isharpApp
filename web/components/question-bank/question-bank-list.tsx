@@ -2,49 +2,26 @@
 
 import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  AlertTriangle,
-  CheckSquare,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Download,
-  FileQuestion,
-  LayoutGrid,
-  List,
-  Plus,
-  RotateCcw,
-  Search,
-  Square,
-  Trash2,
-  UploadCloud,
-  X,
-} from "lucide-react";
+import { AlertTriangle, Download, Trash2 } from "lucide-react";
 import { Stack } from "@/components/layout/layout-primitives";
+import { QuestionCardsSkeletonGrid } from "@/components/skeletons/admin/question-card-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
+import { exportQuestionsToExcel } from "@/lib/question-export";
 import { QuestionCard } from "./question-card";
 import { QuestionDeleteDialog } from "./question-delete-dialog";
+import { getQuestionDuplicateKey } from "./question-duplicate-utils";
+import type { Question } from "./types";
+import type { SubjectFilter } from "./use-question-bank";
+import { QuestionBankFilterBar } from "./list/question-bank-filter-bar";
+import { QuestionBankBulkToolbar } from "./list/question-bank-bulk-toolbar";
+import { QuestionBankPagination } from "./list/question-bank-pagination";
+import { QuestionBankEmptyState } from "./list/question-bank-empty-state";
 
 const QuestionPreviewDialog = dynamic(
   () =>
-    import("./question-preview-dialog").then(
-      (m) => m.QuestionPreviewDialog,
-    ),
+    import("./question-preview-dialog").then((m) => m.QuestionPreviewDialog),
   { ssr: false },
 );
-import { QuestionCardsSkeletonGrid } from "@/components/skeletons/admin/question-card-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { Question } from "./types";
-import type { SubjectFilter } from "./use-question-bank";
-import { exportQuestionsToExcel } from "@/lib/question-export";
-import { getQuestionDuplicateKey } from "./question-duplicate-utils";
 
 interface QuestionBankListProps {
   subjectFilter: SubjectFilter;
@@ -103,19 +80,18 @@ export function QuestionBankList({
   const [previewQuestion, setPreviewQuestion] = useState<Question | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Question[] | null>(null);
   const [deleteBusy, setDeleteBusy] = useState<boolean>(false);
-  const [languageViewMode, setLanguageViewMode] = useState<"BILINGUAL" | "EN" | "TA">("BILINGUAL");
+  const [languageViewMode, setLanguageViewMode] = useState<
+    "BILINGUAL" | "EN" | "TA"
+  >("BILINGUAL");
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState<boolean>(false);
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list");
 
-  // Pagination state
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Duplicate questions detection: content & equivalent duplicate detection
   const { duplicateIds, redundantDuplicateIds } = useMemo(() => {
     const keyToIds = new Map<string, string[]>();
-
     libraryQuestions.forEach((q) => {
       const { equivKey } = getQuestionDuplicateKey(q);
       const list = keyToIds.get(equivKey) || [];
@@ -125,19 +101,15 @@ export function QuestionBankList({
 
     const dupSet = new Set<string>();
     const redundantSet = new Set<string>();
-
     for (const ids of keyToIds.values()) {
       if (ids.length > 1) {
         ids.forEach((id) => dupSet.add(id));
-        // Keep the first record as canonical, rest are redundant duplicates
         ids.slice(1).forEach((id) => redundantSet.add(id));
       }
     }
-
     return { duplicateIds: dupSet, redundantDuplicateIds: redundantSet };
   }, [libraryQuestions]);
 
-  // Questions filtered for duplicate view if enabled
   const displayedQuestions = useMemo(() => {
     if (!showDuplicatesOnly) return libraryQuestions;
     return libraryQuestions.filter((q) => duplicateIds.has(q.id));
@@ -149,10 +121,9 @@ export function QuestionBankList({
       difficultyFilter !== "ALL" ||
       typeFilter !== "ALL" ||
       languageFilter !== "ALL" ||
-      showDuplicatesOnly
+      showDuplicatesOnly,
   );
 
-  // Reset to page 1 whenever filters or query change
   const filterKey = `${subjectFilter}|${chapterFilter}|${difficultyFilter}|${typeFilter}|${languageFilter}|${query}|${pageSize}|${showDuplicatesOnly}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
@@ -163,25 +134,23 @@ export function QuestionBankList({
   const totalItems = displayedQuestions.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const currentPage = Math.min(Math.max(1, page), totalPages);
-
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalItems);
 
-  const paginatedQuestions = useMemo(() => {
-    return displayedQuestions.slice(startIndex, endIndex);
-  }, [displayedQuestions, startIndex, endIndex]);
+  const paginatedQuestions = useMemo(
+    () => displayedQuestions.slice(startIndex, endIndex),
+    [displayedQuestions, startIndex, endIndex],
+  );
 
   const handlePageChange = (newPage: number) => {
     const valid = Math.min(Math.max(1, newPage), totalPages);
     setPage(valid);
-    if (containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const toggleSelectOne = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -198,33 +167,28 @@ export function QuestionBankList({
       const pageIds = new Set(paginatedQuestions.map((q) => q.id));
       setSelectedIds((prev) => prev.filter((id) => !pageIds.has(id)));
     } else {
-      const next = new Set([...selectedIds, ...paginatedQuestions.map((q) => q.id)]);
-      setSelectedIds(Array.from(next));
+      setSelectedIds(
+        Array.from(
+          new Set([...selectedIds, ...paginatedQuestions.map((q) => q.id)]),
+        ),
+      );
     }
   };
 
   const toggleSelectAll = () => {
-    if (isAllSelected) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(displayedQuestions.map((q) => q.id));
-    }
+    setSelectedIds(
+      isAllSelected ? [] : displayedQuestions.map((q) => q.id),
+    );
   };
 
   const handleExportSelected = async () => {
     const selectedQuestions = libraryQuestions.filter((q) =>
-      selectedIds.includes(q.id)
+      selectedIds.includes(q.id),
     );
     await exportQuestionsToExcel(
       selectedQuestions.length > 0 ? selectedQuestions : displayedQuestions,
-      `isharp-neet-${subjectFilter.toLowerCase()}-questions.xlsx`
+      `isharp-neet-${subjectFilter.toLowerCase()}-questions.xlsx`,
     );
-  };
-
-  const handleTriggerBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-    const toDelete = libraryQuestions.filter((q) => selectedIds.includes(q.id));
-    setDeleteTarget(toDelete);
   };
 
   const handleConfirmDelete = async () => {
@@ -246,30 +210,11 @@ export function QuestionBankList({
     }
   };
 
-  // Generate page numbers with ellipsis
-  const pageNumbers = useMemo(() => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    const pages: (number | "ellipsis")[] = [1];
-    if (currentPage > 3) {
-      pages.push("ellipsis");
-    }
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
-    for (let p = start; p <= end; p++) {
-      pages.push(p);
-    }
-    if (currentPage < totalPages - 2) {
-      pages.push("ellipsis");
-    }
-    pages.push(totalPages);
-    return pages;
-  }, [currentPage, totalPages]);
-
   return (
-    <Stack ref={containerRef} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs">
-      {/* Title & Quick Stats */}
+    <Stack
+      ref={containerRef}
+      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:p-6"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -278,9 +223,9 @@ export function QuestionBankList({
             </span>
             <span className="text-slate-300">·</span>
             {busy && !libraryQuestions.length ? (
-              <Skeleton className="h-3.5 w-24 inline-block align-middle" />
+              <Skeleton className="inline-block h-3.5 w-24 align-middle" />
             ) : (
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-xs font-medium text-slate-500">
                 {visibleCount} records matched
               </span>
             )}
@@ -293,70 +238,59 @@ export function QuestionBankList({
               </>
             )}
           </div>
-          <h3 className="text-base font-bold text-slate-900 mt-0.5">
+          <h3 className="mt-0.5 text-base font-bold text-slate-900">
             {subjectFilter[0] + subjectFilter.slice(1).toLowerCase()} Questions
           </h3>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Language View Switcher */}
           <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50/80 p-0.5 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => setLanguageViewMode("BILINGUAL")}
-              className={`rounded px-2.5 py-1 text-2xs transition ${
-                languageViewMode === "BILINGUAL"
-                  ? "bg-white text-indigo-700 font-bold shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              தமிழ் + English
-            </button>
-            <button
-              type="button"
-              onClick={() => setLanguageViewMode("TA")}
-              className={`rounded px-2.5 py-1 text-2xs transition ${
-                languageViewMode === "TA"
-                  ? "bg-white text-indigo-700 font-bold shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              தமிழ்
-            </button>
-            <button
-              type="button"
-              onClick={() => setLanguageViewMode("EN")}
-              className={`rounded px-2.5 py-1 text-2xs transition ${
-                languageViewMode === "EN"
-                  ? "bg-white text-indigo-700 font-bold shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              English
-            </button>
+            {(
+              [
+                ["BILINGUAL", "தமிழ் + English"],
+                ["TA", "தமிழ்"],
+                ["EN", "English"],
+              ] as const
+            ).map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setLanguageViewMode(mode)}
+                className={`rounded px-2.5 py-1 text-2xs transition ${
+                  languageViewMode === mode
+                    ? "bg-white font-bold text-indigo-700 shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           <button
             type="button"
-            onClick={handleExportSelected}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
+            onClick={() => void handleExportSelected()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
           >
             <Download className="size-3.5" />
-            <span>Export {selectedIds.length > 0 ? `(${selectedIds.length})` : "View"}</span>
+            <span>
+              Export {selectedIds.length > 0 ? `(${selectedIds.length})` : "View"}
+            </span>
           </button>
         </div>
       </div>
 
-      {/* Duplicate Notice Banner (if duplicates exist) */}
       {redundantDuplicateIds.size > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs">
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-4 shrink-0 text-amber-600" />
             <span className="font-semibold text-amber-900">
-              {redundantDuplicateIds.size} duplicate question {redundantDuplicateIds.size > 1 ? "copies" : "copy"} detected
+              {redundantDuplicateIds.size} duplicate question{" "}
+              {redundantDuplicateIds.size > 1 ? "copies" : "copy"} detected
             </span>
-            <span className="text-amber-700 hidden sm:inline">
-              (matching content, diagrams, and options in {subjectFilter.toLowerCase()}).
+            <span className="hidden text-amber-700 sm:inline">
+              (matching content, diagrams, and options in{" "}
+              {subjectFilter.toLowerCase()}).
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -365,22 +299,25 @@ export function QuestionBankList({
               onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
               className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
                 showDuplicatesOnly
-                  ? "border-amber-400 bg-amber-200/80 text-amber-900 font-bold shadow-2xs"
+                  ? "border-amber-400 bg-amber-200/80 font-bold text-amber-900 shadow-2xs"
                   : "border-amber-300 bg-white text-amber-800 hover:bg-amber-100/50"
               }`}
             >
-              {showDuplicatesOnly ? "Show All Questions" : `Filter Duplicates (${duplicateIds.size})`}
+              {showDuplicatesOnly
+                ? "Show All Questions"
+                : `Filter Duplicates (${duplicateIds.size})`}
             </button>
             {onDelete && (
               <button
                 type="button"
-                onClick={() => {
-                  const redundantList = libraryQuestions.filter((q) =>
-                    redundantDuplicateIds.has(q.id)
-                  );
-                  setDeleteTarget(redundantList);
-                }}
-                className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-700 shadow-2xs transition"
+                onClick={() =>
+                  setDeleteTarget(
+                    libraryQuestions.filter((q) =>
+                      redundantDuplicateIds.has(q.id),
+                    ),
+                  )
+                }
+                className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white shadow-2xs transition hover:bg-rose-700"
               >
                 <Trash2 className="size-3" />
                 <span>Clean {redundantDuplicateIds.size} Duplicates</span>
@@ -390,207 +327,50 @@ export function QuestionBankList({
         </div>
       )}
 
-      {/* Dynamic Advanced Filter Bar */}
-      <div className="grid gap-2.5 rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 sm:grid-cols-2 lg:grid-cols-5">
-        {/* Search Input */}
-        <div className="relative sm:col-span-2 lg:col-span-2">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-          <input
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-8 text-xs text-slate-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-            placeholder={`Search ${subjectFilter.toLowerCase()} by ID, text or Tamil...`}
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => onQueryChange("")}
-              aria-label="Clear search"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition focus:outline-none"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
+      <QuestionBankFilterBar
+        subjectFilter={subjectFilter}
+        query={query}
+        onQueryChange={onQueryChange}
+        chapterFilter={chapterFilter}
+        onChapterChange={onChapterChange}
+        difficultyFilter={difficultyFilter}
+        onDifficultyChange={onDifficultyChange}
+        typeFilter={typeFilter}
+        onTypeChange={onTypeChange}
+        availableChapters={availableChapters}
+      />
 
-        {/* Chapter Filter */}
-        {onChapterChange && (
-          <Select
-            value={chapterFilter}
-            onValueChange={(value) => value && onChapterChange(value)}
-          >
-            <SelectTrigger className="h-9 text-xs font-medium">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" label={`All Chapters (${availableChapters.length})`}>
-                All Chapters ({availableChapters.length})
-              </SelectItem>
-              {availableChapters.map((ch) => (
-                <SelectItem key={ch} value={ch} label={ch}>
-                  {ch}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {/* Difficulty Filter */}
-        {onDifficultyChange && (
-          <Select
-            value={difficultyFilter}
-            onValueChange={(value) => value && onDifficultyChange(value)}
-          >
-            <SelectTrigger className="h-9 text-xs font-medium">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" label="All Difficulties">All Difficulties</SelectItem>
-              <SelectItem value="EASY" label="Easy">Easy</SelectItem>
-              <SelectItem value="MEDIUM" label="Medium">Medium</SelectItem>
-              <SelectItem value="HARD" label="Hard">Hard</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
-
-        {/* Question Type Filter */}
-        {onTypeChange && (
-          <Select
-            value={typeFilter}
-            onValueChange={(value) => value && onTypeChange(value)}
-          >
-            <SelectTrigger className="h-9 text-xs font-medium">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" label="All Question Types">All Question Types</SelectItem>
-              <SelectItem value="SINGLE_CORRECT" label="Single Correct MCQ">Single Correct MCQ</SelectItem>
-              <SelectItem value="MULTIPLE_CORRECT" label="Multiple Correct MCQ">Multiple Correct MCQ</SelectItem>
-              <SelectItem value="NUMERICAL" label="Numerical Questions">Numerical Questions</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-
-      {/* Bulk Selection Toolbar & Page Size Selector - only shown when questions exist */}
       {totalItems > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-y border-slate-100 py-2.5 px-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleSelectPage}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900"
-            >
-              {isPageAllSelected ? (
-                <CheckSquare className="size-4 text-brand-blue" />
-              ) : (
-                <Square className="size-4 text-slate-400" />
-              )}
-              <span>Select Page ({paginatedQuestions.length})</span>
-            </button>
-
-            {totalItems > paginatedQuestions.length && (
-              <button
-                type="button"
-                onClick={toggleSelectAll}
-                className="text-xs text-indigo-600 hover:underline font-semibold"
-              >
-                {isAllSelected ? "Unselect all" : `Select all ${totalItems} questions`}
-              </button>
-            )}
-
-            {selectedIds.length > 0 && (
-              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-3xs font-bold text-brand-blue border border-blue-200">
-                {selectedIds.length} Selected
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            {selectedIds.length > 0 && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleExportSelected}
-                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-3xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
-                >
-                  <Download className="size-3" />
-                  <span>Export Selected</span>
-                </button>
-                {onDelete && (
-                  <button
-                    type="button"
-                    onClick={handleTriggerBulkDelete}
-                    className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-3xs font-semibold text-red-700 hover:bg-red-100 shadow-2xs"
-                  >
-                    <Trash2 className="size-3" />
-                    <span>Delete Selected</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setSelectedIds([])}
-                  className="text-3xs font-medium text-slate-500 hover:underline"
-                >
-                  Clear
-                </button>
-              </div>
-            )}
-
-            {/* Page size dropdown */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-              <span>Per page:</span>
-              <Select
-                value={String(pageSize)}
-                onValueChange={(value) => value && setPageSize(Number(value))}
-              >
-                <SelectTrigger className="h-7 w-18 rounded-lg px-2 text-xs font-semibold">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10" label="10">10</SelectItem>
-                  <SelectItem value="20" label="20">20</SelectItem>
-                  <SelectItem value="50" label="50">50</SelectItem>
-                  <SelectItem value="100" label="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Layout mode switcher: Full-width list vs 2-column grid */}
-            <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50/80 p-0.5">
-              <button
-                type="button"
-                onClick={() => setLayoutMode("list")}
-                title="Full width layout"
-                aria-label="Full width layout"
-                className={`rounded p-1 transition ${
-                  layoutMode === "list"
-                    ? "bg-white text-indigo-700 shadow-2xs"
-                    : "text-slate-400 hover:text-slate-700"
-                }`}
-              >
-                <List className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setLayoutMode("grid")}
-                title="Two-column grid layout"
-                aria-label="Two-column grid layout"
-                className={`rounded p-1 transition ${
-                  layoutMode === "grid"
-                    ? "bg-white text-indigo-700 shadow-2xs"
-                    : "text-slate-400 hover:text-slate-700"
-                }`}
-              >
-                <LayoutGrid className="size-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <QuestionBankBulkToolbar
+          pageCount={paginatedQuestions.length}
+          totalItems={totalItems}
+          selectedCount={selectedIds.length}
+          isPageAllSelected={isPageAllSelected}
+          isAllSelected={isAllSelected}
+          canDelete={Boolean(onDelete)}
+          pageSize={pageSize}
+          layoutMode={layoutMode}
+          onToggleSelectPage={toggleSelectPage}
+          onToggleSelectAll={toggleSelectAll}
+          onExportSelected={() => void handleExportSelected()}
+          onTriggerBulkDelete={() =>
+            setDeleteTarget(
+              libraryQuestions.filter((q) => selectedIds.includes(q.id)),
+            )
+          }
+          onClearSelection={() => setSelectedIds([])}
+          onPageSizeChange={setPageSize}
+          onLayoutModeChange={setLayoutMode}
+        />
       )}
 
-      {/* Question Cards Container */}
-      <div className={layoutMode === "list" ? "flex flex-col gap-4 w-full" : "grid gap-4 lg:grid-cols-2"}>
+      <div
+        className={
+          layoutMode === "list"
+            ? "flex w-full flex-col gap-4"
+            : "grid gap-4 lg:grid-cols-2"
+        }
+      >
         {busy && !libraryQuestions.length ? (
           <div className="col-span-full w-full">
             <QuestionCardsSkeletonGrid count={6} layoutMode={layoutMode} />
@@ -609,7 +389,12 @@ export function QuestionBankList({
               onDuplicate={
                 onDuplicate
                   ? () => onDuplicate(question)
-                  : () => onEdit({ ...question, id: "", externalId: `${question.externalId}-COPY` })
+                  : () =>
+                      onEdit({
+                        ...question,
+                        id: "",
+                        externalId: `${question.externalId}-COPY`,
+                      })
               }
               onEdit={() => onEdit(question)}
               onDelete={
@@ -621,152 +406,25 @@ export function QuestionBankList({
           ))
         )}
         {!busy && !libraryQuestions.length && (
-          <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 sm:p-14 text-center">
-            <div className="flex size-14 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 ring-8 ring-indigo-50/50">
-              <FileQuestion className="size-7" />
-            </div>
-
-            {hasActiveFilters ? (
-              <>
-                <h4 className="mt-4 text-base font-bold text-slate-800">
-                  No matching {subjectFilter[0] + subjectFilter.slice(1).toLowerCase()} questions
-                </h4>
-                <p className="mt-1.5 max-w-sm text-xs text-slate-500 leading-relaxed">
-                  No questions match your current search and filter settings. Try clearing your filters or search query.
-                </p>
-                {onClearFilters && (
-                  <button
-                    type="button"
-                    onClick={onClearFilters}
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-indigo-600 transition"
-                  >
-                    <RotateCcw className="size-3.5" />
-                    <span>Reset All Filters</span>
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <h4 className="mt-4 text-base font-bold text-slate-800">
-                  No {subjectFilter[0] + subjectFilter.slice(1).toLowerCase()} Questions Yet
-                </h4>
-                <p className="mt-1.5 max-w-md text-xs text-slate-500 leading-relaxed">
-                  There are currently no questions in {subjectFilter[0] + subjectFilter.slice(1).toLowerCase()}. Start building your verified question repository by creating questions or importing them from Excel.
-                </p>
-                <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                  {onCreateQuestion && (
-                    <button
-                      type="button"
-                      onClick={onCreateQuestion}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-indigo-700 transition"
-                    >
-                      <Plus className="size-4" />
-                      <span>Create Question</span>
-                    </button>
-                  )}
-                  {onOpenImport && (
-                    <button
-                      type="button"
-                      onClick={onOpenImport}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
-                    >
-                      <UploadCloud className="size-4 text-slate-500" />
-                      <span>Import Excel</span>
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+          <QuestionBankEmptyState
+            subjectFilter={subjectFilter}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={onClearFilters}
+            onCreateQuestion={onCreateQuestion}
+            onOpenImport={onOpenImport}
+          />
         )}
       </div>
 
-      {/* Bottom Pagination Bar */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100 pt-4 px-1">
-          <div className="text-xs text-slate-500 font-medium">
-            Showing <span className="font-bold text-slate-800">{startIndex + 1}</span> to{" "}
-            <span className="font-bold text-slate-800">{endIndex}</span> of{" "}
-            <span className="font-bold text-slate-800">{totalItems}</span> questions
-          </div>
+      <QuestionBankPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
+      />
 
-          <div className="flex items-center gap-1">
-            {/* First Page */}
-            <button
-              type="button"
-              onClick={() => handlePageChange(1)}
-              disabled={currentPage <= 1}
-              className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="First Page"
-            >
-              <ChevronsLeft className="size-4" />
-            </button>
-
-            {/* Previous Page */}
-            <button
-              type="button"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage <= 1}
-              className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="Previous Page"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-
-            {/* Page number buttons */}
-            <div className="flex items-center gap-1 mx-1">
-              {pageNumbers.map((p, idx) => {
-                if (p === "ellipsis") {
-                  return (
-                    <span key={`ellipsis-${idx}`} className="px-1.5 text-xs text-slate-400">
-                      …
-                    </span>
-                  );
-                }
-                const isCurrent = p === currentPage;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => handlePageChange(p)}
-                    className={`size-8 rounded-lg text-xs font-semibold transition ${
-                      isCurrent
-                        ? "bg-brand-blue text-white shadow-xs"
-                        : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Next Page */}
-            <button
-              type="button"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-              className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="Next Page"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-
-            {/* Last Page */}
-            <button
-              type="button"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={currentPage >= totalPages}
-              className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="Last Page"
-            >
-              <ChevronsRight className="size-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Question Preview Modal */}
       {Boolean(previewQuestion) && (
         <QuestionPreviewDialog
           open={Boolean(previewQuestion)}
@@ -775,7 +433,6 @@ export function QuestionBankList({
         />
       )}
 
-      {/* Question Delete Confirmation Modal */}
       <QuestionDeleteDialog
         open={Boolean(deleteTarget && deleteTarget.length > 0)}
         onClose={() => !deleteBusy && setDeleteTarget(null)}

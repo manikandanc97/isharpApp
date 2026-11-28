@@ -2,6 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomInt } from 'node:crypto';
 import { QuestionDifficulty, QuestionType } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  fetchSelectedQuestionsByIds,
+  searchEligibleBankQuestions,
+} from './question-selection-search.helper.js';
 
 export interface ChapterAllocationInput {
   chapterId: string;
@@ -71,12 +75,10 @@ function cryptoShuffle<T>(items: T[]): T[] {
 export class QuestionSelectionEngine {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Returns all active subjects (via CourseSubject) with their active chapters
-   * and eligible question counts without loading full questions into memory.
-   */
   async getSubjectsAndChapters(allowedTypes?: QuestionType[]) {
-    const types = allowedTypes?.length ? allowedTypes : [QuestionType.SINGLE_CORRECT];
+    const types = allowedTypes?.length
+      ? allowedTypes
+      : [QuestionType.SINGLE_CORRECT];
 
     const courseSubjects = await this.prisma.courseSubject.findMany({
       where: {
@@ -117,11 +119,13 @@ export class QuestionSelectionEngine {
         (subjectTotals.get(row.courseSubjectId) ?? 0) + count,
       );
       if (row.chapterId) {
-        chapterTotals.set(row.chapterId, (chapterTotals.get(row.chapterId) ?? 0) + count);
+        chapterTotals.set(
+          row.chapterId,
+          (chapterTotals.get(row.chapterId) ?? 0) + count,
+        );
       }
     }
 
-    // Deduplicate by subject code if multiple courses exist, preferring the primary NEET course
     const sorted = [...courseSubjects].sort((a, b) => {
       if (a.course.code === 'NEET' && b.course.code !== 'NEET') return -1;
       if (b.course.code === 'NEET' && a.course.code !== 'NEET') return 1;
@@ -145,9 +149,6 @@ export class QuestionSelectionEngine {
     }));
   }
 
-  /**
-   * Generates a duplicate-free, fingerprint-checked question set matching exact subject & chapter allocations.
-   */
   async generateQuestions(params: {
     subjectAllocations: SubjectAllocationInput[];
     allowedTypes?: QuestionType[];
@@ -157,12 +158,15 @@ export class QuestionSelectionEngine {
     questions: SelectedQuestionSummary[];
     shortages: QuestionShortageDetail[];
   }> {
-    const activeAllocations = params.subjectAllocations.filter((s) => s.questionCount > 0);
+    const activeAllocations = params.subjectAllocations.filter(
+      (s) => s.questionCount > 0,
+    );
     if (activeAllocations.length === 0) {
-      throw new BadRequestException('At least one subject with questionCount > 0 is required');
+      throw new BadRequestException(
+        'At least one subject with questionCount > 0 is required',
+      );
     }
 
-    // Validate manual chapter allocations before querying
     for (const sub of activeAllocations) {
       if (sub.chapterAllocationMode === 'MANUAL') {
         const allocs = sub.chapterAllocations ?? [];
@@ -173,7 +177,10 @@ export class QuestionSelectionEngine {
           );
         }
       }
-      if (sub.chapterMode === 'SELECTED' && (!sub.chapterIds || sub.chapterIds.length === 0)) {
+      if (
+        sub.chapterMode === 'SELECTED' &&
+        (!sub.chapterIds || sub.chapterIds.length === 0)
+      ) {
         throw new BadRequestException(
           `${sub.subjectName}: Please select at least one chapter or switch to All Chapters`,
         );
@@ -216,10 +223,16 @@ export class QuestionSelectionEngine {
 
       const isEligible = (q: (typeof candidates)[number]) => {
         if (usedQuestionIds.has(q.id)) return false;
-        if (q.contentFingerprint && usedContentFingerprints.has(q.contentFingerprint)) {
+        if (
+          q.contentFingerprint &&
+          usedContentFingerprints.has(q.contentFingerprint)
+        ) {
           return false;
         }
-        if (q.equivalentFingerprint && usedEquivalentFingerprints.has(q.equivalentFingerprint)) {
+        if (
+          q.equivalentFingerprint &&
+          usedEquivalentFingerprints.has(q.equivalentFingerprint)
+        ) {
           return false;
         }
         return true;
@@ -227,8 +240,12 @@ export class QuestionSelectionEngine {
 
       const markUsed = (q: (typeof candidates)[number]) => {
         usedQuestionIds.add(q.id);
-        if (q.contentFingerprint) usedContentFingerprints.add(q.contentFingerprint);
-        if (q.equivalentFingerprint) usedEquivalentFingerprints.add(q.equivalentFingerprint);
+        if (q.contentFingerprint) {
+          usedContentFingerprints.add(q.contentFingerprint);
+        }
+        if (q.equivalentFingerprint) {
+          usedEquivalentFingerprints.add(q.equivalentFingerprint);
+        }
         selectedIds.push(q.id);
       };
 
@@ -242,10 +259,14 @@ export class QuestionSelectionEngine {
         }
 
         const chaptersInfo = await this.prisma.chapter.findMany({
-          where: { id: { in: (sub.chapterAllocations ?? []).map((a) => a.chapterId) } },
+          where: {
+            id: { in: (sub.chapterAllocations ?? []).map((a) => a.chapterId) },
+          },
           select: { id: true, title: true },
         });
-        const chapterTitleById = new Map(chaptersInfo.map((c) => [c.id, c.title]));
+        const chapterTitleById = new Map(
+          chaptersInfo.map((c) => [c.id, c.title]),
+        );
 
         for (const alloc of sub.chapterAllocations ?? []) {
           if (alloc.count <= 0) continue;
@@ -263,7 +284,8 @@ export class QuestionSelectionEngine {
               subjectCode: sub.subjectCode,
               subjectName: sub.subjectName,
               chapterId: alloc.chapterId,
-              chapterTitle: chapterTitleById.get(alloc.chapterId) ?? 'Selected Chapter',
+              chapterTitle:
+                chapterTitleById.get(alloc.chapterId) ?? 'Selected Chapter',
               required: alloc.count,
               available: pickedForChapter,
               shortage: alloc.count - pickedForChapter,
@@ -271,7 +293,6 @@ export class QuestionSelectionEngine {
           }
         }
       } else {
-        // AUTOMATIC balanced chapter distribution
         const shuffled = cryptoShuffle(candidates);
         const byChapter = new Map<string, typeof candidates>();
         for (const q of shuffled) {
@@ -321,63 +342,11 @@ export class QuestionSelectionEngine {
     return { questions: fullQuestions, shortages: [] };
   }
 
-  /**
-   * Fetches full bilingual question payloads in the exact requested order.
-   */
-  async fetchQuestionsByIds(ids: string[]): Promise<SelectedQuestionSummary[]> {
-    if (ids.length === 0) return [];
-
-    const rows = await this.prisma.question.findMany({
-      where: { id: { in: ids }, isActive: true },
-      include: {
-        options: { orderBy: { position: 'asc' } },
-        chapter: { select: { id: true, title: true } },
-        courseSubject: {
-          include: {
-            subject: { select: { id: true, code: true, name: true } },
-          },
-        },
-      },
-    });
-
-    const byId = new Map(rows.map((r) => [r.id, r]));
-    return ids
-      .map((id) => byId.get(id))
-      .filter((r): r is NonNullable<typeof r> => Boolean(r))
-      .map((q) => ({
-        id: q.id,
-        externalId: q.externalId,
-        courseSubjectId: q.courseSubjectId,
-        subjectCode: q.courseSubject.subject.code,
-        subjectName: q.courseSubject.subject.name,
-        chapterId: q.chapterId,
-        chapterTitle: q.chapter?.title ?? null,
-        type: q.type,
-        difficulty: q.difficulty,
-        textEn: q.textEn,
-        textTa: q.textTa,
-        questionImageUrl: q.questionImageUrl,
-        solutionEn: q.solutionEn,
-        solutionTa: q.solutionTa,
-        solutionImageUrl: q.solutionImageUrl,
-        correctMarks: q.correctMarks,
-        negativeMarks: q.negativeMarks,
-        options: q.options.map((o) => ({
-          id: o.id,
-          label: o.label,
-          textEn: o.textEn,
-          textTa: o.textTa,
-          imageUrl: o.imageUrl,
-          isCorrect: o.isCorrect,
-          position: o.position,
-        })),
-      }));
+  fetchQuestionsByIds(ids: string[]): Promise<SelectedQuestionSummary[]> {
+    return fetchSelectedQuestionsByIds(this.prisma, ids);
   }
 
-  /**
-   * Paginated server-side Question Bank search for Manual Question Selection & Replacement.
-   */
-  async searchEligibleQuestions(params: {
+  searchEligibleQuestions(params: {
     page?: number;
     limit?: number;
     subjectCode?: string;
@@ -388,104 +357,6 @@ export class QuestionSelectionEngine {
     query?: string;
     excludeIds?: string[];
   }) {
-    const page = Math.max(1, params.page ?? 1);
-    const limit = Math.min(50, Math.max(1, params.limit ?? 20));
-    const skip = (page - 1) * limit;
-
-    const where: Record<string, unknown> = {
-      isActive: true,
-      courseSubject: {
-        isActive: true,
-        ...(params.subjectCode && params.subjectCode !== 'ALL'
-          ? { subject: { code: params.subjectCode.toUpperCase() } }
-          : {}),
-      },
-      OR: [{ chapterId: null }, { chapter: { isActive: true } }],
-    };
-
-    if (params.courseSubjectId && params.courseSubjectId !== 'ALL') {
-      where.courseSubjectId = params.courseSubjectId;
-    }
-    if (params.chapterId && params.chapterId !== 'ALL') {
-      where.chapterId = params.chapterId;
-    }
-    if (params.difficulty && params.difficulty !== 'ALL') {
-      where.difficulty = params.difficulty as QuestionDifficulty;
-    }
-    if (params.type && params.type !== 'ALL') {
-      where.type = params.type as QuestionType;
-    } else {
-      where.type = QuestionType.SINGLE_CORRECT;
-    }
-    if (params.excludeIds?.length) {
-      where.id = { notIn: params.excludeIds };
-    }
-    if (params.query?.trim()) {
-      const q = params.query.trim();
-      where.AND = [
-        {
-          OR: [
-            { externalId: { contains: q, mode: 'insensitive' } },
-            { textEn: { contains: q, mode: 'insensitive' } },
-            { textTa: { contains: q, mode: 'insensitive' } },
-            { chapter: { title: { contains: q, mode: 'insensitive' } } },
-          ],
-        },
-      ];
-    }
-
-    const [total, items] = await Promise.all([
-      this.prisma.question.count({ where }),
-      this.prisma.question.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-        include: {
-          options: { orderBy: { position: 'asc' } },
-          chapter: { select: { id: true, title: true } },
-          courseSubject: {
-            include: {
-              subject: { select: { id: true, code: true, name: true } },
-            },
-          },
-        },
-      }),
-    ]);
-
-    return {
-      items: items.map((q) => ({
-        id: q.id,
-        externalId: q.externalId,
-        courseSubjectId: q.courseSubjectId,
-        subjectCode: q.courseSubject.subject.code,
-        subjectName: q.courseSubject.subject.name,
-        chapterId: q.chapterId,
-        chapterTitle: q.chapter?.title ?? null,
-        type: q.type,
-        difficulty: q.difficulty,
-        textEn: q.textEn,
-        textTa: q.textTa,
-        questionImageUrl: q.questionImageUrl,
-        solutionEn: q.solutionEn,
-        solutionTa: q.solutionTa,
-        solutionImageUrl: q.solutionImageUrl,
-        correctMarks: q.correctMarks,
-        negativeMarks: q.negativeMarks,
-        options: q.options.map((o) => ({
-          id: o.id,
-          label: o.label,
-          textEn: o.textEn,
-          textTa: o.textTa,
-          imageUrl: o.imageUrl,
-          isCorrect: o.isCorrect,
-          position: o.position,
-        })),
-      })),
-      total,
-      page,
-      limit,
-      totalPages: Math.max(1, Math.ceil(total / limit)),
-    };
+    return searchEligibleBankQuestions(this.prisma, params);
   }
 }

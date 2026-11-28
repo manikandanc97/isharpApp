@@ -6,7 +6,7 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import type { DemoVerificationMethod } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
@@ -14,6 +14,11 @@ import {
   resolveDemoOtpRuntimeConfig,
   type DemoOtpDeliveryProvider,
 } from './demo-otp-provider.js';
+import {
+  hashOtpSessionToken,
+  resolveDemoOtpSession,
+  upsertLeadAndCreateSessionInTx,
+} from './demo-otp-session.helper.js';
 import { normalizeIndianMobile } from './demo-test-phone.helper.js';
 import { SlidingWindowRateLimiter } from './demo-test-rate-limit.helper.js';
 
@@ -71,15 +76,9 @@ export class DemoOtpService {
       .digest('hex');
   }
 
-  private hashSessionToken(rawToken: string): string {
-    return createHash('sha256').update(rawToken).digest('hex');
-  }
-
   private generateOtpValue(provider: DemoOtpDeliveryProvider): string {
     const config = resolveDemoOtpRuntimeConfig();
-    if (provider.isMock) {
-      return config.mockOtp;
-    }
+    if (provider.isMock) return config.mockOtp;
     return randomInt(100000, 1000000).toString();
   }
 
@@ -126,7 +125,6 @@ export class DemoOtpService {
       }
     }
 
-    const challengeId = randomBytes(16).toString('hex');
     const otp = this.generateOtpValue(provider);
     const expiresAt = new Date(now.getTime() + config.expirySeconds * 1000);
     const createdChallenge = await this.prisma.$transaction(async (tx) => {
@@ -158,8 +156,6 @@ export class DemoOtpService {
       });
     });
 
-    void challengeId;
-
     await provider.sendOtp({
       normalizedPhone,
       otp,
@@ -190,10 +186,14 @@ export class DemoOtpService {
       where: { id: input.challengeId },
     });
     if (!challenge) {
-      throw new BadRequestException('OTP challenge not found. Please request a new OTP.');
+      throw new BadRequestException(
+        'OTP challenge not found. Please request a new OTP.',
+      );
     }
     if (challenge.status !== 'PENDING' || challenge.consumedAt) {
-      throw new BadRequestException('This OTP challenge is no longer active. Please request a new OTP.');
+      throw new BadRequestException(
+        'This OTP challenge is no longer active. Please request a new OTP.',
+      );
     }
 
     const now = new Date();
@@ -202,12 +202,16 @@ export class DemoOtpService {
         where: { id: challenge.id },
         data: { status: 'EXPIRED' },
       });
-      throw new BadRequestException('OTP has expired. Please request a new OTP.');
+      throw new BadRequestException(
+        'OTP has expired. Please request a new OTP.',
+      );
     }
 
     this.requestPhoneLimiter.consume(`phone:${challenge.normalizedPhone}`);
 
-    const elapsedSeconds = Math.floor((now.getTime() - challenge.lastSentAt.getTime()) / 1000);
+    const elapsedSeconds = Math.floor(
+      (now.getTime() - challenge.lastSentAt.getTime()) / 1000,
+    );
     if (elapsedSeconds < config.resendCooldownSeconds) {
       const retryAfter = config.resendCooldownSeconds - elapsedSeconds;
       throw new HttpException(
@@ -275,8 +279,10 @@ export class DemoOtpService {
 
     const now = new Date();
     const rawSessionToken = randomBytes(32).toString('hex');
-    const sessionTokenHash = this.hashSessionToken(rawSessionToken);
-    const sessionExpiresAt = new Date(now.getTime() + config.sessionTtlSeconds * 1000);
+    const sessionTokenHash = hashOtpSessionToken(rawSessionToken);
+    const sessionExpiresAt = new Date(
+      now.getTime() + config.sessionTtlSeconds * 1000,
+    );
 
     const result = await this.prisma.$transaction(async (tx) => {
       const challenge = await tx.demoOtpChallenge.findUnique({
@@ -286,8 +292,14 @@ export class DemoOtpService {
         throw new BadRequestException('Invalid or expired OTP challenge.');
       }
 
-      if (challenge.status !== 'PENDING' || challenge.consumedAt || challenge.verifiedAt) {
-        throw new BadRequestException('This OTP has already been used or invalidated. Please request a new OTP.');
+      if (
+        challenge.status !== 'PENDING' ||
+        challenge.consumedAt ||
+        challenge.verifiedAt
+      ) {
+        throw new BadRequestException(
+          'This OTP has already been used or invalidated. Please request a new OTP.',
+        );
       }
 
       if (challenge.expiresAt <= now) {
@@ -295,7 +307,9 @@ export class DemoOtpService {
           where: { id: challenge.id },
           data: { status: 'EXPIRED' },
         });
-        throw new BadRequestException('OTP has expired. Please request a new OTP.');
+        throw new BadRequestException(
+          'OTP has expired. Please request a new OTP.',
+        );
       }
 
       if (challenge.attemptCount >= challenge.maxAttempts) {
@@ -303,14 +317,21 @@ export class DemoOtpService {
           where: { id: challenge.id },
           data: { status: 'LOCKED' },
         });
-        throw new BadRequestException('Maximum verification attempts exceeded. Please request a new OTP.');
+        throw new BadRequestException(
+          'Maximum verification attempts exceeded. Please request a new OTP.',
+        );
       }
 
-      const expectedHash = this.hashOtp(challenge.id, challenge.normalizedPhone, otp);
+      const expectedHash = this.hashOtp(
+        challenge.id,
+        challenge.normalizedPhone,
+        otp,
+      );
       const actualBuf = Buffer.from(expectedHash, 'utf8');
       const storedBuf = Buffer.from(challenge.otpHash, 'utf8');
       const isMatch =
-        actualBuf.length === storedBuf.length && timingSafeEqual(actualBuf, storedBuf);
+        actualBuf.length === storedBuf.length &&
+        timingSafeEqual(actualBuf, storedBuf);
 
       if (!isMatch) {
         const nextAttempts = challenge.attemptCount + 1;
@@ -330,7 +351,6 @@ export class DemoOtpService {
         );
       }
 
-      // Single-use atomic consumption to prevent replay / concurrent race
       const consumed = await tx.demoOtpChallenge.updateMany({
         where: {
           id: challenge.id,
@@ -352,115 +372,27 @@ export class DemoOtpService {
           ? input.marketingConsent
           : challenge.marketingConsent;
 
-      const existingLead = await tx.demoLead.findUnique({
-        where: { normalizedPhone: challenge.normalizedPhone },
+      return upsertLeadAndCreateSessionInTx(tx, {
+        normalizedPhone: challenge.normalizedPhone,
+        verificationMethod: challenge.verificationMethod,
+        explicitConsent,
+        sessionTokenHash,
+        sessionExpiresAt,
+        now,
       });
-
-      let lead;
-      if (existingLead) {
-        // Preserve existing adminNotes, followUpStatus, firstAccessAt, totalAttempts.
-        // Only upgrade marketingConsent if explicitly granted now.
-        lead = await tx.demoLead.update({
-          where: { id: existingLead.id },
-          data: {
-            lastAccessAt: now,
-            verificationMethod: challenge.verificationMethod,
-            isVerified: true,
-            verifiedAt: now,
-            ...(explicitConsent && !existingLead.marketingConsent
-              ? { marketingConsent: true, consentTimestamp: now }
-              : {}),
-          },
-        });
-      } else {
-        const guestTokenHash = createHash('sha256')
-          .update(randomBytes(24).toString('hex'))
-          .digest('hex');
-        const visitor = await tx.demoVisitor.create({
-          data: {
-            guestTokenHash,
-          },
-        });
-        lead = await tx.demoLead.create({
-          data: {
-            normalizedPhone: challenge.normalizedPhone,
-            visitorId: visitor.id,
-            verificationMethod: challenge.verificationMethod,
-            isVerified: true,
-            verifiedAt: now,
-            firstAccessAt: now,
-            lastAccessAt: now,
-            totalAttempts: 0,
-            marketingConsent: explicitConsent,
-            consentTimestamp: explicitConsent ? now : null,
-            followUpStatus: 'NEW',
-          },
-        });
-      }
-
-      const session = await tx.demoAccessSession.create({
-        data: {
-          leadId: lead.id,
-          visitorId: lead.visitorId,
-          tokenHash: sessionTokenHash,
-          verificationMethod: challenge.verificationMethod,
-          expiresAt: sessionExpiresAt,
-          lastUsedAt: now,
-        },
-      });
-
-      return { lead, session };
     });
 
     return {
       verified: true,
       sessionToken: rawSessionToken,
       expiresAt: result.session.expiresAt.toISOString(),
-      verificationMethod: result.lead.verificationMethod as DemoVerificationMethod,
+      verificationMethod: result.lead
+        .verificationMethod as DemoVerificationMethod,
       marketingConsent: result.lead.marketingConsent,
     };
   }
 
-  async resolveSession(rawToken?: string | null) {
-    if (!rawToken || typeof rawToken !== 'string' || rawToken.trim().length < 32) {
-      return null;
-    }
-
-    const tokenHash = this.hashSessionToken(rawToken.trim());
-    const now = new Date();
-
-    const session = await this.prisma.demoAccessSession.findUnique({
-      where: { tokenHash },
-      include: {
-        lead: {
-          select: {
-            id: true,
-            visitorId: true,
-            verificationMethod: true,
-            marketingConsent: true,
-          },
-        },
-      },
-    });
-
-    if (!session || session.revokedAt || session.expiresAt <= now) {
-      return null;
-    }
-
-    await this.prisma.demoAccessSession
-      .update({
-        where: { id: session.id },
-        data: { lastUsedAt: now },
-      })
-      .catch(() => {});
-
-    return {
-      sessionId: session.id,
-      leadId: session.lead.id,
-      visitorId: session.lead.visitorId,
-      verificationMethod: session.lead.verificationMethod,
-      marketingConsent: session.lead.marketingConsent,
-      expiresAt: session.expiresAt.toISOString(),
-    };
+  resolveSession(rawToken?: string | null) {
+    return resolveDemoOtpSession(this.prisma, rawToken);
   }
 }

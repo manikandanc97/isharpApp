@@ -21,6 +21,10 @@ import type {
 import { useExamAutosave } from "./use-exam-autosave";
 import { useExamTimer } from "./use-exam-timer";
 import { useFullscreenToggle } from "@/components/demo-test/use-fullscreen-toggle";
+import {
+  computePaletteSummaryCounts,
+  getQuestionPaletteStatus,
+} from "@/components/shared/examination/exam-palette-utils";
 
 interface ProductionExamRunnerProps {
   initialAttempt: SanitizedAttemptPayload;
@@ -255,37 +259,15 @@ export function ProductionExamRunner({
 
   // Palette status calculator
   const getQuestionStatus = useCallback(
-    (qId: string): QuestionStatus => {
-      const rec = answers[qId];
-      if (!rec || !rec.visited) return "not_visited";
-      const hasAnswer = Boolean(rec.selectedOptionId);
-      if (hasAnswer && rec.markedForReview) return "answered_and_marked";
-      if (rec.markedForReview) return "marked_for_review";
-      if (hasAnswer) return "answered";
-      return "unanswered";
-    },
-    [answers]
+    (qId: string): QuestionStatus => getQuestionPaletteStatus(answers[qId]),
+    [answers],
   );
 
   // Summary counts
-  const summaryCounts: SummaryCounts = useMemo(() => {
-    let answered = 0;
-    let notAnswered = 0;
-    let marked = 0;
-    let answeredAndMarked = 0;
-    let notVisited = 0;
-
-    questions.forEach((q) => {
-      const st = getQuestionStatus(q.id);
-      if (st === "answered") answered++;
-      else if (st === "unanswered") notAnswered++;
-      else if (st === "marked_for_review") marked++;
-      else if (st === "answered_and_marked") answeredAndMarked++;
-      else notVisited++;
-    });
-
-    return { answered, notAnswered, marked, answeredAndMarked, notVisited };
-  }, [getQuestionStatus, questions]);
+  const summaryCounts: SummaryCounts = useMemo(
+    () => computePaletteSummaryCounts(questions, getQuestionStatus),
+    [getQuestionStatus, questions],
+  );
 
   const attemptedCount = summaryCounts.answered + summaryCounts.answeredAndMarked;
   const remainingCount = summaryCounts.notAnswered + summaryCounts.notVisited;
